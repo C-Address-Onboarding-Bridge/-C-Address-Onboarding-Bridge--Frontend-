@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docs:api": "typedoc --options typedoc.json"
   },
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",
@@ -28,6 +29,7 @@
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "typedoc": "^0.28.0"
   }
 }
