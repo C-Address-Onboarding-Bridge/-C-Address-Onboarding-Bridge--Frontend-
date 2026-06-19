@@ -1,0 +1,43 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --hostname 0.0.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_STELLAR_NETWORK: ${NEXT_PUBLIC_STELLAR_NETWORK:-TESTNET}
+      NEXT_PUBLIC_BRIDGE_CONTRACT_ID: ${NEXT_PUBLIC_BRIDGE_CONTRACT_ID:-}
+      NEXT_PUBLIC_MOONPAY_API_KEY: ${NEXT_PUBLIC_MOONPAY_API_KEY:-}
+      NEXT_PUBLIC_TRANSAK_API_KEY: ${NEXT_PUBLIC_TRANSAK_API_KEY:-}
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "true"
+    env_file:
+      - path: .env.local
+        required: false
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+
+  frontend-prod:
+    profiles: ["production"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_STELLAR_NETWORK: ${NEXT_PUBLIC_STELLAR_NETWORK:-TESTNET}
+      NEXT_PUBLIC_BRIDGE_CONTRACT_ID: ${NEXT_PUBLIC_BRIDGE_CONTRACT_ID:-}
+      NEXT_PUBLIC_MOONPAY_API_KEY: ${NEXT_PUBLIC_MOONPAY_API_KEY:-}
+      NEXT_PUBLIC_TRANSAK_API_KEY: ${NEXT_PUBLIC_TRANSAK_API_KEY:-}
+      NEXT_TELEMETRY_DISABLED: "1"
+    env_file:
+      - path: .env.local
+        required: false
+
+volumes:
+  frontend_node_modules:
+  frontend_next:
