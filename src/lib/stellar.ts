@@ -176,7 +176,8 @@ export async function buildAndSubmitPayment(
   destinationAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
@@ -197,7 +198,7 @@ export async function buildAndSubmitPayment(
   }
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
@@ -234,10 +235,11 @@ export async function bridgeViaContract(
   cAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   if (!BRIDGE_CONTRACT_ID) {
-    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network);
+    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network, feeStroops);
   }
 
   const server = getHorizonServer(network);
@@ -246,7 +248,7 @@ export async function bridgeViaContract(
   const account = await server.loadAccount(sourceAddress);
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
@@ -391,4 +393,38 @@ export async function getTransactionStatus(
     }
     throw e;
   }
+}
+
+export interface FeeTiers {
+  slow: string;      // stroops
+  standard: string;
+  fast: string;
+  baseFee: string;
+  congested: boolean;
+}
+
+export async function fetchFeeStats(network: "PUBLIC" | "TESTNET"): Promise<FeeTiers> {
+  const server = getHorizonServer(network);
+  const stats = await server.feeStats();
+  const baseFee = stats.last_ledger_base_fee;
+  return {
+    slow: stats.fee_charged.p10,
+    standard: stats.fee_charged.p50,
+    fast: stats.fee_charged.p90,
+    baseFee: String(baseFee),
+    congested: parseFloat(stats.ledger_capacity_usage) > 0.5,
+  };
+}
+
+export function validateFee(feeStroops: string, baseFee: string, opCount = 1): boolean {
+  const min = parseInt(baseFee, 10) * opCount;
+  return parseInt(feeStroops, 10) >= min;
+}
+
+export function xlmToStroops(xlm: string): string {
+  return String(Math.round(parseFloat(xlm) * 1e7));
+}
+
+export function stroopsToXlm(stroops: string): string {
+  return (parseInt(stroops, 10) / 1e7).toFixed(7);
 }

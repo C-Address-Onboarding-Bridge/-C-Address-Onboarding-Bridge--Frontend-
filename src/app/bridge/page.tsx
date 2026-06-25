@@ -6,6 +6,7 @@ import {
   Loader2, ExternalLink, XCircle, AlertTriangle,
 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
+import { FeeSelector } from "@/components/fee-selector";
 import {
   isValidStellarAddress,
   isCAddress,
@@ -31,6 +32,7 @@ export default function BridgePage() {
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+  const [selectedFee, setSelectedFee] = useState<string>("100");
 
   // Account info (fetched async)
   const [allBalances, setAllBalances] = useState<{ asset: string; amount: string }[]>([]);
@@ -170,7 +172,7 @@ export default function BridgePage() {
     setTxStatus("signing");
     setTxError(null);
     try {
-      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network);
+      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network, selectedFee);
       setTxHash(result.hash);
       setTxStatus("success");
       setStep("confirm");
@@ -394,10 +396,14 @@ export default function BridgePage() {
                     <span className="text-sm text-[var(--text-muted)]">Network</span>
                     <span className="text-sm">{network === "PUBLIC" ? "Mainnet" : "Testnet"}</span>
                   </div>
-                  <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Fee</span>
-                    <span className="text-sm">~0.00001 XLM</span>
-                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-2">Transaction Fee</p>
+                  <FeeSelector
+                    network={network}
+                    onFeeChange={(stroops) => setSelectedFee(stroops)}
+                  />
                 </div>
 
                 {txError && (
