@@ -26,9 +26,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         <WalletProvider>
+          <a
+            href="#main-content"
+            className="absolute top-0 left-0 -translate-y-full focus:translate-y-0 focus:z-50 px-4 py-2 bg-[var(--primary)] text-white rounded-b-lg transition-transform"
+          >
+            Skip to main content
+          </a>
           <div className="min-h-screen flex flex-col">
             <Navbar />
-            <main className="flex-1 pt-16">{children}</main>
+            <main id="main-content" className="flex-1 pt-16">{children}</main>
             <Footer />
           </div>
         </WalletProvider>
