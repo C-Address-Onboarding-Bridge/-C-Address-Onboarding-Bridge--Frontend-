@@ -12,6 +12,8 @@ interface WalletContextType {
   isConnecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
+  clearAllData: () => Promise<void>;
+  revokePermissions: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType>({
@@ -22,6 +24,8 @@ const WalletContext = createContext<WalletContextType>({
   isConnecting: false,
   connect: async () => {},
   disconnect: () => {},
+  clearAllData: async () => {},
+  revokePermissions: async () => {},
 });
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -36,6 +40,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const net = await getCurrentNetwork();
       setAddress(pk);
       setNetwork(net);
+      if (pk) {
+        await addRecentAddress(pk);
+      }
     } else {
       setAddress(null);
     }
@@ -50,6 +57,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
+      const capsGranted = await ensureRequiredCapabilities();
+      if (!capsGranted) {
+        console.error("Required capabilities not granted");
+        setIsConnecting(false);
+        return;
+      }
       const pk = await connectWallet();
       if (pk) {
         setAddress(pk);
@@ -65,6 +78,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setAddress(null);
   }, []);
 
+  const clearAllData = useCallback(async () => {
+    await clearAllUserData();
+    setAddress(null);
+  }, []);
+
+  const revokePermissions = useCallback(async () => {
+    await revokeAllCapabilities();
+    setAddress(null);
+  }, []);
+
   return (
     <WalletContext.Provider
       value={{
@@ -75,6 +98,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         connect,
         disconnect,
+        clearAllData,
+        revokePermissions,
       }}
     >
       {children}

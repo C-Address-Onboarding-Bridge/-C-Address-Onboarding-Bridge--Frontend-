@@ -88,8 +88,17 @@ export default function CexPage() {
             </div>
           </div>
 
+          {cAddress && (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+              <h3 className="font-semibold mb-4">4. Verify Bridge Address Access</h3>
+              <CEXAddressVerification
+                onVerified={() => {}}
+              />
+            </div>
+          )}
+
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">4. Withdrawal Details for {selectedCex.name}</h3>
+            <h3 className="font-semibold mb-4">5. Withdrawal Details for {selectedCex.name}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Bridge Deposit Address</label>
@@ -197,18 +206,22 @@ export default function CexPage() {
             <ol className="space-y-3 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">1.</span>
-                <span>Withdraw from your CEX to the bridge address</span>
+                <span>Verify bridge address access with micro-transaction</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">2.</span>
-                <span>The Soroban bridge contract detects the deposit</span>
+                <span>Withdraw from your CEX to the bridge address</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">3.</span>
-                <span>Funds are routed to your C-address automatically</span>
+                <span>The Soroban bridge contract detects the deposit</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">4.</span>
+                <span>Funds are routed to your C-address automatically</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--primary-light)] font-medium">5.</span>
                 <span>Use your Soroban dApp directly</span>
               </li>
             </ol>
