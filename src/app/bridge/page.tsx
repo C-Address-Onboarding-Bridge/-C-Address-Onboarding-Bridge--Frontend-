@@ -15,7 +15,11 @@ import {
   buildAndSubmitChangeTrust,
   getTransactionStatus,
   USDC_ISSUERS,
+  isNativeAsset,
+  getTokenAllowance,
+  approveToken,
 } from "@/lib/stellar";
+import { BRIDGE_CONTRACT_ID } from "@/lib/types";
 
 type Step = "form" | "review" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
@@ -46,6 +50,28 @@ export default function BridgePage() {
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollActiveRef = useRef(false);
+
+  // Allowance state
+  type AllowanceStatus = "idle" | "checking" | "sufficient" | "required" | "approving" | "approved" | "error";
+  const [allowanceStatus, setAllowanceStatus] = useState<AllowanceStatus>("idle");
+  const [allowanceError, setAllowanceError] = useState<string | null>(null);
+
+  // For native XLM or when no bridge contract is set, approval is never needed
+  const needsAllowanceCheck = step === "review" && !isNativeAsset(asset) && !!BRIDGE_CONTRACT_ID && asset === "USDC";
+
+  const checkAllowance = async (owner: string, amtStr: string, net: "PUBLIC" | "TESTNET") => {
+    setAllowanceStatus("checking");
+    setAllowanceError(null);
+    try {
+      const tokenContractId = USDC_ISSUERS[net];
+      const amountRaw = BigInt(Math.round(parseFloat(amtStr) * 10_000_000));
+      const current = await getTokenAllowance(tokenContractId, owner, BRIDGE_CONTRACT_ID, net);
+      setAllowanceStatus(current >= amountRaw ? "sufficient" : "required");
+    } catch (e) {
+      setAllowanceError(e instanceof Error ? e.message : "Allowance check failed");
+      setAllowanceStatus("error");
+    }
+  };
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -101,6 +127,22 @@ export default function BridgePage() {
       if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
     };
   }, []);
+
+  const handleApprove = async () => {
+    if (!fromAddress || !amount || !BRIDGE_CONTRACT_ID || !needsAllowanceCheck) return;
+    const tokenContractId = USDC_ISSUERS[network];
+
+    setAllowanceStatus("approving");
+    setAllowanceError(null);
+    try {
+      const amountRaw = BigInt(Math.round(parseFloat(amount) * 10_000_000));
+      await approveToken(tokenContractId, fromAddress, BRIDGE_CONTRACT_ID, amountRaw, network);
+      setAllowanceStatus("approved");
+    } catch (e) {
+      setAllowanceError(e instanceof Error ? e.message : "Approval failed");
+      setAllowanceStatus("error");
+    }
+  };
 
   // --- Polling ---
 
@@ -163,6 +205,11 @@ export default function BridgePage() {
     if (!canProceed) return;
     setStep("review");
     setTxError(null);
+    setAllowanceStatus("idle");
+    setAllowanceError(null);
+    if (!isNativeAsset(asset) && BRIDGE_CONTRACT_ID && asset === "USDC" && fromAddress && amount) {
+      checkAllowance(fromAddress, amount, network);
+    }
   };
 
   const handleConfirm = async () => {
@@ -209,6 +256,8 @@ export default function BridgePage() {
     setPollTimedOut(false);
     setTrustlineActionStatus("idle");
     setTrustlineError(null);
+    setAllowanceStatus("idle");
+    setAllowanceError(null);
   };
 
   return (
@@ -400,6 +449,54 @@ export default function BridgePage() {
                   </div>
                 </div>
 
+                {/* Allowance status row */}
+                {needsAllowanceCheck && (
+                  <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-muted)]">Token Approval</span>
+                      {allowanceStatus === "checking" && (
+                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Checking allowance…
+                        </span>
+                      )}
+                      {(allowanceStatus === "sufficient" || allowanceStatus === "approved") && (
+                        <span className="flex items-center gap-1 text-xs text-[var(--success)]">
+                          <Check className="w-3 h-3" /> Approved
+                        </span>
+                      )}
+                      {allowanceStatus === "required" && (
+                        <span className="text-xs text-amber-400">Approval Required</span>
+                      )}
+                      {allowanceStatus === "approving" && (
+                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Approving…
+                        </span>
+                      )}
+                      {allowanceStatus === "error" && (
+                        <span className="text-xs text-[var(--error)]">Check failed</span>
+                      )}
+                    </div>
+                    {allowanceStatus === "required" && (
+                      <button
+                        onClick={handleApprove}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-sm font-medium hover:bg-amber-500/30 transition-colors"
+                      >
+                        Approve {asset} for Bridge Contract
+                      </button>
+                    )}
+                    {allowanceError && (
+                      <p className="text-xs text-[var(--error)]">{allowanceError}</p>
+                    )}
+                  </div>
+                )}
+
+                {!needsAllowanceCheck && (
+                  <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
+                    <span className="text-sm text-[var(--text-muted)]">Token Approval</span>
+                    <span className="text-xs text-[var(--text-muted)]">Not needed for XLM</span>
+                  </div>
+                )}
+
                 {txError && (
                   <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
@@ -420,7 +517,13 @@ export default function BridgePage() {
                   </button>
                   <button
                     onClick={handleConfirm}
-                    disabled={txStatus === "signing" || txStatus === "submitting"}
+                    disabled={
+                      txStatus === "signing" ||
+                      txStatus === "submitting" ||
+                      (needsAllowanceCheck &&
+                        allowanceStatus !== "sufficient" &&
+                        allowanceStatus !== "approved")
+                    }
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
                   >
                     {txStatus === "signing" || txStatus === "submitting" ? (

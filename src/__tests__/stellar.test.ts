@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidStellarAddress, isCAddress, isGAddress } from "@/lib/stellar";
+import { isValidStellarAddress, isCAddress, isGAddress, isNativeAsset } from "@/lib/stellar";
 
 const G_ADDRESS = "GAIUIQ7G3TMN53Z2Y3Y5CJI7Q7ZQJX4W5F5N5Z5Q5Z5Q5Z5Q5Z5Q5Z5A";
 const C_ADDRESS = "CAIUIQ7G3TMN53Z2Y3Y5CJI7Q7ZQJX4W5F5N5Z5Q5Z5Q5Z5Q5Z5Q5Z5A";
@@ -48,5 +48,19 @@ describe("isGAddress", () => {
 
   it("rejects C-address", () => {
     expect(isGAddress(C_ADDRESS)).toBe(false);
+  });
+});
+
+describe("isNativeAsset", () => {
+  it("returns true for XLM", () => {
+    expect(isNativeAsset("XLM")).toBe(true);
+  });
+
+  it("returns false for USDC", () => {
+    expect(isNativeAsset("USDC")).toBe(false);
+  });
+
+  it("returns false for arbitrary token code", () => {
+    expect(isNativeAsset("yXLM")).toBe(false);
   });
 });

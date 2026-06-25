@@ -12,6 +12,11 @@ import {
   Asset,
   Horizon,
   rpc,
+  Contract,
+  Address,
+  nativeToScVal,
+  scValToNative,
+  StrKey,
 } from "@stellar/stellar-sdk";
 import {
   BRIDGE_CONTRACT_ID,
@@ -391,4 +396,86 @@ export async function getTransactionStatus(
     }
     throw e;
   }
+}
+
+export function isNativeAsset(assetCode: string): boolean {
+  return assetCode === "XLM";
+}
+
+function addressToScVal(address: string) {
+  if (StrKey.isValidEd25519PublicKey(address)) {
+    return nativeToScVal(Address.account(StrKey.decodeEd25519PublicKey(address)), { type: "address" });
+  }
+  return nativeToScVal(Address.contract(StrKey.decodeContract(address)), { type: "address" });
+}
+
+export async function getTokenAllowance(
+  tokenContractId: string,
+  owner: string,
+  spender: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<bigint> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(owner);
+  const contract = new Contract(tokenContractId);
+
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(contract.call("allowance", addressToScVal(owner), addressToScVal(spender)))
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(sim)) {
+    throw new Error(`Allowance simulation failed: ${sim.error}`);
+  }
+  const result = (sim as rpc.Api.SimulateTransactionSuccessResponse).result;
+  if (!result) return BigInt(0);
+  return BigInt(scValToNative(result.retval) as bigint);
+}
+
+export async function approveToken(
+  tokenContractId: string,
+  owner: string,
+  spender: string,
+  amount: bigint,
+  network: "PUBLIC" | "TESTNET"
+): Promise<string> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(owner);
+  const contract = new Contract(tokenContractId);
+
+  const latestLedger = (await server.getLatestLedger()).sequence;
+  const expirationLedger = latestLedger + 535680; // ~30 days at 5s/ledger
+
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(
+      contract.call(
+        "approve",
+        addressToScVal(owner),
+        addressToScVal(spender),
+        nativeToScVal(amount, { type: "i128" }),
+        nativeToScVal(expirationLedger, { type: "u32" })
+      )
+    )
+    .setTimeout(30)
+    .build();
+
+  const prepared = await server.prepareTransaction(tx);
+  const signedResult = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signedResult && signedResult.error) {
+    throw new Error(`Signing failed: ${signedResult.error}`);
+  }
+  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const sendResult = await server.sendTransaction(signedTx);
+  if (sendResult.status === "ERROR") {
+    throw new Error(`Approve transaction failed: ${JSON.stringify(sendResult.errorResult)}`);
+  }
+  const polled = await server.pollTransaction(sendResult.hash, { attempts: 20, sleepStrategy: rpc.BasicSleepStrategy });
+  if (polled.status !== "SUCCESS") {
+    throw new Error(`Approve transaction did not succeed: ${polled.status}`);
+  }
+  return sendResult.hash;
 }
