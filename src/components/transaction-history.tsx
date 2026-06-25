@@ -1,6 +1,7 @@
 import { ArrowLeftRight, CreditCard, Building2, ExternalLink, Loader2 } from "lucide-react";
 import type { BridgeTransaction as BridgeTransactionData } from "@/lib/types";
 import { getExplorerUrl } from "@/lib/stellar";
+import { encodeHtml } from "@/lib/sanitization";
 
 const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
   "g-to-c": { icon: ArrowLeftRight, label: "G → C Bridge", color: "text-[var(--primary-light)]" },
@@ -50,7 +51,7 @@ export default function TransactionHistory({ transactions, loading, network }: P
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{type.label}</p>
                       <p className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">
-                        {tx.amount} {tx.asset} → {tx.toAddress}
+                        {encodeHtml(tx.amount)} {encodeHtml(tx.asset)} → {encodeHtml(tx.toAddress)}
                       </p>
                     </div>
                   </div>

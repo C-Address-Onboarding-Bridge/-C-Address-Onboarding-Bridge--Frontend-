@@ -16,6 +16,12 @@ import {
   getTransactionStatus,
   USDC_ISSUERS,
 } from "@/lib/stellar";
+import {
+  sanitizeStellarAddress,
+  sanitizeCAddress,
+  sanitizeAmount,
+  encodeHtml,
+} from "@/lib/sanitization";
 
 type Step = "form" | "review" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
@@ -234,7 +240,8 @@ export default function BridgePage() {
                       type="text"
                       value={fromAddress}
                       onChange={(e) => {
-                        setFromAddress(e.target.value);
+                        const sanitized = sanitizeStellarAddress(e.target.value) || e.target.value;
+                        setFromAddress(sanitized);
                         setSourceBalance(null);
                         setAccountExists(null);
                         setAllBalances([]);
@@ -281,7 +288,10 @@ export default function BridgePage() {
                     <input
                       type="text"
                       value={toAddress}
-                      onChange={(e) => setToAddress(e.target.value)}
+                      onChange={(e) => {
+                        const sanitized = sanitizeCAddress(e.target.value) || e.target.value;
+                        setToAddress(sanitized);
+                      }}
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== "idle"}
@@ -302,7 +312,7 @@ export default function BridgePage() {
                       <input
                         type="text"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                         placeholder="0.00"
                         className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== "idle"}
@@ -380,15 +390,15 @@ export default function BridgePage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">From</span>
-                    <span className="text-sm font-mono">{fromAddress}</span>
+                    <span className="text-sm font-mono">{encodeHtml(fromAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">To</span>
-                    <span className="text-sm font-mono">{toAddress}</span>
+                    <span className="text-sm font-mono">{encodeHtml(toAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">Amount</span>
-                    <span className="text-sm font-semibold">{amount} {asset}</span>
+                    <span className="text-sm font-semibold">{encodeHtml(amount)} {encodeHtml(asset)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">Network</span>
