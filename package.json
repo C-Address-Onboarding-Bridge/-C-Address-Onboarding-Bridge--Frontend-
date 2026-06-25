@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "check:env": "node scripts/check-env.js",
     "prepare": "husky"
   },
   "dependencies": {

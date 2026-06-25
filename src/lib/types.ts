@@ -17,6 +17,17 @@ export interface BridgeTransaction {
   timestamp: number;
   type: "g-to-c" | "fiat" | "cex";
   hash?: string;
+  memo?: string;
+}
+
+export interface PaymentResult {
+  hash: string;
+  successful: boolean;
+}
+
+export interface AccountBalances {
+  total: string;
+  balances: { asset: string; amount: string }[];
 }
 
 export interface Balance {

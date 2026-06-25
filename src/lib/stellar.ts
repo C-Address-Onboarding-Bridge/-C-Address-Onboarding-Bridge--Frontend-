@@ -13,24 +13,24 @@ import {
   Horizon,
   rpc,
 } from "@stellar/stellar-sdk";
-import { BRIDGE_CONTRACT_ID } from "./types";
+import {
+  BRIDGE_CONTRACT_ID,
+  HORIZON_URL,
+  SOROBAN_RPC_URL,
+  type PaymentResult,
+  type AccountBalances,
+  type BridgeTransaction,
+} from "./types";
 
-const HORIZON_URLS = {
-  PUBLIC: "https://horizon.stellar.org",
-  TESTNET: "https://horizon-testnet.stellar.org",
-};
-
-const SOROBAN_RPC_URLS = {
-  PUBLIC: "https://soroban-rpc.stellar.org",
-  TESTNET: "https://soroban-rpc-testnet.stellar.org",
-};
+export type { BridgeTransaction as BridgeTransactionData } from "./types";
+export type { PaymentResult, AccountBalances } from "./types";
 
 export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server {
-  return new Horizon.Server(HORIZON_URLS[network]);
+  return new Horizon.Server(HORIZON_URL[network]);
 }
 
 export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): rpc.Server {
-  return new rpc.Server(SOROBAN_RPC_URLS[network]);
+  return new rpc.Server(SOROBAN_RPC_URL[network]);
 }
 
 export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
@@ -90,27 +90,18 @@ export function isGAddress(address: string): boolean {
   return address.startsWith("G") && address.length === 56;
 }
 
-export interface PaymentResult {
-  hash: string;
-  successful: boolean;
-}
-
-export interface AccountBalances {
-  total: string;
-  balances: { asset: string; amount: string }[];
-}
-
-export interface BridgeTransactionData {
-  id: string;
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
-  asset: string;
-  status: "pending" | "confirmed" | "failed";
-  timestamp: number;
-  type: "g-to-c" | "fiat" | "cex";
-  hash?: string;
-  memo?: string;
+export function validateEnvironment(): string[] {
+  const warnings: string[] = [];
+  if (!process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID) {
+    warnings.push("NEXT_PUBLIC_BRIDGE_CONTRACT_ID is not set; bridge will fall back to direct payment");
+  }
+  if (!process.env.NEXT_PUBLIC_MOONPAY_API_KEY) {
+    warnings.push("NEXT_PUBLIC_MOONPAY_API_KEY is not set; Moonpay onramp will be unavailable");
+  }
+  if (!process.env.NEXT_PUBLIC_TRANSAK_API_KEY) {
+    warnings.push("NEXT_PUBLIC_TRANSAK_API_KEY is not set; Transak onramp will be unavailable");
+  }
+  return warnings;
 }
 
 interface HorizonBalance {
@@ -154,7 +145,7 @@ export async function fetchRecentTransactions(
   address: string,
   network: "PUBLIC" | "TESTNET",
   limit: number = 10
-): Promise<BridgeTransactionData[]> {
+): Promise<BridgeTransaction[]> {
   const server = getHorizonServer(network);
   try {
     const payments = await server

@@ -6,7 +6,8 @@ import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
 import { getAccountBalances, fetchRecentTransactions, getExplorerUrl } from "@/lib/stellar";
-import type { BridgeTransactionData as BridgeTransaction } from "@/lib/stellar";
+import type { BridgeTransaction } from "@/lib/types";
+import { BRIDGE_CONTRACT_ID } from "@/lib/types";
 
 export default function DashboardPage() {
   const { isConnected, address, network, connect } = useWallet();
@@ -87,6 +88,14 @@ export default function DashboardPage() {
           New Bridge
         </Link>
       </div>
+
+      {!BRIDGE_CONTRACT_ID && (
+        <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400 flex items-center gap-2">
+          <span className="font-medium">Info:</span>
+          Bridge contract not configured — bridge transactions will use direct payment.
+          Set <code className="font-mono text-xs">NEXT_PUBLIC_BRIDGE_CONTRACT_ID</code> to enable the smart contract.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
