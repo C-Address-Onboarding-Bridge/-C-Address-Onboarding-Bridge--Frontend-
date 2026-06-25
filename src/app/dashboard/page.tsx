@@ -8,6 +8,18 @@ import Link from "next/link";
 import { getAccountBalances, fetchRecentTransactions, getExplorerUrl } from "@/lib/stellar";
 import type { BridgeTransaction } from "@/lib/types";
 import { BRIDGE_CONTRACT_ID } from "@/lib/types";
+import {
+  ASSET_XLM,
+  NETWORK_DISPLAY,
+  DEFAULT_TX_LIMIT,
+  DASHBOARD_REFRESH_MS,
+  COPY_FEEDBACK_MS,
+  XLM_DISPLAY_DECIMALS,
+  ASSET_DISPLAY_DECIMALS,
+  STATUS_CONFIRMED,
+  STATUS_PENDING,
+  ENV_BRIDGE_CONTRACT_ID,
+} from "@/lib/constants";
 
 export default function DashboardPage() {
   const { isConnected, address, network, connect } = useWallet();
@@ -26,7 +38,7 @@ export default function DashboardPage() {
       try {
         const [balResult, txResult] = await Promise.all([
           getAccountBalances(address, network),
-          fetchRecentTransactions(address, network, 10),
+          fetchRecentTransactions(address, network, DEFAULT_TX_LIMIT),
         ]);
         setBalance(balResult.total);
         setAllBalances(balResult.balances);
@@ -38,18 +50,18 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-    const interval = setInterval(fetchData, 30000);
+    const interval = setInterval(fetchData, DASHBOARD_REFRESH_MS);
     return () => clearInterval(interval);
   }, [isConnected, address, network]);
 
-  const confirmedCount = transactions.filter((t) => t.status === "confirmed").length;
-  const pendingCount = transactions.filter((t) => t.status === "pending").length;
+  const confirmedCount = transactions.filter((t) => t.status === STATUS_CONFIRMED).length;
+  const pendingCount = transactions.filter((t) => t.status === STATUS_PENDING).length;
 
   const handleCopy = () => {
     if (!address) return;
     navigator.clipboard.writeText(address);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   if (!isConnected) {
@@ -95,7 +107,7 @@ export default function DashboardPage() {
         <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400 flex items-center gap-2">
           <span className="font-medium">Info:</span>
           Bridge contract not configured — bridge transactions will use direct payment.
-          Set <code className="font-mono text-xs">NEXT_PUBLIC_BRIDGE_CONTRACT_ID</code> to enable the smart contract.
+          Set <code className="font-mono text-xs">{ENV_BRIDGE_CONTRACT_ID}</code> to enable the smart contract.
         </div>
       )}
 
@@ -114,7 +126,7 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="text-xs text-[var(--text-muted)] mt-1">
-            {network === "PUBLIC" ? "Mainnet" : "Testnet"}
+            {NETWORK_DISPLAY[network]}
             {address && (
               <a
                 href={getExplorerUrl(network, "account", address)}
@@ -129,8 +141,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
-          <div className="text-xs text-[var(--text-muted)] mb-1">XLM Balance</div>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs text-[var(--text-muted)] mb-1">{ASSET_XLM} Balance</div>
           {loading ? (
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
@@ -139,9 +151,9 @@ export default function DashboardPage() {
           ) : (
             <>
               <div className="text-2xl font-bold mb-1">
-                {balance !== null ? parseFloat(balance).toFixed(2) : "—"}
+                {balance !== null ? parseFloat(balance).toFixed(XLM_DISPLAY_DECIMALS) : "—"}
               </div>
-              <div className="text-xs text-[var(--text-muted)]">XLM</div>
+              <div className="text-xs text-[var(--text-muted)]">{ASSET_XLM}</div>
             </>
           )}
         </div>
@@ -172,7 +184,7 @@ export default function DashboardPage() {
               <div key={b.asset} className="flex justify-between items-center py-2 first:pt-0 last:pb-0">
                 <span className="text-sm text-[var(--text-muted)]">{b.asset}</span>
                 <span className="text-sm font-mono">
-                  {parseFloat(b.amount).toFixed(b.asset === "XLM" ? 2 : 6)}
+                  {parseFloat(b.amount).toFixed(b.asset === ASSET_XLM ? XLM_DISPLAY_DECIMALS : ASSET_DISPLAY_DECIMALS)}
                 </span>
               </div>
             ))}

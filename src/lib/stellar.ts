@@ -21,6 +21,27 @@ import {
   type AccountBalances,
   type BridgeTransaction,
 } from "./types";
+import {
+  ASSET_XLM,
+  NATIVE_ASSET_TYPE,
+  UNKNOWN_ASSET,
+  STELLAR_ADDRESS_REGEX,
+  STELLAR_ADDRESS_LENGTH,
+  NETWORK_PUBLIC,
+  DEFAULT_NETWORK,
+  DEFAULT_TX_LIMIT,
+  STELLAR_TX_TIMEOUT_SECONDS,
+  ACCOUNT_MIN_BALANCE,
+  EXPLORER_BASE_URLS,
+  STATUS_CONFIRMED,
+  STATUS_FAILED,
+  STATUS_PENDING,
+  BALANCE_INITIAL,
+  TX_TYPE_G_TO_C,
+  ENV_BRIDGE_CONTRACT_ID,
+  ENV_MOONPAY_API_KEY,
+  ENV_TRANSAK_API_KEY,
+} from "./constants";
 
 export type { BridgeTransaction as BridgeTransactionData } from "./types";
 export type { PaymentResult, AccountBalances } from "./types";
@@ -34,7 +55,7 @@ export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): rpc.Server {
 }
 
 export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
-  return network === "PUBLIC" ? Networks.PUBLIC : Networks.TESTNET;
+  return network === NETWORK_PUBLIC ? Networks.PUBLIC : Networks.TESTNET;
 }
 
 export async function connectWallet(): Promise<string | null> {
@@ -74,32 +95,32 @@ export async function getCurrentNetwork(): Promise<"PUBLIC" | "TESTNET"> {
     const result = await getNetwork();
     return result.network === Networks.PUBLIC ? "PUBLIC" : "TESTNET";
   } catch {
-    return "TESTNET";
+    return DEFAULT_NETWORK;
   }
 }
 
 export function isValidStellarAddress(address: string): boolean {
-  return /^[G|C][A-Z0-9]{55}$/.test(address);
+  return STELLAR_ADDRESS_REGEX.test(address);
 }
 
 export function isCAddress(address: string): boolean {
-  return address.startsWith("C") && address.length === 56;
+  return address.startsWith("C") && address.length === STELLAR_ADDRESS_LENGTH;
 }
 
 export function isGAddress(address: string): boolean {
-  return address.startsWith("G") && address.length === 56;
+  return address.startsWith("G") && address.length === STELLAR_ADDRESS_LENGTH;
 }
 
 export function validateEnvironment(): string[] {
   const warnings: string[] = [];
-  if (!process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID) {
-    warnings.push("NEXT_PUBLIC_BRIDGE_CONTRACT_ID is not set; bridge will fall back to direct payment");
+  if (!process.env[ENV_BRIDGE_CONTRACT_ID]) {
+    warnings.push(`${ENV_BRIDGE_CONTRACT_ID} is not set; bridge will fall back to direct payment`);
   }
-  if (!process.env.NEXT_PUBLIC_MOONPAY_API_KEY) {
-    warnings.push("NEXT_PUBLIC_MOONPAY_API_KEY is not set; Moonpay onramp will be unavailable");
+  if (!process.env[ENV_MOONPAY_API_KEY]) {
+    warnings.push(`${ENV_MOONPAY_API_KEY} is not set; Moonpay onramp will be unavailable`);
   }
-  if (!process.env.NEXT_PUBLIC_TRANSAK_API_KEY) {
-    warnings.push("NEXT_PUBLIC_TRANSAK_API_KEY is not set; Transak onramp will be unavailable");
+  if (!process.env[ENV_TRANSAK_API_KEY]) {
+    warnings.push(`${ENV_TRANSAK_API_KEY} is not set; Transak onramp will be unavailable`);
   }
   return warnings;
 }
@@ -131,20 +152,20 @@ export async function getAccountBalances(
   try {
     const account = await server.loadAccount(address);
     const balances = (account.balances as HorizonBalance[]).map((b) => ({
-      asset: b.asset_type === "native" ? "XLM" : (b.asset_code || "unknown"),
+      asset: b.asset_type === NATIVE_ASSET_TYPE ? ASSET_XLM : (b.asset_code || UNKNOWN_ASSET),
       amount: b.balance,
     }));
-    const total = balances.find((b) => b.asset === "XLM")?.amount || "0";
+    const total = balances.find((b) => b.asset === ASSET_XLM)?.amount || BALANCE_INITIAL;
     return { total, balances };
   } catch {
-    return { total: "0", balances: [] };
+    return { total: BALANCE_INITIAL, balances: [] };
   }
 }
 
 export async function fetchRecentTransactions(
   address: string,
   network: "PUBLIC" | "TESTNET",
-  limit: number = 10
+  limit: number = DEFAULT_TX_LIMIT
 ): Promise<BridgeTransaction[]> {
   const server = getHorizonServer(network);
   try {
@@ -160,10 +181,10 @@ export async function fetchRecentTransactions(
       fromAddress: p.from || "",
       toAddress: p.to || "",
       amount: p.amount || "0",
-      asset: p.asset_type === "native" ? "XLM" : (p.asset_code || "XLM"),
-      status: p.transaction_successful ? "confirmed" as const : "failed" as const,
+      asset: p.asset_type === NATIVE_ASSET_TYPE ? ASSET_XLM : (p.asset_code || ASSET_XLM),
+      status: p.transaction_successful ? STATUS_CONFIRMED : STATUS_FAILED,
       timestamp: new Date(p.created_at || Date.now()).getTime(),
-      type: "g-to-c" as const,
+      type: TX_TYPE_G_TO_C,
       hash: p.transaction_hash,
     }));
   } catch {
@@ -207,7 +228,7 @@ export async function buildAndSubmitPayment(
         amount,
       })
     )
-    .setTimeout(30)
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
   const signedResult = await signTransaction(tx.toXDR(), {
@@ -256,7 +277,7 @@ export async function bridgeViaContract(
         amount,
       })
     )
-    .setTimeout(30)
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
   const unsignedXDR = tx.toXDR();
@@ -294,20 +315,12 @@ export function getExplorerUrl(
   type: "tx" | "account" | "contract",
   id: string
 ): string {
-  const base = network === "PUBLIC"
-    ? "https://stellar.expert/explorer/public"
-    : "https://stellar.expert/explorer/testnet";
-  return `${base}/${type}/${id}`;
+  return `${EXPLORER_BASE_URLS[network]}/${type}/${id}`;
 }
 
 export function getAccountMinimumBalance(): string {
-  return "1.0";
+  return ACCOUNT_MIN_BALANCE;
 }
-
-export const USDC_ISSUERS: Record<"PUBLIC" | "TESTNET", string> = {
-  PUBLIC: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
-  TESTNET: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-};
 
 export interface AccountInfo {
   exists: boolean;
@@ -322,7 +335,7 @@ export async function loadAccountInfo(
   try {
     const account = await server.loadAccount(address);
     const balances = (account.balances as HorizonBalance[]).map((b) => ({
-      asset: b.asset_type === "native" ? "XLM" : (b.asset_code || "unknown"),
+      asset: b.asset_type === NATIVE_ASSET_TYPE ? ASSET_XLM : (b.asset_code || UNKNOWN_ASSET),
       amount: b.balance,
     }));
     return { exists: true, balances };
@@ -363,7 +376,7 @@ export async function buildAndSubmitChangeTrust(
     networkPassphrase: passphrase,
   })
     .addOperation(changeTrustOperation(assetCode, issuer))
-    .setTimeout(30)
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
   const signedResult = await signTransaction(tx.toXDR(), { networkPassphrase: passphrase });
@@ -383,11 +396,11 @@ export async function getTransactionStatus(
   const server = getHorizonServer(network);
   try {
     const tx = await server.transactions().transaction(hash).call();
-    return tx.successful ? "confirmed" : "failed";
+    return tx.successful ? STATUS_CONFIRMED : STATUS_FAILED;
   } catch (e: unknown) {
     const err = e as { response?: { status?: number } };
     if (err.response?.status === 404) {
-      return "pending";
+      return STATUS_PENDING;
     }
     throw e;
   }
