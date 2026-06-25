@@ -1,5 +1,5 @@
 import { ArrowLeftRight, CreditCard, Building2, ExternalLink, Loader2 } from "lucide-react";
-import type { BridgeTransactionData } from "@/lib/stellar";
+import type { BridgeTransaction as BridgeTransactionData } from "@/lib/types";
 import { getExplorerUrl } from "@/lib/stellar";
 
 const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
