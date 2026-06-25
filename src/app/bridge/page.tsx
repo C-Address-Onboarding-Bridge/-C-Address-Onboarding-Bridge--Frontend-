@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ArrowRightLeft, Wallet, Send, ArrowRight, Check, AlertCircle,
-  Loader2, ExternalLink, XCircle, AlertTriangle,
+  Loader2, ExternalLink, XCircle, AlertTriangle, RotateCcw, RotateCw,
 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
+import { ToastContainer, useToast } from "@/components/toast";
+import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
 import {
   isValidStellarAddress,
   isCAddress,
@@ -50,6 +52,8 @@ type PollStatus = "pending" | "confirmed" | "failed" | null;
 
 export default function BridgePage() {
   const { isConnected, address, network, connect } = useWallet();
+  const { toasts, add: addToast, remove: removeToast } = useToast();
+
   const [fromAddress, setFromAddress] = useState("");
   const [toAddress, setToAddress] = useState("");
   const [amount, setAmount] = useState("");
@@ -58,6 +62,22 @@ export default function BridgePage() {
   const [txStatus, setTxStatus] = useState<TxStatus>(STATUS_IDLE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+
+  const formState = useMemo(
+    () => ({ fromAddress, toAddress, amount, asset }),
+    [fromAddress, toAddress, amount, asset]
+  );
+
+  const restoreFormState = useCallback((state: FormState): void => {
+    setFromAddress(state.fromAddress);
+    setToAddress(state.toAddress);
+    setAmount(state.amount);
+    setAsset(state.asset);
+  }, []);
+  const { updateHistory, undo, redo, clearHistory, canUndo, canRedo } = useFormHistory(
+    formState,
+    restoreFormState
+  );
 
   // Account info (fetched async)
   const [allBalances, setAllBalances] = useState<{ asset: string; amount: string }[]>([]);
@@ -96,6 +116,13 @@ export default function BridgePage() {
   })();
 
   // --- Effects ---
+
+  // Update history when form state changes (only on form step)
+  useEffect(() => {
+    if (step === "form") {
+      updateHistory(formState);
+    }
+  }, [fromAddress, toAddress, amount, asset, step, formState, updateHistory]);
 
   // Fetch account info whenever from-address is a valid address
   useEffect(() => {
@@ -252,10 +279,46 @@ export default function BridgePage() {
     setTrustlineError(null);
   };
 
+  const handleUndo = () => {
+    if (undo()) {
+      addToast("Undo: Form state restored", "info", 2000);
+    }
+  };
+
+  const handleRedo = () => {
+    if (redo()) {
+      addToast("Redo: Form state restored", "info", 2000);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">G → C Bridge</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">G → C Bridge</h1>
+          {step === "form" && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleUndo}
+                disabled={!canUndo}
+                className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Undo (Ctrl+Z)"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={!canRedo}
+                className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <RotateCw className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
         <p className="text-[var(--text-muted)]">
           Fund a Soroban smart account (C-address) from an existing Stellar G-address.
         </p>

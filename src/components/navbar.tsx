@@ -17,8 +17,13 @@ const navLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { isConnected, address, connect, isConnecting } = useWallet();
+  const { isConnected, address, connect, isConnecting, network } = useWallet();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+
+  const handleConnectClick = () => {
+    setWalletModalOpen(true);
+  };
 
   useEscapeKey(() => {
     if (mobileOpen) {
@@ -66,10 +71,10 @@ export default function Navbar() {
                 <span className="text-xs font-mono text-[var(--text-muted)]">
                   {address?.slice(0, 4)}...{address?.slice(-4)}
                 </span>
-              </div>
+              </button>
             ) : (
               <button
-                onClick={connect}
+                onClick={handleConnectClick}
                 disabled={isConnecting}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
               >
@@ -112,7 +117,7 @@ export default function Navbar() {
             })}
             {!isConnected && (
               <button
-                onClick={() => { connect(); setMobileOpen(false); }}
+                onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
                 disabled={isConnecting}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium"
               >
@@ -120,9 +125,29 @@ export default function Navbar() {
                 {isConnecting ? "Connecting..." : "Connect Wallet"}
               </button>
             )}
+            {isConnected && (
+              <button
+                onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--surface-2)] text-[var(--foreground)] text-sm font-medium border border-[var(--border)]"
+              >
+                <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
+                <span className="font-mono text-xs">
+                  {address?.slice(0, 4)}...{address?.slice(-4)}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       )}
+
+      <WalletModal
+        isOpen={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
+        onConnect={connect}
+        connectedAddress={address}
+        network={network}
+        isConnecting={isConnecting}
+      />
     </nav>
   );
 }
