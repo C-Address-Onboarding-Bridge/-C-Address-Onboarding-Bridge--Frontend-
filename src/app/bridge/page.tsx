@@ -22,6 +22,15 @@ import {
   sanitizeAmount,
   encodeHtml,
 } from "@/lib/sanitization";
+import {
+  checkRateLimit,
+  recordSubmissionAttempt,
+  recordSubmissionFailure,
+  recordSubmissionSuccess,
+  getRemainingCooldownSeconds,
+  checkForDuplicateSubmission,
+  recordTransactionSubmission,
+} from "@/lib/rate-limit";
 
 type Step = "form" | "review" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
@@ -52,6 +61,10 @@ export default function BridgePage() {
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollActiveRef = useRef(false);
+
+  // Rate limiting and anti-spam
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(0);
+  const rateLimitIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -100,11 +113,12 @@ export default function BridgePage() {
     return () => { ignore = true; };
   }, [fromAddress, network]);
 
-  // Cleanup polling on unmount
+  // Cleanup polling and rate limit on unmount
   useEffect(() => {
     return () => {
       pollActiveRef.current = false;
       if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+      if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
     };
   }, []);
 
@@ -173,17 +187,61 @@ export default function BridgePage() {
 
   const handleConfirm = async () => {
     if (!fromAddress || !toAddress || !amount) return;
+
+    // Check rate limit
+    const rateLimitWait = checkRateLimit("bridge_submission");
+    if (rateLimitWait > 0) {
+      setTxError(`Please wait ${Math.ceil(rateLimitWait / 1000)} seconds before submitting again`);
+      // Start countdown timer
+      if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
+      rateLimitIntervalRef.current = setInterval(() => {
+        const remaining = checkRateLimit("bridge_submission");
+        setRateLimitRemaining(remaining);
+        if (remaining <= 0) {
+          if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
+          setRateLimitRemaining(0);
+        }
+      }, 100);
+      return;
+    }
+
+    // Check for duplicate submission
+    if (checkForDuplicateSubmission(fromAddress, toAddress, amount, asset)) {
+      setTxError("This transaction was recently submitted. Please wait a moment before resubmitting the same transaction.");
+      return;
+    }
+
     setTxStatus("signing");
     setTxError(null);
+    recordSubmissionAttempt("bridge_submission");
+    recordTransactionSubmission(fromAddress, toAddress, amount, asset);
+
     try {
       const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network);
       setTxHash(result.hash);
       setTxStatus("success");
       setStep("confirm");
+      recordSubmissionSuccess("bridge_submission");
       startPolling(result.hash);
     } catch (e: unknown) {
-      setTxError(e instanceof Error ? e.message : "Transaction failed");
+      const errorMsg = e instanceof Error ? e.message : "Transaction failed";
+      setTxError(errorMsg);
       setTxStatus("error");
+      recordSubmissionFailure("bridge_submission");
+
+      // Start countdown timer after failure
+      const failureWait = checkRateLimit("bridge_submission");
+      if (failureWait > 0) {
+        if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
+        rateLimitIntervalRef.current = setInterval(() => {
+          const remaining = checkRateLimit("bridge_submission");
+          setRateLimitRemaining(remaining);
+          if (remaining <= 0) {
+            if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
+            setRateLimitRemaining(0);
+          }
+        }, 100);
+      }
     }
   };
 
@@ -414,8 +472,14 @@ export default function BridgePage() {
                   <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-[var(--error)]">Transaction Failed</p>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">{txError}</p>
+                      <p className="text-sm font-medium text-[var(--error)]">
+                        {rateLimitRemaining > 0 ? "Rate Limited" : "Transaction Failed"}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        {rateLimitRemaining > 0
+                          ? `Please wait ${Math.ceil(rateLimitRemaining / 1000)} seconds before submitting again`
+                          : txError}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -430,7 +494,7 @@ export default function BridgePage() {
                   </button>
                   <button
                     onClick={handleConfirm}
-                    disabled={txStatus === "signing" || txStatus === "submitting"}
+                    disabled={txStatus === "signing" || txStatus === "submitting" || rateLimitRemaining > 0}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
                   >
                     {txStatus === "signing" || txStatus === "submitting" ? (
