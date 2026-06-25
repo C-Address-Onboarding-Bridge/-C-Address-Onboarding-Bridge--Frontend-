@@ -46,7 +46,7 @@ import {
   USDC_ISSUERS,
 } from "@/lib/constants";
 
-type Step = "form" | "review" | "confirm";
+type Step = "form" | "review" | "simulate" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
 type PollStatus = "pending" | "confirmed" | "failed" | null;
 
@@ -170,11 +170,12 @@ export default function BridgePage() {
     return () => { ignore = true; };
   }, [fromAddress, network]);
 
-  // Cleanup polling on unmount
+  // Cleanup polling and rate limit on unmount
   useEffect(() => {
     return () => {
       pollActiveRef.current = false;
       if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+      if (rateLimitIntervalRef.current) clearInterval(rateLimitIntervalRef.current);
     };
   }, []);
 
@@ -280,6 +281,9 @@ export default function BridgePage() {
     if (!fromAddress || !toAddress || !amount) return;
     setTxStatus(STATUS_SIGNING);
     setTxError(null);
+    recordSubmissionAttempt("bridge_submission");
+    recordTransactionSubmission(fromAddress, toAddress, amount, asset);
+
     try {
       const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network);
       setTxHash(result.hash);
@@ -383,7 +387,8 @@ export default function BridgePage() {
                       type="text"
                       value={fromAddress}
                       onChange={(e) => {
-                        setFromAddress(e.target.value);
+                        const sanitized = sanitizeStellarAddress(e.target.value) || e.target.value;
+                        setFromAddress(sanitized);
                         setSourceBalance(null);
                         setAccountExists(null);
                         setAllBalances([]);
@@ -430,7 +435,10 @@ export default function BridgePage() {
                     <input
                       type="text"
                       value={toAddress}
-                      onChange={(e) => setToAddress(e.target.value)}
+                      onChange={(e) => {
+                        const sanitized = sanitizeCAddress(e.target.value) || e.target.value;
+                        setToAddress(sanitized);
+                      }}
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
@@ -451,7 +459,7 @@ export default function BridgePage() {
                       <input
                         type="text"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                         placeholder="0.00"
                         className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== "idle"}
@@ -529,15 +537,15 @@ export default function BridgePage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">From</span>
-                    <span className="text-sm font-mono">{fromAddress}</span>
+                    <span className="text-sm font-mono">{encodeHtml(fromAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">To</span>
-                    <span className="text-sm font-mono">{toAddress}</span>
+                    <span className="text-sm font-mono">{encodeHtml(toAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">Amount</span>
-                    <span className="text-sm font-semibold">{amount} {asset}</span>
+                    <span className="text-sm font-semibold">{encodeHtml(amount)} {encodeHtml(asset)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">Network</span>
@@ -601,8 +609,14 @@ export default function BridgePage() {
                   <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-[var(--error)]">Transaction Failed</p>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">{txError}</p>
+                      <p className="text-sm font-medium text-[var(--error)]">
+                        {rateLimitRemaining > 0 ? "Rate Limited" : "Transaction Failed"}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        {rateLimitRemaining > 0
+                          ? `Please wait ${Math.ceil(rateLimitRemaining / 1000)} seconds before submitting again`
+                          : txError}
+                      </p>
                     </div>
                   </div>
                 )}
