@@ -13,24 +13,24 @@ import {
   Horizon,
   rpc,
 } from "@stellar/stellar-sdk";
-import { BRIDGE_CONTRACT_ID } from "./types";
+import {
+  BRIDGE_CONTRACT_ID,
+  HORIZON_URL,
+  SOROBAN_RPC_URL,
+  type PaymentResult,
+  type AccountBalances,
+  type BridgeTransaction,
+} from "./types";
 
-const HORIZON_URLS = {
-  PUBLIC: "https://horizon.stellar.org",
-  TESTNET: "https://horizon-testnet.stellar.org",
-};
-
-const SOROBAN_RPC_URLS = {
-  PUBLIC: "https://soroban-rpc.stellar.org",
-  TESTNET: "https://soroban-rpc-testnet.stellar.org",
-};
+export type { BridgeTransaction as BridgeTransactionData } from "./types";
+export type { PaymentResult, AccountBalances } from "./types";
 
 export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server {
-  return new Horizon.Server(HORIZON_URLS[network]);
+  return new Horizon.Server(HORIZON_URL[network]);
 }
 
 export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): rpc.Server {
-  return new rpc.Server(SOROBAN_RPC_URLS[network]);
+  return new rpc.Server(SOROBAN_RPC_URL[network]);
 }
 
 export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
@@ -90,27 +90,18 @@ export function isGAddress(address: string): boolean {
   return address.startsWith("G") && address.length === 56;
 }
 
-export interface PaymentResult {
-  hash: string;
-  successful: boolean;
-}
-
-export interface AccountBalances {
-  total: string;
-  balances: { asset: string; amount: string }[];
-}
-
-export interface BridgeTransactionData {
-  id: string;
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
-  asset: string;
-  status: "pending" | "confirmed" | "failed";
-  timestamp: number;
-  type: "g-to-c" | "fiat" | "cex";
-  hash?: string;
-  memo?: string;
+export function validateEnvironment(): string[] {
+  const warnings: string[] = [];
+  if (!process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID) {
+    warnings.push("NEXT_PUBLIC_BRIDGE_CONTRACT_ID is not set; bridge will fall back to direct payment");
+  }
+  if (!process.env.NEXT_PUBLIC_MOONPAY_API_KEY) {
+    warnings.push("NEXT_PUBLIC_MOONPAY_API_KEY is not set; Moonpay onramp will be unavailable");
+  }
+  if (!process.env.NEXT_PUBLIC_TRANSAK_API_KEY) {
+    warnings.push("NEXT_PUBLIC_TRANSAK_API_KEY is not set; Transak onramp will be unavailable");
+  }
+  return warnings;
 }
 
 interface HorizonBalance {
@@ -154,7 +145,7 @@ export async function fetchRecentTransactions(
   address: string,
   network: "PUBLIC" | "TESTNET",
   limit: number = 10
-): Promise<BridgeTransactionData[]> {
+): Promise<BridgeTransaction[]> {
   const server = getHorizonServer(network);
   try {
     const payments = await server
@@ -311,4 +302,93 @@ export function getExplorerUrl(
 
 export function getAccountMinimumBalance(): string {
   return "1.0";
+}
+
+export const USDC_ISSUERS: Record<"PUBLIC" | "TESTNET", string> = {
+  PUBLIC: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+  TESTNET: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+};
+
+export interface AccountInfo {
+  exists: boolean;
+  balances: { asset: string; amount: string }[];
+}
+
+export async function loadAccountInfo(
+  address: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<AccountInfo> {
+  const server = getHorizonServer(network);
+  try {
+    const account = await server.loadAccount(address);
+    const balances = (account.balances as HorizonBalance[]).map((b) => ({
+      asset: b.asset_type === "native" ? "XLM" : (b.asset_code || "unknown"),
+      amount: b.balance,
+    }));
+    return { exists: true, balances };
+  } catch (e: unknown) {
+    const err = e as { response?: { status?: number } };
+    if (err.response?.status === 404) {
+      return { exists: false, balances: [] };
+    }
+    throw e;
+  }
+}
+
+export async function hasTrustline(
+  address: string,
+  assetCode: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<boolean> {
+  const info = await loadAccountInfo(address, network);
+  return info.balances.some((b) => b.asset === assetCode);
+}
+
+export function changeTrustOperation(assetCode: string, issuer: string) {
+  return Operation.changeTrust({ asset: new Asset(assetCode, issuer) });
+}
+
+export async function buildAndSubmitChangeTrust(
+  sourceAddress: string,
+  assetCode: string,
+  issuer: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<PaymentResult> {
+  const server = getHorizonServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.loadAccount(sourceAddress);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: passphrase,
+  })
+    .addOperation(changeTrustOperation(assetCode, issuer))
+    .setTimeout(30)
+    .build();
+
+  const signedResult = await signTransaction(tx.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signedResult && signedResult.error) {
+    throw new Error(`Signing failed: ${signedResult.error}`);
+  }
+  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const result = await server.submitTransaction(signedTx);
+  return { hash: result.hash, successful: result.successful };
+}
+
+export async function getTransactionStatus(
+  hash: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<"pending" | "confirmed" | "failed"> {
+  const server = getHorizonServer(network);
+  try {
+    const tx = await server.transactions().transaction(hash).call();
+    return tx.successful ? "confirmed" : "failed";
+  } catch (e: unknown) {
+    const err = e as { response?: { status?: number } };
+    if (err.response?.status === 404) {
+      return "pending";
+    }
+    throw e;
+  }
 }

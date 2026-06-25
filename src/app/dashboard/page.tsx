@@ -6,12 +6,14 @@ import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
 import { getAccountBalances, fetchRecentTransactions, getExplorerUrl } from "@/lib/stellar";
-import type { BridgeTransactionData as BridgeTransaction } from "@/lib/stellar";
+import type { BridgeTransaction } from "@/lib/types";
+import { BRIDGE_CONTRACT_ID } from "@/lib/types";
 
 export default function DashboardPage() {
   const { isConnected, address, network, connect } = useWallet();
   const [copied, setCopied] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
+  const [allBalances, setAllBalances] = useState<{ asset: string; amount: string }[]>([]);
   const [transactions, setTransactions] = useState<BridgeTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,7 @@ export default function DashboardPage() {
           fetchRecentTransactions(address, network, 10),
         ]);
         setBalance(balResult.total);
+        setAllBalances(balResult.balances);
         setTransactions(txResult);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to fetch data");
@@ -87,6 +90,14 @@ export default function DashboardPage() {
           New Bridge
         </Link>
       </div>
+
+      {!BRIDGE_CONTRACT_ID && (
+        <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400 flex items-center gap-2">
+          <span className="font-medium">Info:</span>
+          Bridge contract not configured — bridge transactions will use direct payment.
+          Set <code className="font-mono text-xs">NEXT_PUBLIC_BRIDGE_CONTRACT_ID</code> to enable the smart contract.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -152,6 +163,22 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {allBalances.length > 0 && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6">
+          <h3 className="text-sm font-semibold mb-3">Token Balances</h3>
+          <div className="divide-y divide-[var(--border)]">
+            {allBalances.map((b) => (
+              <div key={b.asset} className="flex justify-between items-center py-2 first:pt-0 last:pb-0">
+                <span className="text-sm text-[var(--text-muted)]">{b.asset}</span>
+                <span className="text-sm font-mono">
+                  {parseFloat(b.amount).toFixed(b.asset === "XLM" ? 2 : 6)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Link

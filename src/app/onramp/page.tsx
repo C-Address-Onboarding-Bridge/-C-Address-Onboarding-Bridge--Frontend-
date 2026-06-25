@@ -74,6 +74,8 @@ export default function OnrampPage() {
 
   const provider = providers.find((p) => p.id === selectedProvider);
 
+  const missingKeys = providers.filter((p) => !p.apiKey).map((p) => p.name);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
@@ -82,6 +84,16 @@ export default function OnrampPage() {
           Buy crypto with a credit card and send it directly to a Soroban C-address.
         </p>
       </div>
+
+      {missingKeys.length > 0 && (
+        <div className="mb-6 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-start gap-2 text-sm">
+          <AlertCircle className="w-4 h-4 text-[var(--warning)] flex-shrink-0 mt-0.5" />
+          <span className="text-[var(--warning)]">
+            {missingKeys.join(" and ")} {missingKeys.length === 1 ? "is" : "are"} not configured and will be unavailable.
+            Set the corresponding <code className="font-mono text-xs">NEXT_PUBLIC_*_API_KEY</code> environment variable to enable {missingKeys.length === 1 ? "it" : "them"}.
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
