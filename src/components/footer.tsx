@@ -1,7 +1,6 @@
 "use client";
 
 import { Wallet, HelpCircle } from "lucide-react";
-import { useState } from "react";
 
 function RestartTourButton() {
   const handleRestartTour = () => {

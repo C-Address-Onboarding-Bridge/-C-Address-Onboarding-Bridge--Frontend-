@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface FormState {
-  [key: string]: any;
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  asset: string;
 }
 
 interface HistoryEntry {
@@ -9,7 +12,14 @@ interface HistoryEntry {
   timestamp: number;
 }
 
-export function useFormHistory(formState: FormState, onRestore: (state: FormState) => void) {
+export function useFormHistory(formState: FormState, onRestore: (state: FormState) => void): {
+  updateHistory: (newState: FormState) => void;
+  undo: () => boolean;
+  redo: () => boolean;
+  clearHistory: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+} {
   const historyRef = useRef<HistoryEntry[]>([]);
   const currentIndexRef = useRef(-1);
   const [showUndo, setShowUndo] = useState(false);

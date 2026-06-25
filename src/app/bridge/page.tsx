@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ArrowRightLeft, Wallet, Send, ArrowRight, Check, AlertCircle,
   Loader2, ExternalLink, XCircle, AlertTriangle, RotateCcw, RotateCw,
 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
 import { ToastContainer, useToast } from "@/components/toast";
-import { useFormHistory } from "@/hooks/useFormHistory";
+import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
 import {
   isValidStellarAddress,
   isCAddress,
@@ -36,16 +36,17 @@ export default function BridgePage() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
 
-  const formState = { fromAddress, toAddress, amount, asset };
-  const restoreFormState = useCallback(
-    (state: any) => {
-      setFromAddress(state.fromAddress);
-      setToAddress(state.toAddress);
-      setAmount(state.amount);
-      setAsset(state.asset);
-    },
-    []
+  const formState = useMemo(
+    () => ({ fromAddress, toAddress, amount, asset }),
+    [fromAddress, toAddress, amount, asset]
   );
+
+  const restoreFormState = useCallback((state: FormState): void => {
+    setFromAddress(state.fromAddress);
+    setToAddress(state.toAddress);
+    setAmount(state.amount);
+    setAsset(state.asset);
+  }, []);
   const { updateHistory, undo, redo, clearHistory, canUndo, canRedo } = useFormHistory(
     formState,
     restoreFormState

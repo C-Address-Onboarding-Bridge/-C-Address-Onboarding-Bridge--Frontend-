@@ -56,8 +56,8 @@ export default function WalletModal({
         if (freighterInstalled) {
           updated[0].isInstalled = true;
         }
-      } catch (e) {
-        // Freighter check
+      } catch {
+        // Freighter check failed
       }
       setWallets(updated);
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useLayoutEffect } from "react";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 
 interface TourStep {
@@ -75,6 +75,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("hasSeenOnboardingTour");
     if (!hasSeenTour) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       localStorage.setItem("hasSeenOnboardingTour", "true");
     }
@@ -87,12 +88,16 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
       return;
     }
 
-    const element = document.body.innerText.includes(step.target)
+    const element = step.target && document.body.innerText.includes(step.target)
       ? Array.from(document.querySelectorAll("*")).find(
-          (el) =>
-            el.textContent?.includes(step.target) &&
-            el.offsetHeight > 0 &&
-            el.offsetWidth > 0
+          (el) => {
+            const htmlEl = el as HTMLElement;
+            return (
+              htmlEl.textContent?.includes(step.target!) &&
+              htmlEl.offsetHeight > 0 &&
+              htmlEl.offsetWidth > 0
+            );
+          }
         )
       : null;
 
@@ -121,7 +126,8 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
     }
   }, [currentStep]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updatePosition();
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition);
