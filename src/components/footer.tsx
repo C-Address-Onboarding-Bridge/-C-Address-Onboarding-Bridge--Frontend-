@@ -1,4 +1,23 @@
-import { Wallet } from "lucide-react";
+"use client";
+
+import { Wallet, HelpCircle } from "lucide-react";
+
+function RestartTourButton() {
+  const handleRestartTour = () => {
+    localStorage.removeItem("hasSeenOnboardingTour");
+    window.location.reload();
+  };
+
+  return (
+    <button
+      onClick={handleRestartTour}
+      className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+    >
+      <HelpCircle className="w-4 h-4" />
+      Restart Tour
+    </button>
+  );
+}
 
 export default function Footer() {
   return (
@@ -28,8 +47,9 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold mb-3">Resources</h3>
+            <h3 className="text-sm font-semibold mb-3">Help & Support</h3>
             <ul className="space-y-2">
+              <li><RestartTourButton /></li>
               <li><a href="https://soroban.stellar.org" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Soroban Docs</a></li>
               <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">GitHub</a></li>
               <li><a href="https://stellar.org" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Stellar</a></li>
