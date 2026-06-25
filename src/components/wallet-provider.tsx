@@ -13,15 +13,7 @@ interface WalletContextType {
   disconnect: () => void;
 }
 
-const WalletContext = createContext<WalletContextType>({
-  address: null,
-  publicKey: null,
-  network: "TESTNET",
-  isConnected: false,
-  isConnecting: false,
-  connect: async () => {},
-  disconnect: () => {},
-});
+const WalletContext = createContext<WalletContextType | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
