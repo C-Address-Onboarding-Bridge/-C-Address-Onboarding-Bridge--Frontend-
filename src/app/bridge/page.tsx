@@ -45,6 +45,11 @@ import {
   validateSimulationAgainstForm,
   type SimulationResult,
 } from "@/lib/transaction-simulation";
+import {
+  checkMempoolForDuplicates,
+  getDuplicateWarningMessage,
+  type MempoolTransaction,
+} from "@/lib/mempool-detection";
 
 type Step = "form" | "review" | "simulate" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
@@ -85,6 +90,10 @@ export default function BridgePage() {
   const [simulationWarnings, setSimulationWarnings] = useState<string[]>([]);
   const [simulationInProgress, setSimulationInProgress] = useState(false);
   const [simulationAcknowledged, setSimulationAcknowledged] = useState(false);
+
+  // Mempool duplicate detection
+  const [mempoolDuplicates, setMempoolDuplicates] = useState<MempoolTransaction[]>([]);
+  const [mempoolDuplicateWarning, setMempoolDuplicateWarning] = useState<string>("");
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -254,12 +263,21 @@ export default function BridgePage() {
         .setTimeout(30)
         .build();
 
+      // Check mempool for duplicate transactions
+      const duplicates = await checkMempoolForDuplicates(fromAddress, toAddress, amount, asset, network);
+      setMempoolDuplicates(duplicates);
+      const duplicateWarning = getDuplicateWarningMessage(duplicates);
+      setMempoolDuplicateWarning(duplicateWarning);
+
       // Simulate the transaction
       const simulation = await simulateTransaction(tempTx.toXDR(), network);
       setSimulationResult(simulation);
 
       // Validate simulation against form inputs
       const warnings = validateSimulationAgainstForm(amount, asset, simulation, toAddress);
+      if (duplicateWarning) {
+        warnings.push(duplicateWarning);
+      }
       setSimulationWarnings(warnings);
 
       // Transition to simulation step
@@ -341,6 +359,8 @@ export default function BridgePage() {
     setSimulationResult(null);
     setSimulationWarnings([]);
     setSimulationAcknowledged(false);
+    setMempoolDuplicates([]);
+    setMempoolDuplicateWarning("");
   };
 
   return (
@@ -623,6 +643,25 @@ export default function BridgePage() {
                               <span>{effect.description}</span>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {mempoolDuplicates.length > 0 && (
+                      <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-orange-600 mb-2">Mempool Duplicate Alert</p>
+                            <div className="space-y-1">
+                              {mempoolDuplicates.map((dup, i) => (
+                                <p key={i} className="text-xs text-orange-700">
+                                  • Transaction {dup.status}: {dup.hash.substring(0, 16)}... at{" "}
+                                  {new Date(dup.timestamp).toLocaleTimeString()}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
