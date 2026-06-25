@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:visual": "percy exec -- playwright test",
     "check:env": "node scripts/check-env.js",
     "prepare": "husky"
   },
