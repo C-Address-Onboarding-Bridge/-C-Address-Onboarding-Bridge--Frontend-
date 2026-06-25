@@ -3,7 +3,6 @@
  * Prevents users from submitting identical pending transactions
  */
 
-import { Horizon } from "@stellar/stellar-sdk";
 import { getHorizonServer } from "./stellar";
 
 export interface MempoolTransaction {
@@ -46,8 +45,7 @@ export async function checkMempoolForDuplicates(
   destinationAddress: string,
   amount: string,
   asset: string,
-  network: "PUBLIC" | "TESTNET",
-  lookbackLedgers: number = 100
+  network: "PUBLIC" | "TESTNET"
 ): Promise<MempoolTransaction[]> {
   const server = getHorizonServer(network);
   const duplicates: MempoolTransaction[] = [];
@@ -67,14 +65,16 @@ export async function checkMempoolForDuplicates(
 
     // Check each transaction for duplicates
     for (const tx of transactions.records) {
-      const horizonTx = tx as Record<string, any>;
-      const hash = horizonTx.id || horizonTx.hash;
+      const txRecord = tx as unknown as Record<string, unknown>;
+      const hash = String(txRecord.id || txRecord.hash || "");
 
       // Check if this transaction matches our criteria
-      if (matchesTransactionDetails(horizonTx, destinationAddress, amount, asset)) {
+      if (matchesTransactionDetails(txRecord)) {
         // Determine status based on whether it's in the most recent ledger
-        const txTimestamp = new Date(horizonTx.created_at || Date.now()).getTime();
+        const createdAtStr = String(txRecord.created_at || "");
+        const txTimestamp = createdAtStr ? new Date(createdAtStr).getTime() : Date.now();
         const isRecent = Date.now() - txTimestamp < 5 * 60 * 1000; // Within 5 minutes
+        const successful = Boolean(txRecord.successful);
 
         duplicates.push({
           hash,
@@ -82,7 +82,7 @@ export async function checkMempoolForDuplicates(
           destinationAddress,
           amount,
           asset,
-          status: isRecent ? "pending" : horizonTx.successful ? "confirmed" : "failed",
+          status: isRecent ? "pending" : successful ? "confirmed" : "failed",
           timestamp: txTimestamp,
         });
       }
@@ -100,19 +100,14 @@ export async function checkMempoolForDuplicates(
  * Checks if a Horizon transaction matches the transaction details we're looking for
  */
 function matchesTransactionDetails(
-  tx: Record<string, any>,
-  destinationAddress: string,
-  amount: string,
-  asset: string
+  tx: Record<string, unknown>
 ): boolean {
-  const sourceAddress = tx.source_account || tx.source || tx.account;
-
   // For now, we check transactions to the destination address with matching amount
   // In a real implementation, you would parse the operations within the transaction
   // to more precisely identify duplicates
 
-  // Simple check: if the transaction was to the destination with similar timing
-  if (tx.operations_count > 0) {
+  // Simple check: if the transaction has operations
+  if (typeof tx.operations_count === "number" && tx.operations_count > 0) {
     // Note: This is a simplified check. A more robust implementation would
     // fetch and parse the operations within the transaction to verify amounts
     return true; // Conservative approach - mark as potential match
@@ -132,16 +127,17 @@ export async function getMempoolTransactionDetails(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as Record<string, any>;
+    const horizonTx = tx as unknown as Record<string, unknown>;
+    const createdAtStr = String(horizonTx.created_at || "");
 
     return {
-      hash: horizonTx.id || txHash,
-      sourceAddress: horizonTx.source_account || horizonTx.source || "",
+      hash: String(horizonTx.id || txHash),
+      sourceAddress: String(horizonTx.source_account || horizonTx.source || ""),
       destinationAddress: "", // Would need to parse operations to get destination
       amount: "", // Would need to parse operations to get amount
       asset: "", // Would need to parse operations to get asset
-      status: horizonTx.successful ? "confirmed" : "failed",
-      timestamp: new Date(horizonTx.created_at || Date.now()).getTime(),
+      status: Boolean(horizonTx.successful) ? "confirmed" : "failed",
+      timestamp: createdAtStr ? new Date(createdAtStr).getTime() : Date.now(),
     };
   } catch (error) {
     console.warn(`Error fetching transaction details for ${txHash}:`, error);
@@ -183,10 +179,10 @@ export async function isTransactionPending(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as Record<string, any>;
+    const horizonTx = tx as unknown as Record<string, unknown>;
 
     // If transaction exists in ledger, check if it was confirmed
-    return !horizonTx.successful; // Not confirmed = still pending or failed
+    return !Boolean(horizonTx.successful); // Not confirmed = still pending or failed
   } catch (error: unknown) {
     const err = error as { response?: { status?: number } };
     // 404 = transaction not found, so it's pending (not yet in ledger)
@@ -209,20 +205,22 @@ export async function getTransactionStatusDetail(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as Record<string, any>;
+    const horizonTx = tx as unknown as Record<string, unknown>;
+    const createdAtStr = String(horizonTx.created_at || "");
+    const isSuccessful = Boolean(horizonTx.successful);
 
     const details: MempoolTransaction = {
-      hash: horizonTx.id || txHash,
-      sourceAddress: horizonTx.source_account || "",
+      hash: String(horizonTx.id || txHash),
+      sourceAddress: String(horizonTx.source_account || ""),
       destinationAddress: "",
       amount: "",
       asset: "",
-      status: horizonTx.successful ? "confirmed" : "failed",
-      timestamp: new Date(horizonTx.created_at || Date.now()).getTime(),
+      status: isSuccessful ? "confirmed" : "failed",
+      timestamp: createdAtStr ? new Date(createdAtStr).getTime() : Date.now(),
     };
 
     return {
-      status: horizonTx.successful ? "confirmed" : "failed",
+      status: isSuccessful ? "confirmed" : "failed",
       details,
     };
   } catch (error: unknown) {

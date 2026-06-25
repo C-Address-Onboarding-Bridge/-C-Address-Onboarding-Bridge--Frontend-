@@ -45,36 +45,44 @@ export async function simulateTransaction(
       TransactionBuilder.fromXDR(txXdr, passphrase)
     );
 
-    if (response.error) {
-      result.errors.push(response.error.message || "Simulation failed");
+    // Check if the response is an error type
+    const responseAsRecord = response as unknown as Record<string, unknown>;
+    if (responseAsRecord.error) {
+      const errorMessage = (responseAsRecord.error as Record<string, unknown>).message || "Simulation failed";
+      result.errors.push(String(errorMessage));
       return result;
     }
 
-    if (!response.results || response.results.length === 0) {
+    const responseAsSuccess = response as unknown as Record<string, unknown>;
+    const results = responseAsSuccess.results as unknown[];
+    if (!results || results.length === 0) {
       result.errors.push("No simulation results returned");
       return result;
     }
 
     result.isSuccessful = true;
-    result.estimatedFee = response.latestLedgerBumpSeqNum?.toString() || "0";
+    const ledgerBumpSeq = responseAsSuccess.latestLedgerBumpSeqNum;
+    result.estimatedFee = ledgerBumpSeq ? String(ledgerBumpSeq) : "0";
 
     // Parse the simulation results to extract effects
-    const simulationResult = response.results[0];
+    const simulationResult = results[0] as unknown as Record<string, unknown>;
     if (simulationResult) {
       // Extract transaction effects from the simulation
-      if (simulationResult.auth && Array.isArray(simulationResult.auth)) {
+      const auth = simulationResult.auth as unknown[];
+      if (auth && Array.isArray(auth)) {
         result.effects.push({
           type: "contract_invocation",
-          description: `Contract invocation with ${simulationResult.auth.length} authorization(s)`,
+          description: `Contract invocation with ${auth.length} authorization(s)`,
           details: {
-            authCount: simulationResult.auth.length,
+            authCount: auth.length,
           },
         });
       }
     }
 
     // Add warnings if simulation shows potential issues
-    if (response.latestLedgerBumpSeqNum && response.latestLedgerBumpSeqNum > 1000) {
+    const bumpSeqNum = responseAsSuccess.latestLedgerBumpSeqNum;
+    if (bumpSeqNum && typeof bumpSeqNum === "number" && bumpSeqNum > 1000) {
       result.warnings.push(
         "High ledger bump sequence number detected. The transaction might take longer than expected."
       );
@@ -118,8 +126,7 @@ export function extractPaymentDetails(
 export function validateSimulationAgainstForm(
   formAmount: string,
   formAsset: string,
-  simulationResult: SimulationResult,
-  _formToAddress: string
+  simulationResult: SimulationResult
 ): string[] {
   const warnings: string[] = [];
 

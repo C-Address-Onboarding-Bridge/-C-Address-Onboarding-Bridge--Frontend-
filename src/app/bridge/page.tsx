@@ -35,13 +35,11 @@ import {
   recordSubmissionAttempt,
   recordSubmissionFailure,
   recordSubmissionSuccess,
-  getRemainingCooldownSeconds,
   checkForDuplicateSubmission,
   recordTransactionSubmission,
 } from "@/lib/rate-limit";
 import {
   simulateTransaction,
-  extractPaymentDetails,
   validateSimulationAgainstForm,
   type SimulationResult,
 } from "@/lib/transaction-simulation";
@@ -93,7 +91,6 @@ export default function BridgePage() {
 
   // Mempool duplicate detection
   const [mempoolDuplicates, setMempoolDuplicates] = useState<MempoolTransaction[]>([]);
-  const [mempoolDuplicateWarning, setMempoolDuplicateWarning] = useState<string>("");
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -267,14 +264,13 @@ export default function BridgePage() {
       const duplicates = await checkMempoolForDuplicates(fromAddress, toAddress, amount, asset, network);
       setMempoolDuplicates(duplicates);
       const duplicateWarning = getDuplicateWarningMessage(duplicates);
-      setMempoolDuplicateWarning(duplicateWarning);
 
       // Simulate the transaction
       const simulation = await simulateTransaction(tempTx.toXDR(), network);
       setSimulationResult(simulation);
 
       // Validate simulation against form inputs
-      const warnings = validateSimulationAgainstForm(amount, asset, simulation, toAddress);
+      const warnings = validateSimulationAgainstForm(amount, asset, simulation);
       if (duplicateWarning) {
         warnings.push(duplicateWarning);
       }
@@ -360,7 +356,6 @@ export default function BridgePage() {
     setSimulationWarnings([]);
     setSimulationAcknowledged(false);
     setMempoolDuplicates([]);
-    setMempoolDuplicateWarning("");
   };
 
   return (
