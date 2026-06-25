@@ -108,7 +108,7 @@ export default function LandingPage() {
               <Link
                 key={feature.title}
                 href={feature.href}
-                className="group relative p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+                className="feature-card group relative p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
               >
                 <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--primary)]/20 transition-colors">
                   <Icon className="w-5 h-5 text-[var(--primary-light)]" />
