@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { connectWallet, checkConnection, getWalletAddress, getCurrentNetwork } from "@/lib/stellar";
+import { WALLET_INITIAL_DELAY_MS, WALLET_POLL_INTERVAL_MS, DEFAULT_NETWORK } from "@/lib/constants";
 
 const APP_NETWORK_KEY = "stellar_app_network";
 
@@ -27,27 +28,25 @@ interface WalletContextType {
   isConnecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  switchNetwork: (net: "PUBLIC" | "TESTNET") => void;
+  clearAllData: () => Promise<void>;
+  revokePermissions: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType>({
   address: null,
   publicKey: null,
-  network: "TESTNET",
-  walletNetwork: "TESTNET",
-  appNetwork: "TESTNET",
-  isNetworkMismatched: false,
+  network: DEFAULT_NETWORK,
   isConnected: false,
   isConnecting: false,
   connect: async () => {},
   disconnect: () => {},
-  switchNetwork: () => {},
+  clearAllData: async () => {},
+  revokePermissions: async () => {},
 });
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
-  const [walletNetwork, setWalletNetwork] = useState<"PUBLIC" | "TESTNET">("TESTNET");
-  const [appNetwork, setAppNetwork] = useState<"PUBLIC" | "TESTNET">(() => loadPersistedNetwork());
+  const [network, setNetwork] = useState<"PUBLIC" | "TESTNET">(DEFAULT_NETWORK);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const switchNetwork = useCallback((net: "PUBLIC" | "TESTNET") => {
@@ -61,21 +60,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const pk = await getWalletAddress();
       const net = await getCurrentNetwork();
       setAddress(pk);
-      setWalletNetwork(net);
+      setNetwork(net);
+      if (pk) {
+        await addRecentAddress(pk);
+      }
     } else {
       setAddress(null);
     }
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(updateConnection, 0);
-    const interval = setInterval(updateConnection, 3000);
+    const timer = setTimeout(updateConnection, WALLET_INITIAL_DELAY_MS);
+    const interval = setInterval(updateConnection, WALLET_POLL_INTERVAL_MS);
     return () => { clearTimeout(timer); clearInterval(interval); };
   }, [updateConnection]);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
+      const capsGranted = await ensureRequiredCapabilities();
+      if (!capsGranted) {
+        console.error("Required capabilities not granted");
+        setIsConnecting(false);
+        return;
+      }
       const pk = await connectWallet();
       if (pk) {
         setAddress(pk);
@@ -91,8 +99,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setAddress(null);
   }, []);
 
-  const isNetworkMismatched = !!address && walletNetwork !== appNetwork;
-  const network = appNetwork;
+  const clearAllData = useCallback(async () => {
+    await clearAllUserData();
+    setAddress(null);
+  }, []);
+
+  const revokePermissions = useCallback(async () => {
+    await revokeAllCapabilities();
+    setAddress(null);
+  }, []);
 
   return (
     <WalletContext.Provider
@@ -107,7 +122,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         connect,
         disconnect,
-        switchNetwork,
+        clearAllData,
+        revokePermissions,
       }}
     >
       {children}

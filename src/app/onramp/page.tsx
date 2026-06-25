@@ -3,13 +3,33 @@
 import { useState } from "react";
 import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
 import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
+import {
+  STELLAR_ADDRESS_LENGTH,
+  PROVIDER_MOONPAY,
+  PROVIDER_TRANSAK,
+  WALLET_CHAIN_STELLAR,
+  DEFAULT_CRYPTO_CURRENCY,
+  MOONPAY_FEE_RATE,
+  TRANSAK_FEE_RATE,
+  BASE_RECEIVE_MULTIPLIER,
+  MOONPAY_RECEIVE_MULTIPLIER,
+  TRANSAK_RECEIVE_MULTIPLIER,
+  FIAT_DISPLAY_DECIMALS,
+  MOONPAY_BASE_URL,
+  TRANSAK_BASE_URL,
+  REDIRECT_DELAY_MS,
+  ENV_MOONPAY_API_KEY,
+  ENV_TRANSAK_API_KEY,
+  STEP_FORM,
+  STEP_REDIRECT,
+} from "@/lib/constants";
 
 const MOONPAY_API_KEY = process.env.NEXT_PUBLIC_MOONPAY_API_KEY || "";
 const TRANSAK_API_KEY = process.env.NEXT_PUBLIC_TRANSAK_API_KEY || "";
 
 const providers = [
   {
-    id: "moonpay",
+    id: PROVIDER_MOONPAY,
     name: "Moonpay",
     description: "Buy with credit/debit card",
     fee: "4.5%",
@@ -17,10 +37,10 @@ const providers = [
     currencies: ["USD", "EUR", "GBP"],
     supported: true,
     apiKey: MOONPAY_API_KEY,
-    baseUrl: "https://buy.moonpay.com",
+    baseUrl: MOONPAY_BASE_URL,
   },
   {
-    id: "transak",
+    id: PROVIDER_TRANSAK,
     name: "Transak",
     description: "Buy with card, Apple Pay, Google Pay",
     fee: "5%",
@@ -28,15 +48,15 @@ const providers = [
     currencies: ["USD", "EUR", "GBP", "INR"],
     supported: true,
     apiKey: TRANSAK_API_KEY,
-    baseUrl: "https://global.transak.com",
+    baseUrl: TRANSAK_BASE_URL,
   },
 ];
 
 export default function OnrampPage() {
   const [cAddress, setCAddress] = useState("");
   const [fiatAmount, setFiatAmount] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("moonpay");
-  const [step, setStep] = useState<"form" | "redirect">("form");
+  const [selectedProvider, setSelectedProvider] = useState<string>(PROVIDER_MOONPAY);
+  const [step, setStep] = useState<"form" | "redirect">(STEP_FORM);
   const [error, setError] = useState<string | null>(null);
 
   const validAddress = !cAddress || (isValidStellarAddress(cAddress) && isCAddress(cAddress));
@@ -51,17 +71,17 @@ export default function OnrampPage() {
     if (!provider) return;
 
     if (!provider.apiKey) {
-      setError(`${provider.name} API key is not configured. Set NEXT_PUBLIC_${provider.id === "moonpay" ? "MOONPAY" : "TRANSAK"}_API_KEY in your environment.`);
+      setError(`${provider.name} API key is not configured. Set ${provider.id === PROVIDER_MOONPAY ? ENV_MOONPAY_API_KEY : ENV_TRANSAK_API_KEY} in your environment.`);
       return;
     }
 
-    setStep("redirect");
+    setStep(STEP_REDIRECT);
 
     const params = new URLSearchParams({
       apiKey: provider.apiKey,
       walletAddress: cAddress,
-      walletChain: "Stellar",
-      defaultCryptoCurrency: "USDC",
+      walletChain: WALLET_CHAIN_STELLAR,
+      defaultCryptoCurrency: DEFAULT_CRYPTO_CURRENCY,
       defaultFiatAmount: fiatAmount,
     });
 
@@ -69,7 +89,7 @@ export default function OnrampPage() {
 
     setTimeout(() => {
       window.open(url, "_blank", "noopener,noreferrer");
-    }, 1500);
+    }, REDIRECT_DELAY_MS);
   };
 
   const provider = providers.find((p) => p.id === selectedProvider);
@@ -98,7 +118,7 @@ export default function OnrampPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            {step === "form" && (
+            {step === STEP_FORM && (
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-3">Select Provider</label>
@@ -143,7 +163,7 @@ export default function OnrampPage() {
                     />
                   </div>
                   {!validAddress && cAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid C-address (must start with C, 56 characters)</p>
+                    <p className="text-xs text-[var(--error)] mt-1">Invalid C-address (must start with C, {STELLAR_ADDRESS_LENGTH} characters)</p>
                   )}
                 </div>
 
@@ -173,14 +193,14 @@ export default function OnrampPage() {
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Fee ({provider?.fee})</span>
                     <span>
-                      -${fiatAmount ? (Number(fiatAmount) * (selectedProvider === "moonpay" ? 0.045 : 0.05)).toFixed(2) : "0"}
+                      -${fiatAmount ? (Number(fiatAmount) * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_FEE_RATE : TRANSAK_FEE_RATE)).toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Est. receive</span>
                     <span className="font-semibold">
                       {fiatAmount && validAmount
-                        ? `~${(Number(fiatAmount) * 0.95 * (selectedProvider === "moonpay" ? 1 : 0.95)).toFixed(2)} USDC`
+                        ? `~${(Number(fiatAmount) * BASE_RECEIVE_MULTIPLIER * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_RECEIVE_MULTIPLIER : TRANSAK_RECEIVE_MULTIPLIER)).toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
                         : "—"}
                     </span>
                   </div>
@@ -204,7 +224,7 @@ export default function OnrampPage() {
               </div>
             )}
 
-            {step === "redirect" && (
+            {step === STEP_REDIRECT && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
                   <ExternalLink className="w-8 h-8 text-[var(--primary-light)]" />
@@ -214,7 +234,7 @@ export default function OnrampPage() {
                   You will be redirected to complete your purchase. Funds will be sent to your C-address.
                 </p>
                 <button
-                  onClick={() => setStep("form")}
+                  onClick={() => setStep(STEP_FORM)}
                   className="text-sm text-[var(--primary-light)] hover:underline"
                 >
                   Go back
