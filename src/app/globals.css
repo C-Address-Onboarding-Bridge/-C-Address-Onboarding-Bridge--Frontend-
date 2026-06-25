@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-:root {
+:root,
+:root.dark-theme {
   --background: #0a0b0e;
   --foreground: #e8eaed;
   --primary: #6c5ce7;
@@ -14,6 +15,22 @@
   --success: #00b894;
   --warning: #fdcb6e;
   --error: #e17055;
+}
+
+:root.light-theme {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --primary: #6c5ce7;
+  --primary-light: #7e6fe8;
+  --secondary: #00b8a9;
+  --accent: #d63031;
+  --surface: #f5f5f5;
+  --surface-2: #e8e8e8;
+  --border: #d0d0d0;
+  --text-muted: #6b7280;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
 }
 
 @theme inline {
@@ -35,6 +52,11 @@
 
 * {
   box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
@@ -95,4 +117,216 @@ body {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(108, 92, 231, 0.12);
+}
+
+/* Focus indicators for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-to-main:focus {
+  top: 0;
+  outline: none;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(108, 92, 231, 0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes rotate-scale {
+  0% {
+    transform: scale(0.8) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Micro-interaction classes */
+.pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+.slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.bounce-in {
+  animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.checkmark-animation {
+  animation: checkmark 0.6s ease-out;
+}
+
+.rotate-scale-animation {
+  animation: rotate-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Enhanced hover effects */
+.feature-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15), 0 0 30px rgba(0, 206, 201, 0.05);
+}
+
+.interactive-element {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.interactive-element:hover {
+  transform: scale(1.05);
+}
+
+.interactive-element:active {
+  transform: scale(0.98);
+}
+
+/* Logo animation */
+.cex-logo {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.cex-logo:hover {
+  transform: scale(1.15) rotateY(10deg);
+  filter: drop-shadow(0 0 20px rgba(108, 92, 231, 0.3));
+}
+
+.cex-logo:active {
+  transform: scale(0.95);
+}
+
+.cex-logo.selected {
+  animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  filter: drop-shadow(0 0 15px rgba(108, 92, 231, 0.5));
+}
+
+/* Button ripple effect */
+.ripple-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple-button:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Card entrance animation */
+.card-entrance {
+  animation: slide-in 0.4s ease-out;
+}
+
+/* Smooth transitions for theme changes (already defined above) */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
