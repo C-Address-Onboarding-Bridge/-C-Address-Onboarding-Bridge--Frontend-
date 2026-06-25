@@ -100,7 +100,7 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="w-4 h-4 text-[var(--primary-light)]" />
             <span className="text-xs text-[var(--text-muted)]">Connected Address</span>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="text-xs text-[var(--text-muted)] mb-1">XLM Balance</div>
           {loading ? (
             <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="text-xs text-[var(--text-muted)] mb-1">Transactions</div>
           {loading ? (
             <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function DashboardPage() {
       </div>
 
       {allBalances.length > 0 && (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6 card-entrance">
           <h3 className="text-sm font-semibold mb-3">Token Balances</h3>
           <div className="divide-y divide-[var(--border)]">
             {allBalances.map((b) => (
@@ -183,7 +183,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Link
           href="/bridge"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
             <ArrowLeftRight className="w-5 h-5 text-[var(--primary-light)]" />
@@ -196,7 +196,7 @@ export default function DashboardPage() {
 
         <Link
           href="/onramp"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--secondary)]/10 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-[var(--secondary)]" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
 
         <Link
           href="/cex"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center">
             <Building2 className="w-5 h-5 text-[var(--accent)]" />

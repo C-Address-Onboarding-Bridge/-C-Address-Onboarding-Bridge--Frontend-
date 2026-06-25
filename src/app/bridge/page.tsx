@@ -455,24 +455,24 @@ export default function BridgePage() {
             )}
 
             {step === "confirm" && txStatus === "success" && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 card-entrance">
                 {pollStatus === "confirmed" ? (
                   <>
                     <div className="w-16 h-16 rounded-full bg-[var(--success)]/10 flex items-center justify-center mx-auto mb-4">
-                      <Check className="w-8 h-8 text-[var(--success)]" />
+                      <Check className="w-8 h-8 text-[var(--success)] checkmark-animation" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Confirmed ✓</h3>
-                    <p className="text-sm text-[var(--text-muted)] mb-4">
+                    <h3 className="text-lg font-semibold mb-2 slide-in">Confirmed ✓</h3>
+                    <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
                       Your transaction has been confirmed on the Stellar network.
                     </p>
                   </>
                 ) : pollStatus === "failed" ? (
                   <>
-                    <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4 rotate-scale-animation">
                       <XCircle className="w-8 h-8 text-[var(--error)]" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Failed ✗</h3>
-                    <p className="text-sm text-[var(--text-muted)] mb-4">
+                    <h3 className="text-lg font-semibold mb-2 slide-in">Failed ✗</h3>
+                    <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
                       The transaction was rejected by the network.
                     </p>
                   </>
