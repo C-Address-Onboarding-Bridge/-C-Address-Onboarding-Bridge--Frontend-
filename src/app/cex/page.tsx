@@ -39,8 +39,8 @@ export default function CexPage() {
                   onClick={() => setSelectedCex(cex)}
                   className={`p-4 rounded-lg border text-left transition-all ${
                     selectedCex.name === cex.name
-                      ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                      : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)]"
+                      ? "border-[var(--primary)] bg-[var(--primary)]/5 cex-logo selected transform scale-105"
+                      : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)] cex-logo"
                   }`}
                 >
                   <Building2 className="w-8 h-8 text-[var(--text-muted)] mb-2" />
@@ -99,9 +99,13 @@ export default function CexPage() {
                   </code>
                   <button
                     onClick={() => handleCopy(DEFAULT_BRIDGE_ADDRESS, "address")}
-                    className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                    className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                   >
-                    {copiedField === "address" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                    {copiedField === "address" ? (
+                      <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                    )}
                   </button>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -118,9 +122,13 @@ export default function CexPage() {
                     </code>
                     <button
                       onClick={() => handleCopy(cAddress, "caddress")}
-                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                     >
-                      {copiedField === "caddress" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                      {copiedField === "caddress" ? (
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -135,9 +143,13 @@ export default function CexPage() {
                     </code>
                     <button
                       onClick={() => handleCopy(DEFAULT_BRIDGE_MEMO, "memo")}
-                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                     >
-                      {copiedField === "memo" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                      {copiedField === "memo" ? (
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
