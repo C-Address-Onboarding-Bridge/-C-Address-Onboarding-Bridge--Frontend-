@@ -12,6 +12,7 @@ import {
   Asset,
   Horizon,
   rpc,
+  SorobanDataBuilder,
 } from "@stellar/stellar-sdk";
 import {
   BRIDGE_CONTRACT_ID,
@@ -391,4 +392,139 @@ export async function getTransactionStatus(
     }
     throw e;
   }
+}
+
+export interface SorobanSimResult {
+  instructions: number;
+  diskReadBytes: number;
+  writeBytes: number;
+  readOnlyCount: number;
+  readWriteCount: number;
+  minResourceFee: string;
+  /** The prepared transaction with resources applied, ready for signing. */
+  preparedTx: ReturnType<typeof TransactionBuilder.fromXDR>;
+}
+
+// In-memory cache keyed by `${contractId}:${method}:${argsHash}`
+const simulationCache = new Map<string, SorobanSimResult>();
+
+export function clearSimulationCache(): void {
+  simulationCache.clear();
+}
+
+export async function simulateSoroban(
+  tx: ReturnType<typeof TransactionBuilder.prototype.build>,
+  network: "PUBLIC" | "TESTNET",
+  cacheKey?: string
+): Promise<SorobanSimResult> {
+  if (cacheKey && simulationCache.has(cacheKey)) {
+    return simulationCache.get(cacheKey)!;
+  }
+
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+
+  const sim = await server.simulateTransaction(tx);
+
+  if (rpc.Api.isSimulationError(sim)) {
+    throw new Error(`Simulation failed: ${(sim as rpc.Api.SimulateTransactionErrorResponse).error}`);
+  }
+
+  if (rpc.Api.isSimulationRestore(sim)) {
+    throw Object.assign(
+      new Error("FootprintRestoreRequired"),
+      { restorePreamble: (sim as rpc.Api.SimulateTransactionRestoreResponse).restorePreamble, sim }
+    );
+  }
+
+  const success = sim as rpc.Api.SimulateTransactionSuccessResponse;
+  const built = (success.transactionData as SorobanDataBuilder).build();
+  const resources = built.resources();
+  const footprint = resources.footprint();
+
+  const result: SorobanSimResult = {
+    instructions: resources.instructions(),
+    diskReadBytes: resources.diskReadBytes(),
+    writeBytes: resources.writeBytes(),
+    readOnlyCount: footprint.readOnly().length,
+    readWriteCount: footprint.readWrite().length,
+    minResourceFee: success.minResourceFee,
+    preparedTx: TransactionBuilder.fromXDR(
+      (await server.prepareTransaction(tx)).toXDR(),
+      passphrase
+    ),
+  };
+
+  if (cacheKey) simulationCache.set(cacheKey, result);
+  return result;
+}
+
+export async function restoreExpiredFootprint(
+  sourceAddress: string,
+  sim: rpc.Api.SimulateTransactionRestoreResponse,
+  network: "PUBLIC" | "TESTNET"
+): Promise<string> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(sourceAddress);
+
+  const restoreTx = new TransactionBuilder(account, {
+    fee: sim.restorePreamble.minResourceFee,
+    networkPassphrase: passphrase,
+  })
+    .addOperation(Operation.restoreFootprint({}))
+    .setTimeout(30)
+    .build();
+
+  const prepared = await server.prepareTransaction(restoreTx);
+  const signedResult = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signedResult && signedResult.error) {
+    throw new Error(`Signing failed: ${signedResult.error}`);
+  }
+  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const sendResult = await server.sendTransaction(signedTx);
+  if (sendResult.status === "ERROR") {
+    throw new Error(`Restore failed: ${JSON.stringify(sendResult.errorResult)}`);
+  }
+  return sendResult.hash;
+}
+
+/**
+ * Builds and simulates the bridge transaction for resource estimation.
+ * Only meaningful when BRIDGE_CONTRACT_ID is set (Soroban path).
+ * Falls back gracefully if no contract is configured.
+ */
+export async function simulateBridgeTx(
+  sourceAddress: string,
+  amount: string,
+  assetCode: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<SorobanSimResult | null> {
+  if (!BRIDGE_CONTRACT_ID) return null;
+
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(sourceAddress);
+
+    const asset = assetCode === "XLM"
+    ? Asset.native()
+    : new Asset(assetCode, USDC_ISSUERS[network]);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: passphrase,
+  })
+    .addOperation(
+      Operation.payment({
+        destination: BRIDGE_CONTRACT_ID,
+        asset,
+        amount,
+      })
+    )
+    .setTimeout(30)
+    .build();
+
+  const cacheKey = `bridge:${BRIDGE_CONTRACT_ID}:${assetCode}:${amount}`;
+  return simulateSoroban(tx, network, cacheKey);
 }

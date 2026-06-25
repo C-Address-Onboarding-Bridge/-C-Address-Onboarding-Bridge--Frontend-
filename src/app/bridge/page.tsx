@@ -6,6 +6,7 @@ import {
   Loader2, ExternalLink, XCircle, AlertTriangle,
 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
+import { ResourcePanel } from "@/components/resource-panel";
 import {
   isValidStellarAddress,
   isCAddress,
@@ -15,6 +16,8 @@ import {
   buildAndSubmitChangeTrust,
   getTransactionStatus,
   USDC_ISSUERS,
+  simulateBridgeTx,
+  type SorobanSimResult,
 } from "@/lib/stellar";
 
 type Step = "form" | "review" | "confirm";
@@ -46,6 +49,29 @@ export default function BridgePage() {
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollActiveRef = useRef(false);
+
+  // Resource estimation
+  const [simStatus, setSimStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [simResult, setSimResult] = useState<SorobanSimResult | undefined>(undefined);
+  const [simError, setSimError] = useState<string | undefined>(undefined);
+
+  const runSimulation = async (from: string, amt: string, ast: string, net: "PUBLIC" | "TESTNET") => {
+    setSimStatus("loading");
+    setSimResult(undefined);
+    setSimError(undefined);
+    try {
+      const result = await simulateBridgeTx(from, amt, ast, net);
+      if (result) {
+        setSimResult(result);
+        setSimStatus("ready");
+      } else {
+        setSimStatus("idle"); // no contract configured, skip
+      }
+    } catch (e) {
+      setSimError(e instanceof Error ? e.message : "Simulation failed");
+      setSimStatus("error");
+    }
+  };
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -163,6 +189,7 @@ export default function BridgePage() {
     if (!canProceed) return;
     setStep("review");
     setTxError(null);
+    runSimulation(fromAddress, amount, asset, network);
   };
 
   const handleConfirm = async () => {
@@ -209,6 +236,9 @@ export default function BridgePage() {
     setPollTimedOut(false);
     setTrustlineActionStatus("idle");
     setTrustlineError(null);
+    setSimStatus("idle");
+    setSimResult(undefined);
+    setSimError(undefined);
   };
 
   return (
@@ -409,6 +439,8 @@ export default function BridgePage() {
                     </div>
                   </div>
                 )}
+
+                <ResourcePanel status={simStatus} result={simResult} error={simError} />
 
                 <div className="flex gap-3">
                   <button
