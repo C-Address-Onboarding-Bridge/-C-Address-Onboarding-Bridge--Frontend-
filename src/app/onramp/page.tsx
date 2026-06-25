@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
 import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
+import { validateCAddress } from "@/utils/validation";
 import {
   STELLAR_ADDRESS_LENGTH,
   PROVIDER_MOONPAY,
@@ -59,7 +60,8 @@ export default function OnrampPage() {
   const [step, setStep] = useState<"form" | "redirect">(STEP_FORM);
   const [error, setError] = useState<string | null>(null);
 
-  const validAddress = !cAddress || (isValidStellarAddress(cAddress) && isCAddress(cAddress));
+  const cAddressError = validateCAddress(cAddress);
+  const validAddress = !cAddress || (!cAddressError && isValidStellarAddress(cAddress) && isCAddress(cAddress));
   const validAmount = !fiatAmount || /^\d+(\.\d{1,2})?$/.test(fiatAmount);
   const canProceed = cAddress && fiatAmount && validAddress && validAmount;
 
@@ -163,7 +165,7 @@ export default function OnrampPage() {
                     />
                   </div>
                   {!validAddress && cAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid C-address (must start with C, {STELLAR_ADDRESS_LENGTH} characters)</p>
+                    <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
                   )}
                 </div>
 
