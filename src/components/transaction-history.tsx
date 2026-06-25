@@ -1,6 +1,7 @@
 import { ArrowLeftRight, CreditCard, Building2, ExternalLink, Loader2 } from "lucide-react";
 import type { BridgeTransaction as BridgeTransactionData } from "@/lib/types";
 import { getExplorerUrl } from "@/lib/stellar";
+import { EXPLORER_BASE_URLS } from "@/lib/constants";
 
 const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
   "g-to-c": { icon: ArrowLeftRight, label: "G → C Bridge", color: "text-[var(--primary-light)]" },
@@ -79,7 +80,7 @@ export default function TransactionHistory({ transactions, loading, network }: P
       )}
       <div className="p-4 border-t border-[var(--border)]">
         <a
-          href={`https://stellar.expert/explorer/${network === "PUBLIC" ? "public" : "testnet"}`}
+          href={EXPLORER_BASE_URLS[network]}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
