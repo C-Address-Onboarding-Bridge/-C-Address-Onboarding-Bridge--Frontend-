@@ -9,11 +9,6 @@ import {
   PROVIDER_TRANSAK,
   WALLET_CHAIN_STELLAR,
   DEFAULT_CRYPTO_CURRENCY,
-  MOONPAY_FEE_RATE,
-  TRANSAK_FEE_RATE,
-  BASE_RECEIVE_MULTIPLIER,
-  MOONPAY_RECEIVE_MULTIPLIER,
-  TRANSAK_RECEIVE_MULTIPLIER,
   FIAT_DISPLAY_DECIMALS,
   MOONPAY_BASE_URL,
   TRANSAK_BASE_URL,
@@ -23,6 +18,7 @@ import {
   STEP_FORM,
   STEP_REDIRECT,
 } from "@/lib/constants";
+import { estimateOnrampOutput } from "@/lib/onramp";
 
 const MOONPAY_API_KEY = process.env.NEXT_PUBLIC_MOONPAY_API_KEY || "";
 const TRANSAK_API_KEY = process.env.NEXT_PUBLIC_TRANSAK_API_KEY || "";
@@ -193,14 +189,14 @@ export default function OnrampPage() {
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Fee ({provider?.fee})</span>
                     <span>
-                      -${fiatAmount ? (Number(fiatAmount) * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_FEE_RATE : TRANSAK_FEE_RATE)).toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
+                      -${fiatAmount ? estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).fee.toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Est. receive</span>
                     <span className="font-semibold">
                       {fiatAmount && validAmount
-                        ? `~${(Number(fiatAmount) * BASE_RECEIVE_MULTIPLIER * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_RECEIVE_MULTIPLIER : TRANSAK_RECEIVE_MULTIPLIER)).toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
+                        ? `~${estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).receive.toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
                         : "—"}
                     </span>
                   </div>
