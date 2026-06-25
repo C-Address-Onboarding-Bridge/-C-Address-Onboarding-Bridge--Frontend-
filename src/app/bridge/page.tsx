@@ -15,7 +15,15 @@ import {
   buildAndSubmitChangeTrust,
   getTransactionStatus,
   USDC_ISSUERS,
+  getHorizonServer,
+  getNetworkPassphrase,
 } from "@/lib/stellar";
+import {
+  TransactionBuilder,
+  Operation,
+  BASE_FEE,
+  Asset,
+} from "@stellar/stellar-sdk";
 import {
   sanitizeStellarAddress,
   sanitizeCAddress,
@@ -31,8 +39,14 @@ import {
   checkForDuplicateSubmission,
   recordTransactionSubmission,
 } from "@/lib/rate-limit";
+import {
+  simulateTransaction,
+  extractPaymentDetails,
+  validateSimulationAgainstForm,
+  type SimulationResult,
+} from "@/lib/transaction-simulation";
 
-type Step = "form" | "review" | "confirm";
+type Step = "form" | "review" | "simulate" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
 type PollStatus = "pending" | "confirmed" | "failed" | null;
 
@@ -65,6 +79,12 @@ export default function BridgePage() {
   // Rate limiting and anti-spam
   const [rateLimitRemaining, setRateLimitRemaining] = useState(0);
   const rateLimitIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Transaction simulation
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [simulationWarnings, setSimulationWarnings] = useState<string[]>([]);
+  const [simulationInProgress, setSimulationInProgress] = useState(false);
+  const [simulationAcknowledged, setSimulationAcknowledged] = useState(false);
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
@@ -211,6 +231,51 @@ export default function BridgePage() {
       return;
     }
 
+    // Simulate the transaction before signing
+    setSimulationInProgress(true);
+    setTxError(null);
+    setSimulationAcknowledged(false);
+
+    try {
+      // Build transaction XDR for simulation
+      const server = getHorizonServer(network);
+      const account = await server.loadAccount(fromAddress);
+      const tempTx = new TransactionBuilder(account, {
+        fee: BASE_FEE,
+        networkPassphrase: getNetworkPassphrase(network),
+      })
+        .addOperation(
+          Operation.payment({
+            destination: toAddress,
+            asset: asset === "XLM" ? Asset.native() : new Asset(asset, USDC_ISSUERS[network]),
+            amount,
+          })
+        )
+        .setTimeout(30)
+        .build();
+
+      // Simulate the transaction
+      const simulation = await simulateTransaction(tempTx.toXDR(), network);
+      setSimulationResult(simulation);
+
+      // Validate simulation against form inputs
+      const warnings = validateSimulationAgainstForm(amount, asset, simulation, toAddress);
+      setSimulationWarnings(warnings);
+
+      // Transition to simulation step
+      setStep("simulate");
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : "Failed to simulate transaction";
+      setTxError(errorMsg);
+      setSimulationResult(null);
+    } finally {
+      setSimulationInProgress(false);
+    }
+  };
+
+  const handleSignTransaction = async () => {
+    if (!fromAddress || !toAddress || !amount || !simulationAcknowledged) return;
+
     setTxStatus("signing");
     setTxError(null);
     recordSubmissionAttempt("bridge_submission");
@@ -273,6 +338,9 @@ export default function BridgePage() {
     setPollTimedOut(false);
     setTrustlineActionStatus("idle");
     setTrustlineError(null);
+    setSimulationResult(null);
+    setSimulationWarnings([]);
+    setSimulationAcknowledged(false);
   };
 
   return (
@@ -506,6 +574,115 @@ export default function BridgePage() {
                       <>
                         <ArrowRight className="w-4 h-4" />
                         Confirm & Sign
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === "simulate" && (
+              <div className="space-y-6">
+                <h3 className="font-semibold text-lg">Transaction Simulation</h3>
+
+                {simulationInProgress ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-light)]" />
+                    <p className="ml-3 text-sm text-[var(--text-muted)]">Simulating transaction...</p>
+                  </div>
+                ) : simulationResult ? (
+                  <div className="space-y-4">
+                    {simulationResult.isSuccessful ? (
+                      <div className="p-4 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20">
+                        <div className="flex items-start gap-3">
+                          <Check className="w-5 h-5 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-[var(--success)]">Transaction simulation successful</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-[var(--error)]">Simulation Failed</p>
+                            {simulationResult.errors.map((error, i) => (
+                              <p key={i} className="text-xs text-[var(--text-muted)] mt-1">{error}</p>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {simulationResult.effects.length > 0 && (
+                      <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
+                        <p className="text-sm font-medium mb-3">Expected Effects:</p>
+                        <div className="space-y-2">
+                          {simulationResult.effects.map((effect, i) => (
+                            <div key={i} className="text-xs text-[var(--text-muted)] flex items-start gap-2">
+                              <span className="text-[var(--primary-light)]">•</span>
+                              <span>{effect.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {simulationWarnings.length > 0 && (
+                      <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <p className="text-sm font-medium text-amber-500 mb-3">Warnings:</p>
+                        <div className="space-y-2">
+                          {simulationWarnings.map((warning, i) => (
+                            <p key={i} className="text-xs text-amber-600">{warning}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={simulationAcknowledged}
+                          onChange={(e) => setSimulationAcknowledged(e.target.checked)}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm">
+                          I have reviewed the transaction simulation and understand the expected effects
+                        </span>
+                      </label>
+                    </div>
+
+                    {txError && (
+                      <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-[var(--text-muted)]">{txError}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStep("review")}
+                    disabled={simulationInProgress}
+                    className="flex-1 px-6 py-3 rounded-xl border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSignTransaction}
+                    disabled={!simulationAcknowledged || simulationInProgress || txStatus === "signing"}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
+                  >
+                    {txStatus === "signing" ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing…
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-4 h-4" />
+                        Acknowledge & Sign
                       </>
                     )}
                   </button>
