@@ -3,19 +3,18 @@
 import { useState } from "react";
 import { Building2, Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
 import { CEX_LIST, DEFAULT_BRIDGE_ADDRESS, DEFAULT_BRIDGE_MEMO } from "@/lib/types";
-
-const networks = ["Stellar", "Polygon", "Ethereum"];
+import { CEX_NETWORKS, CEX_NETWORK_STELLAR, COPY_FEEDBACK_MS } from "@/lib/constants";
 
 export default function CexPage() {
   const [selectedCex, setSelectedCex] = useState(CEX_LIST[0]);
-  const [selectedNetwork, setSelectedNetwork] = useState("Stellar");
+  const [selectedNetwork, setSelectedNetwork] = useState<string>(CEX_NETWORK_STELLAR);
   const [cAddress, setCAddress] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+    setTimeout(() => setCopiedField(null), COPY_FEEDBACK_MS);
   };
 
   const withdrawalUrl = selectedCex.withdrawalUrl;
@@ -40,8 +39,8 @@ export default function CexPage() {
                   onClick={() => setSelectedCex(cex)}
                   className={`p-4 rounded-lg border text-left transition-all ${
                     selectedCex.name === cex.name
-                      ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                      : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)]"
+                      ? "border-[var(--primary)] bg-[var(--primary)]/5 cex-logo selected transform scale-105"
+                      : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)] cex-logo"
                   }`}
                 >
                   <Building2 className="w-8 h-8 text-[var(--text-muted)] mb-2" />
@@ -55,7 +54,7 @@ export default function CexPage() {
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
             <h3 className="font-semibold mb-4">2. Choose Withdrawal Network</h3>
             <div className="flex flex-wrap gap-2">
-              {networks.map((net) => (
+              {CEX_NETWORKS.map((net) => (
                 <button
                   key={net}
                   onClick={() => setSelectedNetwork(net)}
@@ -100,9 +99,13 @@ export default function CexPage() {
                   </code>
                   <button
                     onClick={() => handleCopy(DEFAULT_BRIDGE_ADDRESS, "address")}
-                    className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                    className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                   >
-                    {copiedField === "address" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                    {copiedField === "address" ? (
+                      <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                    )}
                   </button>
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -119,15 +122,19 @@ export default function CexPage() {
                     </code>
                     <button
                       onClick={() => handleCopy(cAddress, "caddress")}
-                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                     >
-                      {copiedField === "caddress" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                      {copiedField === "caddress" ? (
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                      )}
                     </button>
                   </div>
                 </div>
               )}
 
-              {selectedNetwork === "Stellar" && (
+              {selectedNetwork === CEX_NETWORK_STELLAR && (
                 <div>
                   <label className="block text-xs text-[var(--text-muted)] mb-1">Memo (Required for Stellar)</label>
                   <div className="flex items-center gap-2">
@@ -136,9 +143,13 @@ export default function CexPage() {
                     </code>
                     <button
                       onClick={() => handleCopy(DEFAULT_BRIDGE_MEMO, "memo")}
-                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
                     >
-                      {copiedField === "memo" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
+                      {copiedField === "memo" ? (
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
