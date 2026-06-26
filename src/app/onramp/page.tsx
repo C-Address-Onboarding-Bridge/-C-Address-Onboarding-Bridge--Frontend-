@@ -3,17 +3,13 @@
 import { useState } from "react";
 import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
 import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
+import { validateCAddress } from "@/utils/validation";
 import {
   STELLAR_ADDRESS_LENGTH,
   PROVIDER_MOONPAY,
   PROVIDER_TRANSAK,
   WALLET_CHAIN_STELLAR,
   DEFAULT_CRYPTO_CURRENCY,
-  MOONPAY_FEE_RATE,
-  TRANSAK_FEE_RATE,
-  BASE_RECEIVE_MULTIPLIER,
-  MOONPAY_RECEIVE_MULTIPLIER,
-  TRANSAK_RECEIVE_MULTIPLIER,
   FIAT_DISPLAY_DECIMALS,
   MOONPAY_BASE_URL,
   TRANSAK_BASE_URL,
@@ -23,6 +19,7 @@ import {
   STEP_FORM,
   STEP_REDIRECT,
 } from "@/lib/constants";
+import { estimateOnrampOutput } from "@/lib/onramp";
 
 const MOONPAY_API_KEY = process.env.NEXT_PUBLIC_MOONPAY_API_KEY || "";
 const TRANSAK_API_KEY = process.env.NEXT_PUBLIC_TRANSAK_API_KEY || "";
@@ -59,7 +56,8 @@ export default function OnrampPage() {
   const [step, setStep] = useState<"form" | "redirect">(STEP_FORM);
   const [error, setError] = useState<string | null>(null);
 
-  const validAddress = !cAddress || (isValidStellarAddress(cAddress) && isCAddress(cAddress));
+  const cAddressError = validateCAddress(cAddress);
+  const validAddress = !cAddress || (!cAddressError && isValidStellarAddress(cAddress) && isCAddress(cAddress));
   const validAmount = !fiatAmount || /^\d+(\.\d{1,2})?$/.test(fiatAmount);
   const canProceed = cAddress && fiatAmount && validAddress && validAmount;
 
@@ -163,7 +161,7 @@ export default function OnrampPage() {
                     />
                   </div>
                   {!validAddress && cAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid C-address (must start with C, {STELLAR_ADDRESS_LENGTH} characters)</p>
+                    <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
                   )}
                 </div>
 
@@ -193,14 +191,14 @@ export default function OnrampPage() {
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Fee ({provider?.fee})</span>
                     <span>
-                      -${fiatAmount ? (Number(fiatAmount) * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_FEE_RATE : TRANSAK_FEE_RATE)).toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
+                      -${fiatAmount ? estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).fee.toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Est. receive</span>
                     <span className="font-semibold">
                       {fiatAmount && validAmount
-                        ? `~${(Number(fiatAmount) * BASE_RECEIVE_MULTIPLIER * (selectedProvider === PROVIDER_MOONPAY ? MOONPAY_RECEIVE_MULTIPLIER : TRANSAK_RECEIVE_MULTIPLIER)).toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
+                        ? `~${estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).receive.toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
                         : "—"}
                     </span>
                   </div>

@@ -17,6 +17,7 @@ import {
   buildAndSubmitChangeTrust,
   getTransactionStatus,
 } from "@/lib/stellar";
+import { validateCAddress } from "@/utils/validation";
 import {
   ASSET_XLM,
   ASSET_USDC,
@@ -62,6 +63,7 @@ export default function BridgePage() {
   const [txStatus, setTxStatus] = useState<TxStatus>(STATUS_IDLE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+  const [selectedFee, setSelectedFee] = useState<string>("100");
 
   const formState = useMemo(
     () => ({ fromAddress, toAddress, amount, asset }),
@@ -232,7 +234,8 @@ export default function BridgePage() {
   // --- Validation ---
 
   const validFrom = !fromAddress || isValidStellarAddress(fromAddress);
-  const validTo = !toAddress || (isValidStellarAddress(toAddress) && isCAddress(toAddress));
+  const toAddressError = validateCAddress(toAddress);
+  const validTo = !toAddress || (!toAddressError && isCAddress(toAddress));
   const validAmount = !!amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0;
 
   const canProceed =
@@ -285,7 +288,7 @@ export default function BridgePage() {
     recordTransactionSubmission(fromAddress, toAddress, amount, asset);
 
     try {
-      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network);
+      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network, selectedFee);
       setTxHash(result.hash);
       setTxStatus(STATUS_SUCCESS);
       setStep(STEP_CONFIRM);
@@ -446,7 +449,7 @@ export default function BridgePage() {
                   </div>
                   {!validTo && toAddress && (
                     <p className="text-xs text-[var(--error)] mt-1">
-                      Invalid C-address (must start with C and be {STELLAR_ADDRESS_LENGTH} characters)
+                      {toAddressError}
                     </p>
                   )}
                 </div>
@@ -620,6 +623,8 @@ export default function BridgePage() {
                     </div>
                   </div>
                 )}
+
+                <ResourcePanel status={simStatus} result={simResult} error={simError} />
 
                 <div className="flex gap-3">
                   <button

@@ -7,9 +7,11 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: [
+      "src/__tests__/onramp.test.ts",
+      "src/__tests__/stellar.test.ts",
+    ],
     setupFiles: ["./src/__tests__/setup.ts"],
-    exclude: ["node_modules", "e2e/**"],
   },
   resolve: {
     alias: {

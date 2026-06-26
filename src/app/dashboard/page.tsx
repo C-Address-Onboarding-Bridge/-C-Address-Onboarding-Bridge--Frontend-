@@ -5,7 +5,7 @@ import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLin
 import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
-import { getAccountBalances, fetchRecentTransactions, getExplorerUrl } from "@/lib/stellar";
+import { getAccountBalances, fetchRecentTransactions, getExplorerUrl, isCAddress, getSorobanAccountBalances } from "@/lib/stellar";
 import type { BridgeTransaction } from "@/lib/types";
 import { BRIDGE_CONTRACT_ID } from "@/lib/types";
 import {
@@ -19,6 +19,7 @@ import {
   STATUS_CONFIRMED,
   STATUS_PENDING,
   ENV_BRIDGE_CONTRACT_ID,
+  USDC_ISSUERS,
 } from "@/lib/constants";
 
 export default function DashboardPage() {
@@ -36,8 +37,11 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
+        const balPromise = isCAddress(address)
+          ? getSorobanAccountBalances(address, [USDC_ISSUERS[network]], network)
+          : getAccountBalances(address, network);
         const [balResult, txResult] = await Promise.all([
-          getAccountBalances(address, network),
+          balPromise,
           fetchRecentTransactions(address, network, DEFAULT_TX_LIMIT),
         ]);
         setBalance(balResult.total);

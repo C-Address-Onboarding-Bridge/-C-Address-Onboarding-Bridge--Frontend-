@@ -17,6 +17,7 @@ import {
   checkConnection,
   getWalletAddress,
   getCurrentNetwork,
+  isNativeAsset,
 } from "@/lib/stellar";
 
 const G_ADDRESS = "GAIUIQ7G3TMN53Z2Y3Y5CJI7Q7ZQJX4W5F5N5Z5Q5Z5Q5Z5Q5Z5Q5Z5A";
@@ -72,6 +73,10 @@ describe("isGAddress", () => {
   it("rejects short address", () => {
     expect(isGAddress("CABC")).toBe(false);
   });
+
+  it("rejects G-address with wrong length", () => {
+    expect(isGAddress("GABC")).toBe(false);
+  });
 });
 
 describe("connectWallet", () => {
@@ -88,6 +93,19 @@ describe("connectWallet", () => {
     const result = await connectWallet();
 
     expect(result).toBe(PK);
+    expect(result).not.toBe("");
+  });
+
+  it("returns the exact address from getAddress, not a static value", async () => {
+    const addr1 = "GABCDE" + "A".repeat(50);
+    const addr2 = "GXYZ01" + "B".repeat(50);
+    vi.mocked(isConnected).mockResolvedValue({ isConnected: true, error: null });
+
+    vi.mocked(getAddress).mockResolvedValue({ address: addr1 });
+    expect(await connectWallet()).toBe(addr1);
+
+    vi.mocked(getAddress).mockResolvedValue({ address: addr2 });
+    expect(await connectWallet()).toBe(addr2);
   });
 
   it("returns null when Freighter is not installed (isConnected returns false)", async () => {

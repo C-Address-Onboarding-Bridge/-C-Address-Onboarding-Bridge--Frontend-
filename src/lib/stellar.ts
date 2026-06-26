@@ -14,6 +14,7 @@ import {
   rpc,
   Contract,
   Address,
+  Account,
   nativeToScVal,
   scValToNative,
   StrKey,
@@ -202,7 +203,8 @@ export async function buildAndSubmitPayment(
   destinationAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
@@ -223,7 +225,7 @@ export async function buildAndSubmitPayment(
   }
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
@@ -260,10 +262,11 @@ export async function bridgeViaContract(
   cAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   if (!BRIDGE_CONTRACT_ID) {
-    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network);
+    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network, feeStroops);
   }
 
   const server = getHorizonServer(network);
@@ -272,7 +275,7 @@ export async function bridgeViaContract(
   const account = await server.loadAccount(sourceAddress);
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
@@ -413,6 +416,95 @@ export async function getTransactionStatus(
 
 export function isNativeAsset(assetCode: string): boolean {
   return assetCode === "XLM";
+}
+
+// A well-known funded account used as simulation source for read-only calls.
+const SIM_SOURCE = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+
+async function simulateContractRead(
+  contractId: string,
+  method: string,
+  args: Parameters<Contract["call"]>[1][],
+  network: "PUBLIC" | "TESTNET"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(SIM_SOURCE).catch(
+    () => new Account(SIM_SOURCE, "0")
+  );
+  const contract = new Contract(contractId);
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(30)
+    .build();
+  const sim = await server.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(sim)) return null;
+  return (sim as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
+}
+
+export async function getSorobanTokenBalance(
+  contractId: string,
+  accountId: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<bigint> {
+  try {
+    const retval = await simulateContractRead(contractId, "balance", [addressToScVal(accountId)], network);
+    if (!retval) return BigInt(0);
+    return BigInt(scValToNative(retval) as bigint);
+  } catch {
+    return BigInt(0);
+  }
+}
+
+export async function getTokenSymbol(
+  contractId: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<string> {
+  try {
+    const retval = await simulateContractRead(contractId, "symbol", [], network);
+    if (!retval) return contractId.slice(0, 8);
+    return String(scValToNative(retval));
+  } catch {
+    return contractId.slice(0, 8);
+  }
+}
+
+export async function getTokenDecimals(
+  contractId: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<number> {
+  try {
+    const retval = await simulateContractRead(contractId, "decimals", [], network);
+    if (!retval) return 7;
+    return Number(scValToNative(retval));
+  } catch {
+    return 7;
+  }
+}
+
+export async function getSorobanAccountBalances(
+  cAddress: string,
+  tokenContractIds: string[],
+  network: "PUBLIC" | "TESTNET"
+): Promise<AccountBalances> {
+  const results = await Promise.all(
+    tokenContractIds.map(async (contractId) => {
+      const [rawBalance, symbol, decimals] = await Promise.all([
+        getSorobanTokenBalance(contractId, cAddress, network),
+        getTokenSymbol(contractId, network),
+        getTokenDecimals(contractId, network),
+      ]);
+      const divisor = BigInt(10 ** decimals);
+      const whole = rawBalance / divisor;
+      const frac = rawBalance % divisor;
+      const amount = `${whole}.${frac.toString().padStart(decimals, "0")}`;
+      return { asset: symbol, amount, contractId };
+    })
+  );
+  const xlmEntry = results.find((b) => b.asset === ASSET_XLM);
+  const total = xlmEntry?.amount ?? BALANCE_INITIAL;
+  return { total, balances: results };
 }
 
 function addressToScVal(address: string) {
