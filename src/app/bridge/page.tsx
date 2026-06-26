@@ -55,7 +55,7 @@ type PollStatus = "pending" | "confirmed" | "failed" | null;
 
 export default function BridgePage() {
   const { isConnected, address, network, connect } = useWallet();
-  const { toasts, add: addToast, remove: removeToast } = useToast();
+  const { toasts, add: addToast, update: updateToast, remove: removeToast } = useToast();
 
   const bridgeContractId = getBridgeContractId(network);
 
@@ -64,6 +64,8 @@ export default function BridgePage() {
   const [amount, setAmount] = useState("");
   const [asset, setAsset] = useState<string>(ASSET_XLM);
   const [step, setStep] = useState<Step>(STEP_FORM);
+  const prevStepRef = useRef<Step>(STEP_FORM);
+  const [stepDir, setStepDir] = useState<"forward" | "back">("forward");
   const [txStatus, setTxStatus] = useState<TxStatus>(STATUS_IDLE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
@@ -210,7 +212,7 @@ export default function BridgePage() {
 
   // --- Polling ---
 
-  const startPolling = (hash: string) => {
+  const startPolling = (hash: string, toastId?: string) => {
     pollActiveRef.current = true;
     setPollStatus("pending");
     setPollTimedOut(false);
@@ -222,6 +224,7 @@ export default function BridgePage() {
       if (!pollActiveRef.current) return;
       if (attempts >= maxAttempts) {
         setPollTimedOut(true);
+        if (toastId) updateToast(toastId, { type: "info", message: "Transaction status unknown — check explorer", duration: 8000 });
         return;
       }
       attempts++;
@@ -229,7 +232,11 @@ export default function BridgePage() {
         const status = await getTransactionStatus(hash, network);
         if (!pollActiveRef.current) return;
         setPollStatus(status);
-        if (status === STATUS_PENDING) {
+        if (status === STATUS_CONFIRMED) {
+          if (toastId) updateToast(toastId, { type: "success", message: "Transaction confirmed", duration: 8000 });
+        } else if (status === STATUS_FAILED) {
+          if (toastId) updateToast(toastId, { type: "error", message: "Transaction failed on-chain", duration: 8000 });
+        } else {
           pollTimeoutRef.current = setTimeout(doPoll, TX_POLL_INTERVAL_MS);
         }
       } catch {
@@ -265,7 +272,7 @@ export default function BridgePage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && step === "form" && canProceed) {
         e.preventDefault();
-        setStep("review");
+        goStep("review");
         setTxError(null);
       }
     };
@@ -273,6 +280,18 @@ export default function BridgePage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [step, canProceed]);
+
+  // --- Helpers ---
+
+  const STEP_ORDER: Step[] = [STEP_FORM, STEP_REVIEW, STEP_CONFIRM];
+
+  const goStep = (next: Step) => {
+    const cur = STEP_ORDER.indexOf(prevStepRef.current);
+    const nxt = STEP_ORDER.indexOf(next);
+    setStepDir(nxt >= cur ? "forward" : "back");
+    prevStepRef.current = next;
+    setStep(next);
+  };
 
   // --- Handlers ---
 
@@ -282,7 +301,7 @@ export default function BridgePage() {
 
   const handleSubmit = () => {
     if (!canProceed) return;
-    setStep(STEP_REVIEW);
+    goStep(STEP_REVIEW);
     setTxError(null);
     setAllowanceStatus("idle");
     setAllowanceError(null);
@@ -311,11 +330,16 @@ export default function BridgePage() {
       const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network, selectedFee);
       setTxHash(result.hash);
       setTxStatus(STATUS_SUCCESS);
-      setStep(STEP_CONFIRM);
-      startPolling(result.hash);
+      goStep(STEP_CONFIRM);
+      const toastId = addToast("Transaction submitted", "pending", 0, {
+        txHash: result.hash,
+        explorerUrl: getExplorerUrl(network, "tx", result.hash),
+      });
+      startPolling(result.hash, toastId);
     } catch (e: unknown) {
       setTxError(e instanceof Error ? e.message : "Transaction failed");
       setTxStatus(STATUS_ERROR);
+      addToast(e instanceof Error ? e.message : "Transaction failed", "error", 6000);
     }
   };
 
@@ -339,7 +363,7 @@ export default function BridgePage() {
   const handleReset = () => {
     pollActiveRef.current = false;
     if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-    setStep(STEP_FORM);
+    goStep(STEP_FORM);
     setTxStatus(STATUS_IDLE);
     setTxHash(null);
     setTxError(null);
@@ -416,7 +440,36 @@ export default function BridgePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+          {/* Step indicator */}
+          {(() => {
+            const steps = [{ label: "Details" }, { label: "Review" }, { label: "Confirm" }];
+            const idx = step === STEP_FORM ? 0 : step === STEP_REVIEW ? 1 : 2;
+            return (
+              <div className="mb-4">
+                <div className="flex items-center gap-0 mb-2">
+                  {steps.map((s, i) => (
+                    <div key={s.label} className="flex items-center flex-1 last:flex-none">
+                      <div className={`step-dot w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border ${
+                        i < idx ? "bg-[var(--primary)] border-[var(--primary)] text-white" :
+                        i === idx ? `bg-[var(--primary)]/20 border-[var(--primary)] text-[var(--primary-light)] step-dot-active` :
+                        "bg-transparent border-[var(--border)] text-[var(--text-muted)]"
+                      }`}>
+                        {i < idx ? "✓" : i + 1}
+                      </div>
+                      <span className={`ml-2 text-xs font-medium hidden sm:inline ${i === idx ? "text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{s.label}</span>
+                      {i < steps.length - 1 && (
+                        <div className="flex-1 mx-3 h-px bg-[var(--border)] overflow-hidden">
+                          <div className={`step-progress-bar h-full bg-[var(--primary)] ${i < idx ? "w-full" : "w-0"}`} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 overflow-hidden">
+            <div key={step} className={stepDir === "forward" ? "step-enter" : "step-enter-back"}>
             {step === "form" && (
               <div className="space-y-6">
                 {/* From address */}
@@ -596,8 +649,8 @@ export default function BridgePage() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-[var(--text-muted)]">Estimated Fee</span>
                       {simStatus === "running" && (
-                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Simulating…
+                        <span className="flex items-center gap-1">
+                          <span className="animate-pulse rounded bg-[var(--surface-2)] h-3 w-20 inline-block" />
                         </span>
                       )}
                       {simStatus === "done" && simMinFee && (
@@ -786,13 +839,14 @@ export default function BridgePage() {
                 <h3 className="text-lg font-semibold mb-2">Transaction Failed</h3>
                 <p className="text-sm text-[var(--text-muted)] mb-6">{txError || "An unexpected error occurred"}</p>
                 <button
-                  onClick={() => { setStep(STEP_REVIEW); setTxStatus(STATUS_IDLE); setTxError(null); }}
+                  onClick={() => { goStep(STEP_REVIEW); setTxStatus(STATUS_IDLE); setTxError(null); }}
                   className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
                 >
                   Try Again
                 </button>
               </div>
             )}
+            </div>{/* end step-enter */}
           </div>
         </div>
 

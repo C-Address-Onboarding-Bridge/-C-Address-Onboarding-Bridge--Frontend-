@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
+import { SkeletonTableRow } from "@/components/skeleton";
 
 export interface Column<T> {
   key: string;
@@ -61,9 +62,27 @@ export function DataTable<T>({
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]">
-        <div className="p-12 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border border-[var(--border)] border-t-[var(--primary)]" />
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <tbody className="divide-y divide-[var(--border)]">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTableRow key={i} cols={columns.length + (expandable ? 1 : 0)} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="md:hidden divide-y divide-[var(--border)]">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-4 space-y-3">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div key={j} className="flex justify-between">
+                  <div className="animate-pulse rounded bg-[var(--surface-2)] h-3 w-16" />
+                  <div className="animate-pulse rounded bg-[var(--surface-2)] h-3 w-24" />
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     );
