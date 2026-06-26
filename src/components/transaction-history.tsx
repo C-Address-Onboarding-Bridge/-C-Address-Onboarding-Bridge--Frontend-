@@ -4,17 +4,20 @@ import { ArrowLeftRight, CreditCard, Building2, ExternalLink } from "lucide-reac
 import type { BridgeTransaction as BridgeTransactionData } from "@/lib/types";
 import { getExplorerUrl } from "@/lib/stellar";
 import { EXPLORER_BASE_URLS } from "@/lib/constants";
+import { DataTable } from "@/components/data-table";
+import { useLocale } from "@/components/locale-provider";
+import { formatDate, formatDateTime, formatNumber, translate } from "@/lib/i18n";
 
-const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
-  "g-to-c": { icon: ArrowLeftRight, label: "G → C Bridge", color: "text-[var(--primary-light)]" },
-  fiat: { icon: CreditCard, label: "Fiat Onramp", color: "text-[var(--secondary)]" },
-  cex: { icon: Building2, label: "CEX Withdrawal", color: "text-[var(--accent)]" },
+const typeConfig: Record<string, { icon: typeof ArrowLeftRight; labelKey: string; color: string }> = {
+  "g-to-c": { icon: ArrowLeftRight, labelKey: "history.typeG2C", color: "text-[var(--primary-light)]" },
+  fiat: { icon: CreditCard, labelKey: "history.typeFiat", color: "text-[var(--secondary)]" },
+  cex: { icon: Building2, labelKey: "history.typeCex", color: "text-[var(--accent)]" },
 };
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pending", color: "text-[var(--warning)]" },
-  confirmed: { label: "Confirmed", color: "text-[var(--success)]" },
-  failed: { label: "Failed", color: "text-[var(--error)]" },
+const statusConfig: Record<string, { labelKey: string; color: string }> = {
+  pending: { labelKey: "history.statusPending", color: "text-[var(--warning)]" },
+  confirmed: { labelKey: "history.statusConfirmed", color: "text-[var(--success)]" },
+  failed: { labelKey: "history.statusFailed", color: "text-[var(--error)]" },
 };
 
 interface Props {
@@ -24,10 +27,12 @@ interface Props {
 }
 
 export default function TransactionHistory({ transactions, loading, network }: Props) {
+  const { locale } = useLocale();
+
   const columns: Column<BridgeTransactionData>[] = [
     {
       key: "type",
-      label: "Type",
+      label: translate(locale, "history.type"),
       sortable: true,
       render: (value) => {
         const type = typeConfig[String(value)] || typeConfig["g-to-c"];
@@ -37,40 +42,40 @@ export default function TransactionHistory({ transactions, loading, network }: P
             <div className="w-8 h-8 rounded-lg bg-[var(--surface-2)] flex items-center justify-center flex-shrink-0">
               <Icon className={`w-4 h-4 ${type.color}`} />
             </div>
-            <span>{type.label}</span>
+            <span>{translate(locale, type.labelKey)}</span>
           </div>
         );
       },
     },
     {
       key: "asset",
-      label: "Asset",
+      label: translate(locale, "history.asset"),
       sortable: true,
     },
     {
       key: "amount",
-      label: "Amount",
+      label: translate(locale, "history.amount"),
       sortable: true,
-      render: (value) => <span className="font-mono">{value}</span>,
+      render: (value) => <span className="font-mono">{formatNumber(parseFloat(String(value)), locale, { minimumFractionDigits: 2, maximumFractionDigits: 7 })}</span>,
     },
     {
       key: "status",
-      label: "Status",
+      label: translate(locale, "history.status"),
       sortable: true,
       render: (value) => {
         const status = statusConfig[String(value)];
-        return <span className={`font-medium ${status.color}`}>{status.label}</span>;
+        return <span className={`font-medium ${status.color}`}>{translate(locale, status.labelKey)}</span>;
       },
     },
     {
       key: "timestamp",
-      label: "Date",
+      label: translate(locale, "history.date"),
       sortable: true,
-      render: (value) => new Date(String(value)).toLocaleDateString(),
+      render: (value) => formatDate(String(value), locale),
     },
     {
       key: "hash",
-      label: "Explorer",
+      label: translate(locale, "history.explorer"),
       render: (value) =>
         value ? (
           <a
@@ -80,10 +85,10 @@ export default function TransactionHistory({ transactions, loading, network }: P
             className="inline-flex items-center gap-1 text-[var(--primary-light)] hover:underline transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
-            View
+            {translate(locale, "history.view")}
           </a>
         ) : (
-          <span className="text-[var(--text-muted)]">—</span>
+          <span className="text-[var(--text-muted)]">{translate(locale, "history.unknown")}</span>
         ),
     },
   ];
@@ -91,8 +96,8 @@ export default function TransactionHistory({ transactions, loading, network }: P
   return (
     <div>
       <div className="mb-4">
-        <h3 className="font-semibold text-lg mb-1">Recent Transactions</h3>
-        <p className="text-sm text-[var(--text-muted)]">View and manage your transaction history</p>
+        <h3 className="font-semibold text-lg mb-1">{translate(locale, "history.title")}</h3>
+        <p className="text-sm text-[var(--text-muted)]">{translate(locale, "history.subtitle")}</p>
       </div>
 
       <DataTable
@@ -100,25 +105,25 @@ export default function TransactionHistory({ transactions, loading, network }: P
         data={transactions}
         keyExtractor={(tx) => tx.id}
         loading={loading}
-        emptyMessage="No transactions found for this account."
+        emptyMessage={translate(locale, "history.empty")}
         expandable
         renderExpanded={(tx) => (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-[var(--text-muted)] text-xs mb-1">FROM</p>
+              <p className="text-[var(--text-muted)] text-xs mb-1">{translate(locale, "history.from")}</p>
               <p className="font-mono break-all text-xs">{tx.fromAddress}</p>
             </div>
             <div>
-              <p className="text-[var(--text-muted)] text-xs mb-1">TO</p>
+              <p className="text-[var(--text-muted)] text-xs mb-1">{translate(locale, "history.to")}</p>
               <p className="font-mono break-all text-xs">{tx.toAddress}</p>
             </div>
             <div>
-              <p className="text-[var(--text-muted)] text-xs mb-1">TRANSACTION HASH</p>
+              <p className="text-[var(--text-muted)] text-xs mb-1">{translate(locale, "history.hash")}</p>
               <p className="font-mono break-all text-xs">{tx.hash || "—"}</p>
             </div>
             <div>
-              <p className="text-[var(--text-muted)] text-xs mb-1">TIMESTAMP</p>
-              <p className="text-xs">{new Date(tx.timestamp).toLocaleString()}</p>
+              <p className="text-[var(--text-muted)] text-xs mb-1">{translate(locale, "history.timestamp")}</p>
+              <p className="text-xs">{formatDateTime(tx.timestamp, locale)}</p>
             </div>
           </div>
         )}
@@ -131,7 +136,7 @@ export default function TransactionHistory({ transactions, loading, network }: P
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 text-sm text-[var(--primary-light)] hover:text-[var(--primary)] transition-colors font-medium"
         >
-          View all transactions on Stellar Expert
+          {translate(locale, "history.viewAll")}
           <ExternalLink className="w-4 h-4" />
         </a>
       </div>

@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { WalletProvider } from "@/components/wallet-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
-import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";
+import { WalletProvider } from "@/components/wallet-provider";
+import "./globals.css";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -23,18 +20,17 @@ export const metadata: Metadata = {
     "Fund any Soroban smart account (C-address) directly — from a CEX withdrawal, a credit card, or an existing G-address.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         <ThemeProvider>
           <WalletProvider>
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1 pt-16">{children}</main>
-              <Footer />
-              <KeyboardShortcutsInfo />
-            </div>
+            {children}
           </WalletProvider>
         </ThemeProvider>
       </body>

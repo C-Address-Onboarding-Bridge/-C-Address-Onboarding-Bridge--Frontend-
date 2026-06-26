@@ -6,7 +6,9 @@ import {
   Loader2, ExternalLink, XCircle, AlertTriangle, RotateCcw, RotateCw,
 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
+import { useLocale } from "@/components/locale-provider";
 import { ToastContainer, useToast } from "@/components/toast";
+import { ResourcePanel } from "@/components/resource-panel";
 import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
 import { getBridgeContractId, NETWORK_CONFIG_ERRORS } from "@/config/networks";
 import {
@@ -48,12 +50,14 @@ import {
   STEP_CONFIRM,
   USDC_ISSUERS,
 } from "@/lib/constants";
+import { formatNumber, formatCurrency, translate } from "@/lib/i18n";
 
 type Step = "form" | "review" | "simulate" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
 type PollStatus = "pending" | "confirmed" | "failed" | null;
 
 export default function BridgePage() {
+  const { locale } = useLocale();
   const { isConnected, address, network, connect } = useWallet();
   const { toasts, add: addToast, remove: removeToast } = useToast();
 
@@ -142,10 +146,14 @@ export default function BridgePage() {
     if (isNaN(n) || n <= 0) return null;
     if (asset === ASSET_XLM) {
       const xlmBal = parseFloat(allBalances.find((b) => b.asset === ASSET_XLM)?.amount ?? "0");
-      if (n > xlmBal - XLM_RESERVE_BUFFER) return `Insufficient ${ASSET_XLM} balance. You have ${xlmBal.toFixed(XLM_PRECISE_DECIMALS)} ${ASSET_XLM}`;
+      if (n > xlmBal - XLM_RESERVE_BUFFER) {
+        return translate(locale, "bridge.sidebarBridgeXlmUsdc") + ". " + translate(locale, "dashboard.balance", { asset: ASSET_XLM }) + ": " + formatNumber(xlmBal, locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) + " " + ASSET_XLM;
+      }
     } else if (asset === ASSET_USDC) {
       const usdcBal = parseFloat(allBalances.find((b) => b.asset === ASSET_USDC)?.amount ?? "0");
-      if (n > usdcBal) return `Insufficient ${ASSET_USDC} balance. You have ${usdcBal.toFixed(XLM_DISPLAY_DECIMALS)} ${ASSET_USDC}`;
+      if (n > usdcBal) {
+        return translate(locale, "dashboard.balance", { asset: ASSET_USDC }) + ": " + formatNumber(usdcBal, locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) + " " + ASSET_USDC;
+      }
     }
     return null;
   })();
@@ -387,7 +395,7 @@ export default function BridgePage() {
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold">G → C Bridge</h1>
+          <h1 className="text-3xl font-bold">{translate(locale, "bridge.title")}</h1>
           {step === "form" && (
             <div className="flex gap-2">
               <button
@@ -409,9 +417,7 @@ export default function BridgePage() {
             </div>
           )}
         </div>
-        <p className="text-[var(--text-muted)]">
-          Fund a Soroban smart account (C-address) from an existing Stellar G-address.
-        </p>
+        <p className="text-[var(--text-muted)]">{translate(locale, "bridge.description")}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -421,9 +427,9 @@ export default function BridgePage() {
               <div className="space-y-6">
                 {/* From address */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">From (G-address)</label>
+                  <label className="block text-sm font-medium mb-2">{translate(locale, "bridge.fromLabel")}</label>
                   <div className="relative">
-                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                    <Wallet className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
                       value={fromAddress}
@@ -434,17 +440,17 @@ export default function BridgePage() {
                         setAccountExists(null);
                         setAllBalances([]);
                       }}
-                      placeholder={isConnected ? address! : "GABC...DEF or connect wallet"}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      placeholder={isConnected ? address! : translate(locale, "bridge.fromPlaceholder")}
+                      className="w-full ps-10 pe-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
                     />
                   </div>
                   {!validFrom && fromAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid Stellar address</p>
+                    <p className="text-xs text-[var(--error)] mt-1">{translate(locale, "bridge.invalidAddress")}</p>
                   )}
                   {accountExists === false && (
                     <p className="text-xs text-[var(--error)] mt-1">
-                      Account not found on the {network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET]} network. It needs to be funded first.
+                      {translate(locale, "bridge.accountNotFound", { network: network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET] })}
                     </p>
                   )}
                   {isConnected && (
@@ -452,12 +458,12 @@ export default function BridgePage() {
                       onClick={handleUseConnected}
                       className="text-xs text-[var(--primary-light)] mt-1 hover:underline"
                     >
-                      Use connected wallet
+                      {translate(locale, "bridge.useConnectedWallet")}
                     </button>
                   )}
                   {sourceBalance !== null && (
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      Balance: {parseFloat(sourceBalance).toFixed(XLM_DISPLAY_DECIMALS)} {ASSET_XLM}
+                      {translate(locale, "bridge.balanceLabel", { xlm: formatNumber(parseFloat(sourceBalance), locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }), asset: ASSET_XLM })}
                     </p>
                   )}
                 </div>
@@ -470,9 +476,9 @@ export default function BridgePage() {
 
                 {/* To address */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">To (C-address)</label>
+                  <label className="block text-sm font-medium mb-2">{translate(locale, "bridge.toLabel")}</label>
                   <div className="relative">
-                    <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                    <Send className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
                       value={toAddress}
@@ -480,8 +486,8 @@ export default function BridgePage() {
                         const sanitized = sanitizeCAddress(e.target.value) || e.target.value;
                         setToAddress(sanitized);
                       }}
-                      placeholder="CABC...DEF"
-                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      placeholder={translate(locale, "bridge.toPlaceholder")}
+                      className="w-full ps-10 pe-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
                     />
                   </div>
@@ -494,14 +500,14 @@ export default function BridgePage() {
 
                 {/* Amount + asset */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount</label>
+                  <label className="block text-sm font-medium mb-2">{translate(locale, "bridge.amountLabel")}</label>
                   <div className="flex gap-3">
                     <div className="relative flex-1">
                       <input
                         type="text"
                         value={amount}
                         onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
-                        placeholder="0.00"
+                        placeholder={translate(locale, "bridge.amountPlaceholder")}
                         className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== "idle"}
                       />
@@ -527,9 +533,9 @@ export default function BridgePage() {
                     <div className="flex items-start gap-3 mb-3">
                       <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium">No USDC trustline found</p>
+                        <p className="text-sm font-medium">{translate(locale, "bridge.noTrustline")}</p>
                         <p className="text-xs text-[var(--text-muted)] mt-1">
-                          You need to establish a trustline first before bridging USDC.
+                          {translate(locale, "bridge.trustlineDescription")}
                         </p>
                       </div>
                     </div>
@@ -544,10 +550,10 @@ export default function BridgePage() {
                       {trustlineActionStatus === STATUS_SIGNING ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Adding Trustline…
+                          {translate(locale, "bridge.addingTrustline")}
                         </>
                       ) : (
-                        "Add USDC Trustline"
+                        translate(locale, "bridge.addTrustline")
                       )}
                     </button>
                   </div>
@@ -556,7 +562,7 @@ export default function BridgePage() {
                 {trustlineStatus === STATUS_HAS && asset === ASSET_USDC && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20">
                     <Check className="w-4 h-4 text-[var(--success)]" />
-                    <p className="text-xs text-[var(--success)]">USDC trustline established</p>
+                    <p className="text-xs text-[var(--success)]">{translate(locale, "bridge.trustlineEstablished")}</p>
                   </div>
                 )}
 
@@ -566,47 +572,47 @@ export default function BridgePage() {
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
-                  Review Bridge Transaction
+                  {translate(locale, "bridge.buttonReview")}
                 </button>
               </div>
             )}
 
             {step === STEP_REVIEW && (
               <div className="space-y-6">
-                <h3 className="font-semibold text-lg">Review Transaction</h3>
+                <h3 className="font-semibold text-lg">{translate(locale, "bridge.reviewTitle")}</h3>
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">From</span>
+                    <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewFrom")}</span>
                     <span className="text-sm font-mono">{encodeHtml(fromAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">To</span>
+                    <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewTo")}</span>
                     <span className="text-sm font-mono">{encodeHtml(toAddress)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Amount</span>
+                    <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewAmount")}</span>
                     <span className="text-sm font-semibold">{encodeHtml(amount)} {encodeHtml(asset)}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Network</span>
+                    <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewNetwork")}</span>
                     <span className="text-sm">{network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET]}</span>
                   </div>
                   <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[var(--text-muted)]">Estimated Fee</span>
+                      <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewEstimatedFee")}</span>
                       {simStatus === "running" && (
                         <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Simulating…
+                          <Loader2 className="w-3 h-3 animate-spin" /> {translate(locale, "bridge.reviewSimulating")}
                         </span>
                       )}
                       {simStatus === "done" && simMinFee && (
                         <span className="text-xs text-[var(--text-muted)]">
-                          ~{stroopsToXlm(simMinFee)} {ASSET_XLM} (simulated)
+                          {translate(locale, "bridge.reviewSimulatedFee", { fee: formatNumber(parseFloat(stroopsToXlm(simMinFee)), locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }), asset: ASSET_XLM })}
                         </span>
                       )}
                       {(simStatus === "idle" || (simStatus === "done" && !simMinFee)) && (
-                        <span className="text-xs text-[var(--text-muted)]">~{XLM_RESERVE_BUFFER} {ASSET_XLM}</span>
+                        <span className="text-xs text-[var(--text-muted)]">{translate(locale, "bridge.reviewEstimatedFeeFixed", { fee: formatNumber(XLM_RESERVE_BUFFER, locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }), asset: ASSET_XLM })}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -630,23 +636,23 @@ export default function BridgePage() {
                 {needsAllowanceCheck && (
                   <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[var(--text-muted)]">Token Approval</span>
+                      <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewTokenApproval")}</span>
                       {allowanceStatus === "checking" && (
                         <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Checking allowance…
+                          <Loader2 className="w-3 h-3 animate-spin" /> {translate(locale, "bridge.reviewCheckingAllowance")}
                         </span>
                       )}
                       {(allowanceStatus === "sufficient" || allowanceStatus === "approved") && (
                         <span className="flex items-center gap-1 text-xs text-[var(--success)]">
-                          <Check className="w-3 h-3" /> Approved
+                          <Check className="w-3 h-3" /> {translate(locale, "bridge.reviewApproved")}
                         </span>
                       )}
                       {allowanceStatus === "required" && (
-                        <span className="text-xs text-amber-400">Approval Required</span>
+                        <span className="text-xs text-amber-400">{translate(locale, "bridge.reviewApprovalRequired")}</span>
                       )}
                       {allowanceStatus === "approving" && (
                         <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                          <Loader2 className="w-3 h-3 animate-spin" /> Approving…
+                          <Loader2 className="w-3 h-3 animate-spin" /> {translate(locale, "bridge.addingTrustline")}
                         </span>
                       )}
                       {allowanceStatus === "error" && (
@@ -658,7 +664,7 @@ export default function BridgePage() {
                         onClick={handleApprove}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-sm font-medium hover:bg-amber-500/30 transition-colors"
                       >
-                        Approve {asset} for Bridge Contract
+                        {translate(locale, "bridge.reviewApproveButton", { asset })}
                       </button>
                     )}
                     {allowanceError && (
@@ -669,8 +675,8 @@ export default function BridgePage() {
 
                 {!needsAllowanceCheck && (
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Token Approval</span>
-                    <span className="text-xs text-[var(--text-muted)]">Not needed for XLM</span>
+                    <span className="text-sm text-[var(--text-muted)]">{translate(locale, "bridge.reviewTokenApproval")}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{translate(locale, "bridge.reviewNotNeeded")}</span>
                   </div>
                 )}
 
@@ -679,11 +685,11 @@ export default function BridgePage() {
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-[var(--error)]">
-                        {rateLimitRemaining > 0 ? "Rate Limited" : "Transaction Failed"}
+                        {rateLimitRemaining > 0 ? translate(locale, "bridge.rateLimited") : translate(locale, "bridge.transactionFailed")}
                       </p>
                       <p className="text-xs text-[var(--text-muted)] mt-1">
                         {rateLimitRemaining > 0
-                          ? `Please wait ${Math.ceil(rateLimitRemaining / 1000)} seconds before submitting again`
+                          ? `${translate(locale, "common.required")} ${Math.ceil(rateLimitRemaining / 1000)} ${translate(locale, "history.pending")}`
                           : txError}
                       </p>
                     </div>
@@ -698,7 +704,7 @@ export default function BridgePage() {
                     disabled={txStatus === STATUS_SIGNING || txStatus === STATUS_SUBMITTING}
                     className="flex-1 px-6 py-3 rounded-xl border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
                   >
-                    Edit
+                    {translate(locale, "bridge.reviewEdit")}
                   </button>
                   <button
                     onClick={handleConfirm}
@@ -708,12 +714,12 @@ export default function BridgePage() {
                     {txStatus === STATUS_SIGNING || txStatus === STATUS_SUBMITTING ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        {txStatus === STATUS_SIGNING ? "Signing…" : "Submitting…"}
+                        {txStatus === STATUS_SIGNING ? translate(locale, "bridge.reviewSigning") : translate(locale, "bridge.reviewSubmitting")}
                       </>
                     ) : (
                       <>
                         <ArrowRight className="w-4 h-4" />
-                        Confirm & Sign
+                        {translate(locale, "bridge.reviewConfirmSign")}
                       </>
                     )}
                   </button>
@@ -728,9 +734,9 @@ export default function BridgePage() {
                     <div className="w-16 h-16 rounded-full bg-[var(--success)]/10 flex items-center justify-center mx-auto mb-4">
                       <Check className="w-8 h-8 text-[var(--success)] checkmark-animation" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2 slide-in">Confirmed ✓</h3>
+                    <h3 className="text-lg font-semibold mb-2 slide-in">{translate(locale, "bridge.successConfirmed")} ✓</h3>
                     <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
-                      Your transaction has been confirmed on the Stellar network.
+                      {translate(locale, "bridge.successWaitText")}
                     </p>
                   </>
                 ) : pollStatus === STATUS_FAILED ? (
@@ -738,9 +744,9 @@ export default function BridgePage() {
                     <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4 rotate-scale-animation">
                       <XCircle className="w-8 h-8 text-[var(--error)]" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2 slide-in">Failed ✗</h3>
+                    <h3 className="text-lg font-semibold mb-2 slide-in">{translate(locale, "bridge.successFailed")} ✗</h3>
                     <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
-                      The transaction was rejected by the network.
+                      {translate(locale, "bridge.successWaitText")}
                     </p>
                   </>
                 ) : (
@@ -748,11 +754,11 @@ export default function BridgePage() {
                     <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
                       <Loader2 className="w-8 h-8 text-[var(--primary-light)] animate-spin" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Pending…</h3>
+                    <h3 className="text-lg font-semibold mb-2">{translate(locale, "bridge.successPending")}</h3>
                     <p className="text-sm text-[var(--text-muted)] mb-4">
                       {pollTimedOut
-                        ? "Could not confirm the transaction status in time."
-                        : "Waiting for confirmation on the Stellar network."}
+                        ? translate(locale, "bridge.successTimedOut")
+                        : translate(locale, "bridge.successWaitText")}
                     </p>
                   </>
                 )}
@@ -764,7 +770,7 @@ export default function BridgePage() {
                     className="inline-flex items-center gap-1 text-sm text-[var(--primary-light)] hover:underline mb-6"
                   >
                     <ExternalLink className="w-3 h-3" />
-                    {pollTimedOut ? "Check on Stellar Expert" : "View on Stellar Expert"}
+                    {pollTimedOut ? translate(locale, "bridge.successCheckExplorer") : translate(locale, "bridge.successViewExplorer")}
                   </a>
                 )}
                 <div className="mt-4">
@@ -772,7 +778,7 @@ export default function BridgePage() {
                     onClick={handleReset}
                     className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
                   >
-                    New Bridge Transaction
+                    {translate(locale, "bridge.successNewTransaction")}
                   </button>
                 </div>
               </div>
@@ -783,13 +789,13 @@ export default function BridgePage() {
                 <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-[var(--error)]" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Transaction Failed</h3>
-                <p className="text-sm text-[var(--text-muted)] mb-6">{txError || "An unexpected error occurred"}</p>
+                <h3 className="text-lg font-semibold mb-2">{translate(locale, "bridge.transactionFailed")}</h3>
+                <p className="text-sm text-[var(--text-muted)] mb-6">{txError || translate(locale, "bridge.errorUnexpected")}</p>
                 <button
                   onClick={() => { setStep(STEP_REVIEW); setTxStatus(STATUS_IDLE); setTxError(null); }}
                   className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
                 >
-                  Try Again
+                  {translate(locale, "bridge.errorTryAgain")}
                 </button>
               </div>
             )}
@@ -798,32 +804,32 @@ export default function BridgePage() {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">About G → C Bridging</h3>
+            <h3 className="font-semibold mb-3">{translate(locale, "bridge.sidebarAboutTitle")}</h3>
             <ul className="space-y-3 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
                 <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
-                <span>Bridge XLM or USDC from any G-address</span>
+                <span>{translate(locale, "bridge.sidebarBridgeXlmUsdc")}</span>
               </li>
               <li className="flex gap-2">
                 <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
-                <span>Supports all Soroban C-addresses</span>
+                <span>{translate(locale, "bridge.sidebarSupportsC")}</span>
               </li>
               <li className="flex gap-2">
                 <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
-                <span>Low network fees via Stellar network</span>
+                <span>{translate(locale, "bridge.sidebarLowFees")}</span>
               </li>
             </ul>
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">Quick Info</h3>
+            <h3 className="font-semibold mb-3">{translate(locale, "bridge.sidebarQuickInfoTitle")}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Network</span>
+                <span className="text-[var(--text-muted)]">{translate(locale, "bridge.sidebarNetwork")}</span>
                 <span className="font-mono text-xs">{network}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Bridge Contract</span>
+                <span className="text-[var(--text-muted)]">{translate(locale, "bridge.sidebarBridgeContract")}</span>
                 <span className="font-mono text-xs">v0.1.0</span>
               </div>
             </div>
@@ -835,7 +841,7 @@ export default function BridgePage() {
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--primary)]/30 text-[var(--primary-light)] font-medium hover:bg-[var(--primary)]/5 transition-colors text-sm"
             >
               <Wallet className="w-4 h-4" />
-              Connect Freighter Wallet
+              {translate(locale, "bridge.sidebarConnectWallet")}
             </button>
           )}
         </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { X, Download, CheckCircle } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
+import { translate } from "@/lib/i18n";
 
 interface Wallet {
   name: string;
@@ -47,6 +49,7 @@ export default function WalletModal({
 }: WalletModalProps) {
   const [wallets, setWallets] = useState<Wallet[]>(WALLETS);
   const [connecting, setConnecting] = useState(false);
+  const { locale } = useLocale();
 
   useEffect(() => {
     const checkInstalledWallets = async () => {
@@ -83,15 +86,15 @@ export default function WalletModal({
       <div className="relative w-full max-w-md mx-4 bg-[var(--background)] rounded-xl border border-[var(--border)] shadow-2xl animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+          className="absolute top-4 end-4 p-2 text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="p-6 sm:p-8">
-          <h2 className="text-2xl font-bold mb-2">Connect Wallet</h2>
+          <h2 className="text-2xl font-bold mb-2">{translate(locale, "wallet.modalTitle")}</h2>
           <p className="text-[var(--text-muted)] mb-6">
-            Select a wallet to connect to the C-Address Bridge
+            {translate(locale, "wallet.modalDescription")}
           </p>
 
           {connectedAddress && (
@@ -99,12 +102,12 @@ export default function WalletModal({
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-[var(--success)] flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--success)]">Connected</p>
+                  <p className="text-sm font-medium text-[var(--success)]">{translate(locale, "wallet.connected")}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-1 font-mono break-all">
                     {connectedAddress}
                   </p>
                   <p className="text-xs text-[var(--text-muted)] mt-1">
-                    Network: <span className="font-medium">{network}</span>
+                    {translate(locale, "wallet.network", { network })}
                   </p>
                 </div>
               </div>
@@ -125,10 +128,10 @@ export default function WalletModal({
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{wallet.icon}</span>
-                  <div className="text-left">
+                  <div className="text-start">
                     <p className="font-medium text-[var(--foreground)]">{wallet.name}</p>
                     <p className="text-xs text-[var(--text-muted)]">
-                      {wallet.isInstalled ? "Installed" : "Not installed"}
+                      {wallet.isInstalled ? translate(locale, "wallet.installed") : translate(locale, "wallet.notInstalled")}
                     </p>
                   </div>
                 </div>
@@ -144,7 +147,7 @@ export default function WalletModal({
           {!wallets.some((w) => w.isInstalled) && (
             <div className="p-4 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/30 mb-6">
               <p className="text-sm text-[var(--text-muted)]">
-                No wallet detected. Install one to get started:
+                {translate(locale, "wallet.noWalletDetected")}
               </p>
               <div className="mt-3 space-y-2">
                 {wallets.map((wallet) => (
@@ -156,7 +159,7 @@ export default function WalletModal({
                     className="flex items-center gap-2 text-sm text-[var(--primary)] hover:text-[var(--primary-light)] transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    Download {wallet.name}
+                    {translate(locale, "wallet.download", { name: wallet.name })}
                   </a>
                 ))}
               </div>
@@ -167,7 +170,7 @@ export default function WalletModal({
             onClick={onClose}
             className="w-full px-4 py-2 rounded-lg text-center text-sm font-medium bg-[var(--surface-2)] text-[var(--foreground)] hover:bg-[var(--surface-3)] transition-colors"
           >
-            Close
+            {translate(locale, "common.close")}
           </button>
         </div>
       </div>

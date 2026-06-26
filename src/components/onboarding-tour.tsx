@@ -2,61 +2,57 @@
 
 import { useEffect, useState, useCallback, useLayoutEffect } from "react";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { useLocale } from "./locale-provider";
+import { translate } from "@/lib/i18n";
 
 interface TourStep {
   id: string;
-  title: string;
-  description: string;
-  target?: string;
+  titleKey: string;
+  descKey: string;
+  targetKey?: string;
   position?: "top" | "bottom" | "left" | "right";
 }
 
 const TOUR_STEPS: TourStep[] = [
   {
     id: "landing",
-    title: "Welcome to C-Address Bridge",
-    description:
-      "This is a protocol for funding Soroban smart accounts (C-addresses) directly from CEX, credit card, or existing G-address wallets.",
+    titleKey: "tour.welcomeTitle",
+    descKey: "tour.welcomeDesc",
     position: "bottom",
   },
   {
     id: "bridge",
-    title: "Bridge Stellar Assets",
-    description:
-      "Send XLM or other Stellar assets from a G-address wallet directly to a C-address.",
-    target: "Bridge",
+    titleKey: "tour.bridgeTitle",
+    descKey: "tour.bridgeDesc",
+    targetKey: "tour.bridgeTarget",
     position: "bottom",
   },
   {
     id: "wallet",
-    title: "Connect Your Wallet",
-    description:
-      "Click the Connect Wallet button to authenticate with Freighter or Lobstr and start bridging.",
-    target: "Connect Wallet",
+    titleKey: "tour.walletTitle",
+    descKey: "tour.walletDesc",
+    targetKey: "tour.walletTarget",
     position: "bottom",
   },
   {
     id: "onramp",
-    title: "Onramp with Moonpay/Transak",
-    description:
-      "Fund your C-address directly with fiat currency through our integrated onramp partners.",
-    target: "Onramp",
+    titleKey: "tour.onrampTitle",
+    descKey: "tour.onrampDesc",
+    targetKey: "tour.onrampTarget",
     position: "bottom",
   },
   {
     id: "cex",
-    title: "CEX Withdrawal Routes",
-    description:
-      "Check available CEX partners and withdrawal addresses for your account.",
-    target: "CEX",
+    titleKey: "tour.cexTitle",
+    descKey: "tour.cexDesc",
+    targetKey: "tour.cexTarget",
     position: "bottom",
   },
   {
     id: "dashboard",
-    title: "Monitor Your Activity",
-    description:
-      "View transaction history and account balances on your dashboard.",
-    target: "Dashboard",
+    titleKey: "tour.dashboardTitle",
+    descKey: "tour.dashboardDesc",
+    targetKey: "tour.dashboardTarget",
     position: "bottom",
   },
 ];
@@ -71,6 +67,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  const { locale } = useLocale();
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("hasSeenOnboardingTour");
@@ -83,17 +80,18 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
 
   const updatePosition = useCallback(() => {
     const step = TOUR_STEPS[currentStep];
-    if (!step.target) {
+    const targetText = step.targetKey ? translate(locale, step.targetKey) : undefined;
+    if (!targetText) {
       setHighlightRect(null);
       return;
     }
 
-    const element = step.target && document.body.innerText.includes(step.target)
+    const element = document.body.innerText.includes(targetText)
       ? Array.from(document.querySelectorAll("*")).find(
           (el) => {
             const htmlEl = el as HTMLElement;
             return (
-              htmlEl.textContent?.includes(step.target!) &&
+              htmlEl.textContent?.includes(targetText) &&
               htmlEl.offsetHeight > 0 &&
               htmlEl.offsetWidth > 0
             );
@@ -124,7 +122,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
 
       setPosition({ top, left });
     }
-  }, [currentStep]);
+  }, [currentStep, locale]);
 
   useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -157,6 +155,10 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
   };
 
   const step = TOUR_STEPS[currentStep];
+  const stepTitle = translate(locale, step.titleKey);
+  const stepDesc = translate(locale, step.descKey);
+  const stepOfText = translate(locale, "tour.stepOf", { current: currentStep + 1, total: TOUR_STEPS.length });
+  const skipText = translate(locale, "tour.skip");
 
   if (!isVisible) return null;
 
@@ -229,10 +231,10 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="text-xs font-medium text-[var(--primary)] mb-2">
-                Step {currentStep + 1} of {TOUR_STEPS.length}
+                {stepOfText}
               </div>
               <h3 className="text-lg font-bold text-[var(--foreground)]">
-                {step.title}
+                {stepTitle}
               </h3>
             </div>
             <button
@@ -244,7 +246,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
           </div>
 
           <p className="text-sm text-[var(--text-muted)] mb-6">
-            {step.description}
+            {stepDesc}
           </p>
 
           <div className="flex items-center gap-3">
@@ -283,7 +285,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
             onClick={handleComplete}
             className="w-full mt-4 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--surface-2)] text-[var(--foreground)] hover:bg-[var(--surface-3)] transition-colors"
           >
-            Skip Tour
+            {skipText}
           </button>
         </div>
       </div>

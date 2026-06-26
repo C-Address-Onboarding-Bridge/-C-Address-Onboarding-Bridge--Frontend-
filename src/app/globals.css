@@ -59,11 +59,107 @@ html {
   color-scheme: light dark;
 }
 
+html.rtl {
+  direction: rtl;
+}
+
+html.rtl body {
+  text-align: right;
+}
+
+/* RTL logical properties for common layout utilities */
+html.rtl [class*="pl-"] {
+  padding-left: unset;
+}
+
+html.rtl [class*="pr-"] {
+  padding-right: unset;
+}
+
+html.rtl [class*="ml-"] {
+  margin-left: unset;
+}
+
+html.rtl [class*="mr-"] {
+  margin-right: unset;
+}
+
+html.rtl .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-inline-start: 0.5rem;
+  margin-inline-end: 0;
+}
+
+html.rtl .space-x-1 > :not([hidden]) ~ :not([hidden]) {
+  margin-inline-start: 0.25rem;
+  margin-inline-end: 0;
+}
+
+html.rtl .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-inline-start: 0.75rem;
+  margin-inline-end: 0;
+}
+
+html.rtl .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-inline-start: 1rem;
+  margin-inline-end: 0;
+}
+
+/* RTL for flex-row-reverse (icon + text patterns) */
+html.rtl .flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* RTL for icon positioning in inputs */
+html.rtl .icon-left-input {
+  left: auto;
+  right: 0.75rem;
+}
+
+html.rtl input.with-icon-left {
+  padding-left: 0.75rem;
+  padding-right: 2.5rem;
+}
+
+/* RTL for absolute positioned close buttons */
+html.rtl .modal-close-btn {
+  left: 1rem;
+  right: auto;
+}
+
+/* RTL for step connectors */
+html.rtl .step-connector {
+  transform: scaleX(-1);
+}
+
+/* RTL for checkmark animations and icons */
+html.rtl .checkmark-animation,
+html.rtl .rotate-scale-animation {
+  animation-direction: reverse;
+}
+
+/* RTL for translations (text alignment) */
+html.rtl .text-start {
+  text-align: right;
+}
+
+/* Ensure RTL text doesn't break monospace addresses */
+html.rtl .font-mono,
+html.rtl code {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: embed;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-align: start;
+}
+
+html.rtl body {
+  text-align: right;
 }
 
 ::selection {
@@ -117,6 +213,15 @@ body {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(108, 92, 231, 0.12);
+}
+
+html.rtl .flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+html.rtl .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-inline-start: 0.5rem;
+  margin-inline-end: 0;
 }
 
 /* Focus indicators for keyboard navigation */
