@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building2, Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
 import { CEX_LIST, DEFAULT_BRIDGE_ADDRESS, DEFAULT_BRIDGE_MEMO } from "@/lib/types";
 import { CEX_NETWORKS, CEX_NETWORK_STELLAR, COPY_FEEDBACK_MS } from "@/lib/constants";
+import { validateCAddress } from "@/utils/validation";
 
 export default function CexPage() {
   const [selectedCex, setSelectedCex] = useState(CEX_LIST[0]);
@@ -18,6 +19,7 @@ export default function CexPage() {
   };
 
   const withdrawalUrl = selectedCex.withdrawalUrl;
+  const cAddressError = validateCAddress(cAddress);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -86,10 +88,22 @@ export default function CexPage() {
                 className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
               />
             </div>
+            {cAddressError && cAddress && (
+              <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
+            )}
           </div>
 
+          {cAddress && !cAddressError && (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+              <h3 className="font-semibold mb-4">4. Verify Bridge Address Access</h3>
+              <CEXAddressVerification
+                onVerified={() => {}}
+              />
+            </div>
+          )}
+
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">4. Withdrawal Details for {selectedCex.name}</h3>
+            <h3 className="font-semibold mb-4">5. Withdrawal Details for {selectedCex.name}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs text-[var(--text-muted)] mb-1">Bridge Deposit Address</label>
@@ -197,18 +211,22 @@ export default function CexPage() {
             <ol className="space-y-3 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">1.</span>
-                <span>Withdraw from your CEX to the bridge address</span>
+                <span>Verify bridge address access with micro-transaction</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">2.</span>
-                <span>The Soroban bridge contract detects the deposit</span>
+                <span>Withdraw from your CEX to the bridge address</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">3.</span>
-                <span>Funds are routed to your C-address automatically</span>
+                <span>The Soroban bridge contract detects the deposit</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">4.</span>
+                <span>Funds are routed to your C-address automatically</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--primary-light)] font-medium">5.</span>
                 <span>Use your Soroban dApp directly</span>
               </li>
             </ol>
