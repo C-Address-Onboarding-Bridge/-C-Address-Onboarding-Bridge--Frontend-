@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Loader2 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
+import { useLocale } from "@/components/locale-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
 import { getAccountBalances, fetchRecentTransactions, getExplorerUrl, isCAddress, getSorobanAccountBalances } from "@/lib/stellar";
 import type { BridgeTransaction } from "@/lib/types";
 import { getBridgeContractId } from "@/config/networks";
+import { getLocalizedPath, translate, formatNumber } from "@/lib/i18n";
 import {
   ASSET_XLM,
   NETWORK_DISPLAY,
@@ -23,6 +25,7 @@ import {
 } from "@/lib/constants";
 
 export default function DashboardPage() {
+  const { locale } = useLocale();
   const { isConnected, address, network, connect } = useWallet();
   const [copied, setCopied] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
@@ -75,16 +78,16 @@ export default function DashboardPage() {
           <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
             <Wallet className="w-8 h-8 text-[var(--primary-light)]" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Connect Your Wallet</h1>
+          <h1 className="text-2xl font-bold mb-2">{translate(locale, "dashboard.connectTitle")}</h1>
           <p className="text-[var(--text-muted)] mb-6">
-            Connect your Freighter wallet to view your dashboard.
+            {translate(locale, "dashboard.connectText")}
           </p>
           <button
             onClick={connect}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
           >
             <Wallet className="w-4 h-4" />
-            Connect Freighter
+            {translate(locale, "dashboard.connectButton")}
           </button>
         </div>
       </div>
@@ -95,22 +98,22 @@ export default function DashboardPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-[var(--text-muted)]">Manage your C-address funding activity</p>
+          <h1 className="text-3xl font-bold mb-2">{translate(locale, "dashboard.title")}</h1>
+          <p className="text-[var(--text-muted)]">{translate(locale, "dashboard.subtitle")}</p>
         </div>
         <Link
-          href="/bridge"
+          href={getLocalizedPath("/bridge", locale)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          New Bridge
+          {translate(locale, "dashboard.newBridge")}
         </Link>
       </div>
 
       {!getBridgeContractId(network) && (
         <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400 flex items-center gap-2">
-          <span className="font-medium">Info:</span>
-          Bridge contract not configured — bridge transactions will use direct payment.
+          <span className="font-medium">{translate(locale, "dashboard.info")}</span>
+          {translate(locale, "dashboard.contractWarning")}
           Set <code className="font-mono text-xs">{ENV_BRIDGE_CONTRACT_ID}</code> to enable the smart contract.
         </div>
       )}
@@ -119,7 +122,7 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="w-4 h-4 text-[var(--primary-light)]" />
-            <span className="text-xs text-[var(--text-muted)]">Connected Address</span>
+            <span className="text-xs text-[var(--text-muted)]">{translate(locale, "dashboard.connectedAddress")}</span>
           </div>
           <div className="flex items-center gap-2">
             <code className="text-sm font-mono">
@@ -139,23 +142,23 @@ export default function DashboardPage() {
                 className="ml-2 text-[var(--primary-light)] hover:underline inline-flex items-center gap-0.5"
               >
                 <ExternalLink className="w-3 h-3" />
-                View
+                {translate(locale, "dashboard.view")}
               </a>
             )}
           </div>
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs text-[var(--text-muted)] mb-1">{ASSET_XLM} Balance</div>
+          <div className="text-xs text-[var(--text-muted)] mb-1">{translate(locale, "dashboard.balance", { asset: ASSET_XLM })}</div>
           {loading ? (
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">Loading...</span>
+              <span className="text-xs text-[var(--text-muted)]">{translate(locale, "dashboard.loading")}</span>
             </div>
           ) : (
             <>
               <div className="text-2xl font-bold mb-1">
-                {balance !== null ? parseFloat(balance).toFixed(XLM_DISPLAY_DECIMALS) : "—"}
+                {balance !== null ? formatNumber(parseFloat(balance), locale, { minimumFractionDigits: 0, maximumFractionDigits: 7 }) : "—"}
               </div>
               <div className="text-xs text-[var(--text-muted)]">{ASSET_XLM}</div>
             </>
@@ -163,7 +166,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
-          <div className="text-xs text-[var(--text-muted)] mb-1">Transactions</div>
+          <div className="text-xs text-[var(--text-muted)] mb-1">{translate(locale, "dashboard.transactions")}</div>
           {loading ? (
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
@@ -173,7 +176,7 @@ export default function DashboardPage() {
             <>
               <div className="text-2xl font-bold mb-1">{transactions.length}</div>
               <div className="text-xs text-[var(--text-muted)]">
-                {confirmedCount} confirmed{pendingCount > 0 ? `, ${pendingCount} pending` : ""}
+                {confirmedCount} {translate(locale, "dashboard.confirmed")}{pendingCount > 0 ? `, ${pendingCount} ${translate(locale, "dashboard.pending")}` : ""}
               </div>
             </>
           )}
@@ -182,13 +185,13 @@ export default function DashboardPage() {
 
       {allBalances.length > 0 && (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6 card-entrance">
-          <h3 className="text-sm font-semibold mb-3">Token Balances</h3>
+          <h3 className="text-sm font-semibold mb-3">{translate(locale, "dashboard.tokenBalances")}</h3>
           <div className="divide-y divide-[var(--border)]">
             {allBalances.map((b) => (
               <div key={b.asset} className="flex justify-between items-center py-2 first:pt-0 last:pb-0">
                 <span className="text-sm text-[var(--text-muted)]">{b.asset}</span>
                 <span className="text-sm font-mono">
-                  {parseFloat(b.amount).toFixed(b.asset === ASSET_XLM ? XLM_DISPLAY_DECIMALS : ASSET_DISPLAY_DECIMALS)}
+                  {formatNumber(parseFloat(b.amount), locale, { minimumFractionDigits: 2, maximumFractionDigits: 7 })}
                 </span>
               </div>
             ))}
@@ -198,41 +201,41 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Link
-          href="/bridge"
+          href={getLocalizedPath("/bridge", locale)}
           className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
             <ArrowLeftRight className="w-5 h-5 text-[var(--primary-light)]" />
           </div>
           <div>
-            <p className="text-sm font-medium">G → C Bridge</p>
-            <p className="text-xs text-[var(--text-muted)]">Fund from G-address</p>
+            <p className="text-sm font-medium">{translate(locale, "dashboard.g2cTitle")}</p>
+            <p className="text-xs text-[var(--text-muted)]">{translate(locale, "dashboard.g2cSubtitle")}</p>
           </div>
         </Link>
 
         <Link
-          href="/onramp"
+          href={getLocalizedPath("/onramp", locale)}
           className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--secondary)]/10 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-[var(--secondary)]" />
           </div>
           <div>
-            <p className="text-sm font-medium">Fiat Onramp</p>
-            <p className="text-xs text-[var(--text-muted)]">Buy with card</p>
+            <p className="text-sm font-medium">{translate(locale, "dashboard.onrampTitle")}</p>
+            <p className="text-xs text-[var(--text-muted)]">{translate(locale, "dashboard.onrampSubtitle")}</p>
           </div>
         </Link>
 
         <Link
-          href="/cex"
+          href={getLocalizedPath("/cex", locale)}
           className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center">
             <Building2 className="w-5 h-5 text-[var(--accent)]" />
           </div>
           <div>
-            <p className="text-sm font-medium">CEX Withdrawal</p>
-            <p className="text-xs text-[var(--text-muted)]">Route exchange funds</p>
+            <p className="text-sm font-medium">{translate(locale, "dashboard.cexTitle")}</p>
+            <p className="text-xs text-[var(--text-muted)]">{translate(locale, "dashboard.cexSubtitle")}</p>
           </div>
         </Link>
       </div>

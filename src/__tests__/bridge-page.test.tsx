@@ -31,6 +31,11 @@ vi.mock("@/components/wallet-provider", () => ({
   WalletProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
+vi.mock("@/components/locale-provider", () => ({
+  useLocale: () => ({ locale: "en", setLocale: () => {}, dir: "ltr" as const }),
+  LocaleProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
 // Mock stellar lib — keep real validators, mock async functions
 vi.mock("@/lib/stellar", async () => {
   const actual = await vi.importActual<typeof import("@/lib/stellar")>(
@@ -51,7 +56,7 @@ import {
   loadAccountInfo,
   getTransactionStatus,
 } from "@/lib/stellar";
-import BridgePage from "@/app/bridge/page";
+import BridgePage from "@/app/[locale]/bridge/page";
 
 const G_ADDRESS =
   "GAIUIQ7G3TMN53Z2Y3Y5CJI7Q7ZQJX4W5F5N5Z5Q5Z5Q5Z5Q5Z5Q5Z5A";
@@ -90,7 +95,7 @@ function getAmountInput(): HTMLInputElement {
 
 function getReviewButton(): HTMLButtonElement {
   return screen.getAllByRole("button", {
-    name: /Review Bridge Transaction/i,
+    name: /Review Transfer/i,
   })[0] as HTMLButtonElement;
 }
 
@@ -197,7 +202,7 @@ describe("BridgePage — validation", () => {
     await fillForm(G_ADDRESS, C_ADDRESS, "100");
 
     expect(
-      await screen.findByText(/Insufficient XLM balance/, {}, { timeout: 3000 }),
+      await screen.findByText(/Insufficient balance/, {}, { timeout: 3000 }),
     ).toBeInTheDocument();
   });
 });

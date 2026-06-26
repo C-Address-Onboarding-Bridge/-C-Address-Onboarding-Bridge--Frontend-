@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, AlertCircle, Loader, ArrowRight } from "lucide-react";
 import { useWallet } from "./wallet-provider";
+import { useLocale } from "./locale-provider";
 import {
   initiateChallengeTransaction,
   verifyChallengeReceived,
@@ -11,6 +12,7 @@ import {
   type VerificationChallenge,
 } from "@/lib/cex-verification";
 import { DEFAULT_BRIDGE_ADDRESS } from "@/lib/types";
+import { translate } from "@/lib/i18n";
 
 export interface CEXVerificationProps {
   onVerified: () => void;
@@ -18,13 +20,14 @@ export interface CEXVerificationProps {
 
 export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
   const { address, network } = useWallet();
+  const { locale } = useLocale();
   const [step, setStep] = useState<"idle" | "initiating" | "pending" | "verifying" | "verified" | "error">("idle");
   const [challenge, setChallenge] = useState<VerificationChallenge | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleInitiateChallenge = async () => {
     if (!address) {
-      setErrorMessage("Wallet not connected");
+      setErrorMessage(translate(locale, "bridge.errorUnexpected"));
       setStep("error");
       return;
     }
@@ -45,7 +48,7 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
         handleVerifyChallenge(newChallenge.id);
       }, 5000);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to initiate challenge");
+      setErrorMessage(error instanceof Error ? error.message : translate(locale, "bridge.errorGeneral"));
       setStep("error");
     }
   };
@@ -68,11 +71,11 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
           onVerified();
         }
       } else {
-        setErrorMessage("Challenge not yet received at bridge address. Please try again.");
+        setErrorMessage(translate(locale, "bridge.errorUnexpected"));
         setStep("pending");
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Verification failed");
+      setErrorMessage(error instanceof Error ? error.message : translate(locale, "bridge.errorGeneral"));
       setStep("error");
     }
   };
@@ -88,9 +91,9 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-      <h3 className="font-semibold mb-4">Verify Bridge Address Access</h3>
+      <h3 className="font-semibold mb-4">{translate(locale, "cex.howItWorks1")}</h3>
       <p className="text-sm text-[var(--text-muted)] mb-6">
-        To protect your funds, we&apos;ll send a small test transaction (0.0001 XLM) to verify you control the bridge address.
+        {translate(locale, "cex.verifyDescription")}
       </p>
 
       {step === "idle" && (
@@ -99,33 +102,33 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
-          Start Verification
+          {translate(locale, "cex.howItWorks1")}
         </button>
       )}
 
       {step === "initiating" && (
         <div className="flex items-center justify-center gap-2 py-4">
           <Loader className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Sending verification transaction...</span>
+          <span className="text-sm">{translate(locale, "bridge.reviewSimulating")}</span>
         </div>
       )}
 
       {step === "pending" && challenge && (
         <div className="space-y-4">
           <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
-            <p className="text-sm font-medium mb-2">Challenge Details</p>
+            <p className="text-sm font-medium mb-2">{translate(locale, "cex.exchangeDetails")}</p>
             <div className="space-y-2 text-xs text-[var(--text-muted)]">
               <div className="flex justify-between">
-                <span>Amount:</span>
+                <span>{translate(locale, "onramp.amount").replace(" (USD)", "")}:</span>
                 <span className="font-mono">{challenge.amount} XLM</span>
               </div>
               <div className="flex justify-between">
-                <span>Bridge Address:</span>
+                <span>{translate(locale, "cex.bridgedAddressLabel")}:</span>
                 <span className="font-mono">{DEFAULT_BRIDGE_ADDRESS.slice(0, 8)}...</span>
               </div>
               <div className="flex justify-between">
-                <span>Status:</span>
-                <span className="text-[var(--warning)]">Awaiting confirmation...</span>
+                <span>{translate(locale, "dashboard.loading")}:</span>
+                <span className="text-[var(--warning)]">{translate(locale, "bridge.successPending")}</span>
               </div>
             </div>
           </div>
@@ -135,7 +138,7 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
           >
             <Check className="w-4 h-4" />
-            Verify Receipt
+            {translate(locale, "bridge.reviewConfirmSign")}
           </button>
         </div>
       )}
@@ -146,15 +149,15 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
             <div className="flex items-center gap-3">
               <Check className="w-5 h-5 text-[var(--success)]" />
               <div>
-                <p className="text-sm font-medium text-[var(--success)]">Verification Successful!</p>
+                <p className="text-sm font-medium text-[var(--success)]">{translate(locale, "bridge.successConfirmed")}!</p>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Your access to the bridge address has been confirmed.
+                  {translate(locale, "cex.howItWorks4")}
                 </p>
               </div>
             </div>
           </div>
           <p className="text-xs text-[var(--text-muted)]">
-            You can now proceed with your CEX withdrawal to {DEFAULT_BRIDGE_ADDRESS}.
+            {translate(locale, "cex.openWithdrawal", { name: DEFAULT_BRIDGE_ADDRESS })}
           </p>
         </div>
       )}
@@ -165,7 +168,7 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-[var(--error)]">Verification Failed</p>
+                <p className="text-sm font-medium text-[var(--error)]">{translate(locale, "bridge.transactionFailed")}</p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">{errorMessage}</p>
               </div>
             </div>
@@ -174,7 +177,7 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
             onClick={handleRetry}
             className="w-full px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--surface-2)] transition-colors"
           >
-            Try Again
+            {translate(locale, "bridge.errorTryAgain")}
           </button>
         </div>
       )}

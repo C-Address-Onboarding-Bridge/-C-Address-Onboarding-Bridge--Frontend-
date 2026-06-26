@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Cpu, Database, Loader2 } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
+import { translate } from "@/lib/i18n";
 import type { SorobanSimResult } from "@/lib/stellar";
 
 interface ResourcePanelProps {
@@ -12,6 +14,7 @@ interface ResourcePanelProps {
 
 export function ResourcePanel({ status, result, error }: ResourcePanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const { locale } = useLocale();
 
   if (status === "idle") return null;
 
@@ -23,11 +26,11 @@ export function ResourcePanel({ status, result, error }: ResourcePanelProps) {
       >
         <span className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-[var(--text-muted)]" />
-          Resource Estimates
+          {translate(locale, "resourcePanel.title")}
           {status === "loading" && <Loader2 className="w-3 h-3 animate-spin text-[var(--text-muted)]" />}
-          {status === "error" && <span className="text-xs text-[var(--error)]">Failed</span>}
+          {status === "error" && <span className="text-xs text-[var(--error)]">{translate(locale, "resourcePanel.failed")}</span>}
           {status === "ready" && result && (
-            <span className="text-xs text-[var(--text-muted)]">{result.instructions.toLocaleString()} instructions</span>
+            <span className="text-xs text-[var(--text-muted)]">{result.instructions.toLocaleString()} {translate(locale, "resourcePanel.entries")}</span>
           )}
         </span>
         {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />}
@@ -36,7 +39,7 @@ export function ResourcePanel({ status, result, error }: ResourcePanelProps) {
       {expanded && (
         <div className="px-4 pb-4 pt-1 border-t border-[var(--border)]">
           {status === "loading" && (
-            <p className="text-xs text-[var(--text-muted)] py-2">Estimating resources…</p>
+            <p className="text-xs text-[var(--text-muted)] py-2">{translate(locale, "resourcePanel.estimating")}</p>
           )}
           {status === "error" && (
             <p className="text-xs text-[var(--error)] py-2">{error}</p>
@@ -44,34 +47,34 @@ export function ResourcePanel({ status, result, error }: ResourcePanelProps) {
           {status === "ready" && result && (
             <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                <Cpu className="w-3 h-3" /> CPU Instructions
+                <Cpu className="w-3 h-3" /> {translate(locale, "resourcePanel.cpuInstructions")}
               </div>
-              <span className="text-right font-mono">{result.instructions.toLocaleString()}</span>
+              <span className="text-end font-mono">{result.instructions.toLocaleString()}</span>
 
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                <Database className="w-3 h-3" /> Ledger Read (bytes)
+                <Database className="w-3 h-3" /> {translate(locale, "resourcePanel.ledgerRead")}
               </div>
-              <span className="text-right font-mono">{result.diskReadBytes.toLocaleString()}</span>
+              <span className="text-end font-mono">{result.diskReadBytes.toLocaleString()}</span>
 
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                <Database className="w-3 h-3" /> Ledger Write (bytes)
+                <Database className="w-3 h-3" /> {translate(locale, "resourcePanel.ledgerWrite")}
               </div>
-              <span className="text-right font-mono">{result.writeBytes.toLocaleString()}</span>
+              <span className="text-end font-mono">{result.writeBytes.toLocaleString()}</span>
 
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                Footprint Read-Only
+                {translate(locale, "resourcePanel.footprintReadOnly")}
               </div>
-              <span className="text-right font-mono">{result.readOnlyCount} entries</span>
+              <span className="text-end font-mono">{result.readOnlyCount} {translate(locale, "resourcePanel.entries")}</span>
 
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                Footprint Read-Write
+                {translate(locale, "resourcePanel.footprintReadWrite")}
               </div>
-              <span className="text-right font-mono">{result.readWriteCount} entries</span>
+              <span className="text-end font-mono">{result.readWriteCount} {translate(locale, "resourcePanel.entries")}</span>
 
               <div className="flex items-center gap-1 text-[var(--text-muted)]">
-                Min Resource Fee
+                {translate(locale, "resourcePanel.minResourceFee")}
               </div>
-              <span className="text-right font-mono">{result.minResourceFee} stroops</span>
+              <span className="text-end font-mono">{result.minResourceFee} stroops</span>
             </div>
           )}
         </div>

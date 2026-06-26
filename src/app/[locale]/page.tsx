@@ -1,29 +1,33 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Shield, Zap, CreditCard, Building2, Globe, Code } from "lucide-react";
+import { useLocale } from "@/components/locale-provider";
+import { getLocalizedPath, translate } from "@/lib/i18n";
 
 const features = [
   {
     icon: Zap,
-    title: "G → C Bridge",
-    description: "Instantly fund C-addresses from existing G-addresses with a single transaction.",
+    titleKey: "landing.featureBridgeTitle",
+    descriptionKey: "landing.featureBridgeDescription",
     href: "/bridge",
   },
   {
     icon: CreditCard,
-    title: "Fiat Onramp",
-    description: "Buy crypto with credit card via Moonpay or Transak and send directly to a C-address.",
+    titleKey: "landing.featureOnrampTitle",
+    descriptionKey: "landing.featureOnrampDescription",
     href: "/onramp",
   },
   {
     icon: Building2,
-    title: "CEX Withdrawal",
-    description: "Route exchange withdrawals directly to your Soroban smart account.",
+    titleKey: "landing.featureCexTitle",
+    descriptionKey: "landing.featureCexDescription",
     href: "/cex",
   },
   {
     icon: Shield,
-    title: "Soroban Native",
-    description: "Built on Soroban smart contracts for trustless G-to-C address routing.",
+    titleKey: "landing.featureSorobanTitle",
+    descriptionKey: "landing.featureSorobanDescription",
     href: "/bridge",
   },
 ];
@@ -31,27 +35,29 @@ const features = [
 const steps = [
   {
     step: "01",
-    title: "Connect Wallet",
-    description: "Connect your Freighter wallet or enter any Stellar address.",
+    titleKey: "landing.stepConnectTitle",
+    descriptionKey: "landing.stepConnectDescription",
   },
   {
     step: "02",
-    title: "Choose Funding Source",
-    description: "Select from G-address, fiat onramp, or CEX withdrawal.",
+    titleKey: "landing.stepChooseTitle",
+    descriptionKey: "landing.stepChooseDescription",
   },
   {
     step: "03",
-    title: "Enter C-Address",
-    description: "Paste the Soroban smart account address you want to fund.",
+    titleKey: "landing.stepAddressTitle",
+    descriptionKey: "landing.stepAddressDescription",
   },
   {
     step: "04",
-    title: "Confirm & Fund",
-    description: "Review the details and confirm the transaction.",
+    titleKey: "landing.stepConfirmTitle",
+    descriptionKey: "landing.stepConfirmDescription",
   },
 ];
 
 export default function LandingPage() {
+  const { locale } = useLocale();
+
   return (
     <div>
       <section className="relative overflow-hidden">
@@ -60,30 +66,28 @@ export default function LandingPage() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-sm text-[var(--primary-light)] mb-6">
               <Globe className="w-4 h-4" />
-              Stellar Soroban Onboarding Protocol
+              {translate(locale, "landing.badge")}
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              The Onboarding Layer for{" "}
-              <span className="gradient-text">Soroban dApps</span>
+              {translate(locale, "landing.heroTitle")}
             </h1>
             <p className="text-lg text-[var(--text-muted)] max-w-2xl mx-auto mb-10">
-              Fund any Soroban smart account (C-address) directly — from a CEX withdrawal,
-              a credit card, or an existing G-address. No account model knowledge required.
+              {translate(locale, "landing.heroSubtitle")}
             </p>
             <div className="flex items-center justify-center gap-4">
               <Link
-                href="/bridge"
+                href={getLocalizedPath("/bridge", locale)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors glow"
               >
-                Start Bridging
+                {translate(locale, "landing.ctaBridge")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/dashboard"
+                href={getLocalizedPath("/dashboard", locale)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-2)] transition-colors"
               >
                 <Code className="w-4 h-4" />
-                Dashboard
+                {translate(locale, "landing.ctaDashboard")}
               </Link>
             </div>
           </div>
@@ -93,12 +97,10 @@ export default function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">
-            One Protocol,{" "}
-            <span className="gradient-text">Three Funding Methods</span>
+            {translate(locale, "landing.featuresHeading")}
           </h2>
           <p className="text-[var(--text-muted)] max-w-xl mx-auto">
-            Choose how you want to fund your Soroban smart account.
-            No technical knowledge required.
+            {translate(locale, "landing.featuresSubheading")}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -106,15 +108,15 @@ export default function LandingPage() {
             const Icon = feature.icon;
             return (
               <Link
-                key={feature.title}
-                href={feature.href}
+                key={feature.titleKey}
+                href={getLocalizedPath(feature.href, locale)}
                 className="feature-card group relative p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
               >
                 <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--primary)]/20 transition-colors">
                   <Icon className="w-5 h-5 text-[var(--primary-light)]" />
                 </div>
-                <h3 className="font-semibold mb-2">{feature.title}</h3>
-                <p className="text-sm text-[var(--text-muted)]">{feature.description}</p>
+                <h3 className="font-semibold mb-2">{translate(locale, feature.titleKey)}</h3>
+                <p className="text-sm text-[var(--text-muted)]">{translate(locale, feature.descriptionKey)}</p>
               </Link>
             );
           })}
@@ -124,9 +126,9 @@ export default function LandingPage() {
       <section className="border-t border-[var(--border)] bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-3xl font-bold mb-4">{translate(locale, "landing.stepsHeading")}</h2>
             <p className="text-[var(--text-muted)] max-w-xl mx-auto">
-              Four simple steps to fund any C-address
+              {translate(locale, "landing.stepsSubheading")}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -139,8 +141,8 @@ export default function LandingPage() {
                   <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center mb-4">
                     <span className="text-sm font-bold text-[var(--primary-light)]">{step.step}</span>
                   </div>
-                  <h3 className="font-semibold mb-2">{step.title}</h3>
-                  <p className="text-sm text-[var(--text-muted)]">{step.description}</p>
+                  <h3 className="font-semibold mb-2">{translate(locale, step.titleKey)}</h3>
+                  <p className="text-sm text-[var(--text-muted)]">{translate(locale, step.descriptionKey)}</p>
                 </div>
               </div>
             ))}
@@ -152,16 +154,16 @@ export default function LandingPage() {
         <div className="relative p-12 rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--primary)]/5 via-[var(--secondary)]/5 to-transparent overflow-hidden text-center">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl" />
           <h2 className="text-3xl font-bold mb-4 relative">
-            Ready to Bridge?
+            {translate(locale, "landing.readyTitle")}
           </h2>
           <p className="text-[var(--text-muted)] max-w-lg mx-auto mb-8 relative">
-            Start funding Soroban smart accounts directly. No G-address required for new users.
+            {translate(locale, "landing.readyText")}
           </p>
           <Link
-            href="/bridge"
+            href={getLocalizedPath("/bridge", locale)}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors glow relative"
           >
-            Launch Bridge
+            {translate(locale, "landing.readyCta")}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
 import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
+import { useLocale } from "@/components/locale-provider";
+import { translate, formatNumber, formatCurrency } from "@/lib/i18n";
 import { validateCAddress } from "@/utils/validation";
 import {
   STELLAR_ADDRESS_LENGTH,
@@ -50,6 +52,7 @@ const providers = [
 ];
 
 export default function OnrampPage() {
+  const { locale } = useLocale();
   const [cAddress, setCAddress] = useState("");
   const [fiatAmount, setFiatAmount] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string>(PROVIDER_MOONPAY);
@@ -97,9 +100,9 @@ export default function OnrampPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Fiat Onramp</h1>
+        <h1 className="text-3xl font-bold mb-2">{translate(locale, "onramp.title")}</h1>
         <p className="text-[var(--text-muted)]">
-          Buy crypto with a credit card and send it directly to a Soroban C-address.
+          {translate(locale, "onramp.description")}
         </p>
       </div>
 
@@ -107,8 +110,7 @@ export default function OnrampPage() {
         <div className="mb-6 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-start gap-2 text-sm">
           <AlertCircle className="w-4 h-4 text-[var(--warning)] flex-shrink-0 mt-0.5" />
           <span className="text-[var(--warning)]">
-            {missingKeys.join(" and ")} {missingKeys.length === 1 ? "is" : "are"} not configured and will be unavailable.
-            Set the corresponding <code className="font-mono text-xs">NEXT_PUBLIC_*_API_KEY</code> environment variable to enable {missingKeys.length === 1 ? "it" : "them"}.
+            {translate(locale, "onramp.providerAlert", { names: missingKeys.join(" and "), count: missingKeys.length })}
           </span>
         </div>
       )}
@@ -119,7 +121,7 @@ export default function OnrampPage() {
             {step === STEP_FORM && (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium mb-3">Select Provider</label>
+                  <label className="block text-sm font-medium mb-3">{translate(locale, "onramp.selectProvider")}</label>
                   <div className="grid grid-cols-2 gap-3">
                     {providers.map((p) => (
                       <button
@@ -149,15 +151,15 @@ export default function OnrampPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Destination C-Address</label>
+                  <label className="block text-sm font-medium mb-2">{translate(locale, "onramp.destinationAddress")}</label>
                   <div className="relative">
-                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                    <Wallet className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
                       value={cAddress}
                       onChange={(e) => setCAddress(e.target.value)}
-                      placeholder="CABC...DEF"
-                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      placeholder={translate(locale, "cex.placeholder")}
+                      className="w-full ps-10 pe-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                     />
                   </div>
                   {!validAddress && cAddress && (
@@ -166,43 +168,43 @@ export default function OnrampPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount (USD)</label>
+                  <label className="block text-sm font-medium mb-2">{translate(locale, "onramp.amount")}</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                    <DollarSign className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
                       value={fiatAmount}
                       onChange={(e) => setFiatAmount(e.target.value)}
                       placeholder="100.00"
-                      className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      className="w-full ps-10 pe-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                     />
                   </div>
                   {!validAmount && fiatAmount && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid amount format</p>
+                    <p className="text-xs text-[var(--error)] mt-1">{translate(locale, "common.invalidAmount")}</p>
                   )}
                 </div>
 
-                <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
-                  <h4 className="text-sm font-medium mb-2">Estimated Output</h4>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--text-muted)]">You pay</span>
-                    <span>${fiatAmount || "0"} USD</span>
-                  </div>
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-[var(--text-muted)]">Fee ({provider?.fee})</span>
-                    <span>
-                      -${fiatAmount ? estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).fee.toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-[var(--text-muted)]">Est. receive</span>
-                    <span className="font-semibold">
-                      {fiatAmount && validAmount
-                        ? `~${estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).receive.toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
+                 <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
+                   <h4 className="text-sm font-medium mb-2">{translate(locale, "onramp.estimatedOutput")}</h4>
+                   <div className="flex justify-between text-sm">
+                     <span className="text-[var(--text-muted)]">{translate(locale, "onramp.youPay")}</span>
+                     <span>{fiatAmount ? formatCurrency(Number(fiatAmount), locale, "USD") : formatCurrency(0, locale, "USD")}</span>
+                   </div>
+                   <div className="flex justify-between text-sm mt-1">
+                     <span className="text-[var(--text-muted)]">{translate(locale, "onramp.fee", { fee: provider?.fee ?? "" })}</span>
+                     <span>
+                       {fiatAmount ? formatNumber(estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).fee, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : formatNumber(0, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                     </span>
+                   </div>
+                   <div className="flex justify-between text-sm mt-1">
+                     <span className="text-[var(--text-muted)]">{translate(locale, "onramp.estReceive")}</span>
+                     <span className="font-semibold">
+                       {fiatAmount && validAmount
+                         ? formatNumber(estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).receive, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " USDC"
+                         : "—"}
+                     </span>
+                   </div>
+                 </div>
 
                 {error && (
                   <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
@@ -217,7 +219,7 @@ export default function OnrampPage() {
                   className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CreditCard className="w-4 h-4" />
-                  Continue with {provider?.name}
+                  {translate(locale, "onramp.continue", { provider: provider?.name ?? "" })}
                 </button>
               </div>
             )}
@@ -227,15 +229,15 @@ export default function OnrampPage() {
                 <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
                   <ExternalLink className="w-8 h-8 text-[var(--primary-light)]" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Redirecting to {provider?.name}</h3>
+                <h3 className="text-lg font-semibold mb-2">{translate(locale, "onramp.redirectTitle", { provider: provider?.name ?? "" })}</h3>
                 <p className="text-sm text-[var(--text-muted)] mb-4">
-                  You will be redirected to complete your purchase. Funds will be sent to your C-address.
+                  {translate(locale, "onramp.redirectText")}
                 </p>
                 <button
                   onClick={() => setStep(STEP_FORM)}
                   className="text-sm text-[var(--primary-light)] hover:underline"
                 >
-                  Go back
+                  {translate(locale, "onramp.back")}
                 </button>
               </div>
             )}
@@ -244,7 +246,7 @@ export default function OnrampPage() {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">Supported Providers</h3>
+            <h3 className="font-semibold mb-3">{translate(locale, "onramp.supportedProviders")}</h3>
             <div className="space-y-3">
               {providers.map((p) => (
                 <div key={p.id} className="p-3 rounded-lg bg-[var(--surface-2)]">
@@ -259,19 +261,19 @@ export default function OnrampPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">Why Fiat Onramp?</h3>
+            <h3 className="font-semibold mb-3">{translate(locale, "onramp.whyFiat")}</h3>
             <ul className="space-y-2 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
                 <ArrowRight className="w-4 h-4 text-[var(--primary-light)] flex-shrink-0 mt-0.5" />
-                <span>No G-address needed at all</span>
+                <span>{translate(locale, "onramp.noGAddress")}</span>
               </li>
               <li className="flex gap-2">
                 <ArrowRight className="w-4 h-4 text-[var(--primary-light)] flex-shrink-0 mt-0.5" />
-                <span>New users can go straight to Soroban dApps</span>
+                <span>{translate(locale, "onramp.newUsers")}</span>
               </li>
               <li className="flex gap-2">
                 <ArrowRight className="w-4 h-4 text-[var(--primary-light)] flex-shrink-0 mt-0.5" />
-                <span>Credit/debit card, Apple Pay, Google Pay</span>
+                <span>{translate(locale, "onramp.cardOptions")}</span>
               </li>
             </ul>
           </div>

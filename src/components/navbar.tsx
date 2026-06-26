@@ -6,17 +6,22 @@ import { Wallet, ArrowLeftRight, CreditCard, Building2, LayoutDashboard, Menu, X
 import { useState } from "react";
 import { useWallet } from "./wallet-provider";
 import { ThemeToggle } from "./theme-toggle";
+import WalletModal from "./wallet-modal";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useEscapeKey } from "@/hooks/use-keyboard-shortcuts";
+import { useLocale } from "@/components/locale-provider";
+import { getLocalizedPath, translate } from "@/lib/i18n";
 
 const navLinks = [
-  { href: "/bridge", label: "Bridge", icon: ArrowLeftRight },
-  { href: "/onramp", label: "Onramp", icon: CreditCard },
-  { href: "/cex", label: "CEX", icon: Building2 },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/bridge", key: "nav.bridge", icon: ArrowLeftRight },
+  { href: "/onramp", key: "nav.onramp", icon: CreditCard },
+  { href: "/cex", key: "nav.cex", icon: Building2 },
+  { href: "/dashboard", key: "nav.dashboard", icon: LayoutDashboard },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { locale } = useLocale();
   const { isConnected, address, connect, isConnecting, network } = useWallet();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
@@ -38,7 +43,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={getLocalizedPath("/", locale)} className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center">
               <Wallet className="w-4 h-4 text-white" />
             </div>
@@ -52,7 +57,7 @@ export default function Navbar() {
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={getLocalizedPath(link.href, locale)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
@@ -60,13 +65,14 @@ export default function Navbar() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {link.label}
+                  {translate(locale, link.key)}
                 </Link>
               );
             })}
           </div>
 
           <div className="flex items-center gap-2">
+            <LocaleSwitcher />
             <ThemeToggle />
             {isConnected ? (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] bounce-in">
@@ -74,7 +80,7 @@ export default function Navbar() {
                 <span className="text-xs font-mono text-[var(--text-muted)]">
                   {address?.slice(0, 4)}...{address?.slice(-4)}
                 </span>
-              </button>
+              </div>
             ) : (
               <button
                 onClick={handleConnectClick}
@@ -82,7 +88,7 @@ export default function Navbar() {
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
               >
                 <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
+                {isConnecting ? translate(locale, "nav.connecting") : translate(locale, "nav.connectWallet")}
               </button>
             )}
 
@@ -105,7 +111,7 @@ export default function Navbar() {
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={getLocalizedPath(link.href, locale)}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
@@ -114,7 +120,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {link.label}
+                  {translate(locale, link.key)}
                 </Link>
               );
             })}
@@ -125,7 +131,7 @@ export default function Navbar() {
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium"
               >
                 <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
+                {isConnecting ? translate(locale, "nav.connecting") : translate(locale, "nav.connectWallet")}
               </button>
             )}
             {isConnected && (
