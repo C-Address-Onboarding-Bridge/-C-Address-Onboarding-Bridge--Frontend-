@@ -1,62 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Loader2 } from "lucide-react";
+import { useState } from "react";
+import {
+  Wallet,
+  ArrowLeftRight,
+  CreditCard,
+  Building2,
+  Copy,
+  Check,
+  ExternalLink,
+  Plus,
+  Loader2,
+  Radio,
+} from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
-import { getAccountBalances, fetchRecentTransactions, getExplorerUrl, isCAddress, getSorobanAccountBalances } from "@/lib/stellar";
-import type { BridgeTransaction } from "@/lib/types";
+import { getExplorerUrl } from "@/lib/stellar";
+import { useDashboardData } from "@/lib/use-dashboard-data";
 import { getBridgeContractId } from "@/config/networks";
 import {
   ASSET_XLM,
   NETWORK_DISPLAY,
-  DEFAULT_TX_LIMIT,
-  DASHBOARD_REFRESH_MS,
   COPY_FEEDBACK_MS,
   XLM_DISPLAY_DECIMALS,
   ASSET_DISPLAY_DECIMALS,
   STATUS_CONFIRMED,
   STATUS_PENDING,
   ENV_BRIDGE_CONTRACT_ID,
-  USDC_ISSUERS,
 } from "@/lib/constants";
 
 export default function DashboardPage() {
   const { isConnected, address, network, connect } = useWallet();
   const [copied, setCopied] = useState(false);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [allBalances, setAllBalances] = useState<{ asset: string; amount: string }[]>([]);
-  const [transactions, setTransactions] = useState<BridgeTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isConnected || !address) return;
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const balPromise = isCAddress(address)
-          ? getSorobanAccountBalances(address, [USDC_ISSUERS[network]], network)
-          : getAccountBalances(address, network);
-        const [balResult, txResult] = await Promise.all([
-          balPromise,
-          fetchRecentTransactions(address, network, DEFAULT_TX_LIMIT),
-        ]);
-        setBalance(balResult.total);
-        setAllBalances(balResult.balances);
-        setTransactions(txResult);
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Failed to fetch data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-    const interval = setInterval(fetchData, DASHBOARD_REFRESH_MS);
-    return () => clearInterval(interval);
-  }, [isConnected, address, network]);
+  const {
+    balance,
+    allBalances,
+    transactions,
+    loading,
+    error,
+    isStreaming,
+    refresh,
+  } = useDashboardData(address, network, isConnected);
 
   const confirmedCount = transactions.filter((t) => t.status === STATUS_CONFIRMED).length;
   const pendingCount = transactions.filter((t) => t.status === STATUS_PENDING).length;
@@ -95,7 +81,26 @@ export default function DashboardPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            {isStreaming ? (
+              <span
+                title="Live updates active"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--success)]/15 text-[var(--success)] border border-[var(--success)]/25"
+              >
+                <Radio className="w-3 h-3" aria-hidden="true" />
+                Live
+              </span>
+            ) : (
+              <button
+                onClick={refresh}
+                title="Refresh dashboard data"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--text-muted)] border border-[var(--border)] hover:text-[var(--text)] transition-colors"
+              >
+                Polling
+              </button>
+            )}
+          </div>
           <p className="text-[var(--text-muted)]">Manage your C-address funding activity</p>
         </div>
         <Link
@@ -125,8 +130,16 @@ export default function DashboardPage() {
             <code className="text-sm font-mono">
               {address?.slice(0, 8)}...{address?.slice(-8)}
             </code>
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors">
-              {copied ? <Check className="w-3 h-3 text-[var(--success)]" /> : <Copy className="w-3 h-3 text-[var(--text-muted)]" />}
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors"
+              aria-label="Copy address"
+            >
+              {copied ? (
+                <Check className="w-3 h-3 text-[var(--success)]" />
+              ) : (
+                <Copy className="w-3 h-3 text-[var(--text-muted)]" />
+              )}
             </button>
           </div>
           <div className="text-xs text-[var(--text-muted)] mt-1">
@@ -149,7 +162,7 @@ export default function DashboardPage() {
           <div className="text-xs text-[var(--text-muted)] mb-1">{ASSET_XLM} Balance</div>
           {loading ? (
             <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" aria-hidden="true" />
               <span className="text-xs text-[var(--text-muted)]">Loading...</span>
             </div>
           ) : (
@@ -166,7 +179,7 @@ export default function DashboardPage() {
           <div className="text-xs text-[var(--text-muted)] mb-1">Transactions</div>
           {loading ? (
             <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" aria-hidden="true" />
               <span className="text-xs text-[var(--text-muted)]">Loading...</span>
             </div>
           ) : (
@@ -185,10 +198,15 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold mb-3">Token Balances</h3>
           <div className="divide-y divide-[var(--border)]">
             {allBalances.map((b) => (
-              <div key={b.asset} className="flex justify-between items-center py-2 first:pt-0 last:pb-0">
+              <div
+                key={b.asset}
+                className="flex justify-between items-center py-2 first:pt-0 last:pb-0"
+              >
                 <span className="text-sm text-[var(--text-muted)]">{b.asset}</span>
                 <span className="text-sm font-mono">
-                  {parseFloat(b.amount).toFixed(b.asset === ASSET_XLM ? XLM_DISPLAY_DECIMALS : ASSET_DISPLAY_DECIMALS)}
+                  {parseFloat(b.amount).toFixed(
+                    b.asset === ASSET_XLM ? XLM_DISPLAY_DECIMALS : ASSET_DISPLAY_DECIMALS
+                  )}
                 </span>
               </div>
             ))}
