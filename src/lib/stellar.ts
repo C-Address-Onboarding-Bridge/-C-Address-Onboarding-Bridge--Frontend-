@@ -257,6 +257,22 @@ export async function buildAndSubmitPayment(
   };
 }
 
+export async function buildBridgeTransaction(
+  sourceAddress: string,
+  cAddress: string,
+  amount: string,
+  network: "PUBLIC" | "TESTNET",
+  feeStroop: string = BASE_FEE
+) {
+  const server = getHorizonServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.loadAccount(sourceAddress);
+  return new TransactionBuilder(account, { fee: feeStroop, networkPassphrase: passphrase })
+    .addOperation(Operation.payment({ destination: BRIDGE_CONTRACT_ID || cAddress, asset: Asset.native(), amount }))
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
+    .build();
+}
+
 export async function bridgeViaContract(
   sourceAddress: string,
   cAddress: string,
@@ -271,6 +287,7 @@ export async function bridgeViaContract(
 
   const server = getSorobanRpcServer(network);
   const passphrase = getNetworkPassphrase(network);
+  const fee = feeStroop ?? BASE_FEE;
 
   let account;
   try {

@@ -13,6 +13,7 @@ import {
   isValidStellarAddress,
   isCAddress,
   bridgeViaContract,
+  buildBridgeTransaction,
   getExplorerUrl,
   loadAccountInfo,
   buildAndSubmitChangeTrust,
@@ -103,6 +104,13 @@ export default function BridgePage() {
   type AllowanceStatus = "idle" | "checking" | "sufficient" | "required" | "approving" | "approved" | "error";
   const [allowanceStatus, setAllowanceStatus] = useState<AllowanceStatus>("idle");
   const [allowanceError, setAllowanceError] = useState<string | null>(null);
+
+  // Pre-flight simulation state
+  type SimStatus = "idle" | "running" | "done" | "error";
+  const [simStatus, setSimStatus] = useState<SimStatus>("idle");
+  const [simMinFee, setSimMinFee] = useState<string | null>(null);
+  const [simError, setSimError] = useState<string | null>(null);
+  const [feeOverride, setFeeOverride] = useState<string>("");
 
   // For native XLM or when no bridge contract is set, approval is never needed
   const needsAllowanceCheck = step === "review" && !isNativeAsset(asset) && !!bridgeContractId && asset === "USDC";
@@ -281,6 +289,15 @@ export default function BridgePage() {
     if (!isNativeAsset(asset) && bridgeContractId && asset === "USDC" && fromAddress && amount) {
       checkAllowance(fromAddress, amount, network);
     }
+    // Run pre-flight simulation (non-blocking)
+    buildBridgeTransaction(fromAddress, toAddress, amount, network).then((draftTx) =>
+      simulateSorobanTransaction(draftTx, network)
+    ).then(({ minFee, error }) => {
+      setSimMinFee(minFee);
+      setSimError(error);
+      setSimStatus(error ? "error" : "done");
+      if (minFee && !feeOverride) setFeeOverride(minFee);
+    }).catch(() => setSimStatus("done"));
   };
 
   const handleConfirm = async () => {
@@ -332,6 +349,10 @@ export default function BridgePage() {
     setTrustlineError(null);
     setAllowanceStatus("idle");
     setAllowanceError(null);
+    setSimStatus("idle");
+    setSimMinFee(null);
+    setSimError(null);
+    setFeeOverride("");
   };
 
   const handleUndo = () => {
@@ -571,9 +592,37 @@ export default function BridgePage() {
                     <span className="text-sm text-[var(--text-muted)]">Network</span>
                     <span className="text-sm">{network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET]}</span>
                   </div>
-                  <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Fee</span>
-                    <span className="text-sm">~{XLM_RESERVE_BUFFER} {ASSET_XLM}</span>
+                  <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-[var(--text-muted)]">Estimated Fee</span>
+                      {simStatus === "running" && (
+                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Simulating…
+                        </span>
+                      )}
+                      {simStatus === "done" && simMinFee && (
+                        <span className="text-xs text-[var(--text-muted)]">
+                          ~{stroopsToXlm(simMinFee)} {ASSET_XLM} (simulated)
+                        </span>
+                      )}
+                      {(simStatus === "idle" || (simStatus === "done" && !simMinFee)) && (
+                        <span className="text-xs text-[var(--text-muted)]">~{XLM_RESERVE_BUFFER} {ASSET_XLM}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">Fee (stroops)</label>
+                      <input
+                        type="number"
+                        min="100"
+                        value={feeOverride}
+                        onChange={(e) => setFeeOverride(e.target.value)}
+                        placeholder={simMinFee ?? "100"}
+                        className="flex-1 px-2 py-1 rounded bg-[var(--surface-3)] border border-[var(--border)] text-xs font-mono focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                    {simStatus === "error" && simError && (
+                      <p className="text-xs text-[var(--error)]">{simError}</p>
+                    )}
                   </div>
                 </div>
 
