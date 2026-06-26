@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building2, Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
 import { CEX_LIST, DEFAULT_BRIDGE_ADDRESS, DEFAULT_BRIDGE_MEMO } from "@/lib/types";
 import { CEX_NETWORKS, CEX_NETWORK_STELLAR, COPY_FEEDBACK_MS } from "@/lib/constants";
+import { validateCAddress } from "@/utils/validation";
 
 export default function CexPage() {
   const [selectedCex, setSelectedCex] = useState(CEX_LIST[0]);
@@ -18,6 +19,7 @@ export default function CexPage() {
   };
 
   const withdrawalUrl = selectedCex.withdrawalUrl;
+  const cAddressError = validateCAddress(cAddress);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -86,9 +88,12 @@ export default function CexPage() {
                 className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
               />
             </div>
+            {cAddressError && cAddress && (
+              <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
+            )}
           </div>
 
-          {cAddress && (
+          {cAddress && !cAddressError && (
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
               <h3 className="font-semibold mb-4">4. Verify Bridge Address Access</h3>
               <CEXAddressVerification
