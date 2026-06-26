@@ -62,6 +62,7 @@ export default function BridgePage() {
   const [txStatus, setTxStatus] = useState<TxStatus>(STATUS_IDLE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+  const [selectedFee, setSelectedFee] = useState<string>("100");
 
   const formState = useMemo(
     () => ({ fromAddress, toAddress, amount, asset }),
@@ -285,7 +286,7 @@ export default function BridgePage() {
     recordTransactionSubmission(fromAddress, toAddress, amount, asset);
 
     try {
-      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network);
+      const result = await bridgeViaContract(fromAddress, toAddress, amount, asset, network, selectedFee);
       setTxHash(result.hash);
       setTxStatus(STATUS_SUCCESS);
       setStep(STEP_CONFIRM);

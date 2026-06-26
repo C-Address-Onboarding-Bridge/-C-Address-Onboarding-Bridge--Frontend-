@@ -202,7 +202,8 @@ export async function buildAndSubmitPayment(
   destinationAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
@@ -223,7 +224,7 @@ export async function buildAndSubmitPayment(
   }
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
@@ -260,10 +261,11 @@ export async function bridgeViaContract(
   cAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  feeStroops?: string
 ): Promise<PaymentResult> {
   if (!BRIDGE_CONTRACT_ID) {
-    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network);
+    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network, feeStroops);
   }
 
   const server = getHorizonServer(network);
@@ -272,7 +274,7 @@ export async function bridgeViaContract(
   const account = await server.loadAccount(sourceAddress);
 
   const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
+    fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
     .addOperation(
