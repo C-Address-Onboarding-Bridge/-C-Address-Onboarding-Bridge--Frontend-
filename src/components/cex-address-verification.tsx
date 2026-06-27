@@ -9,8 +9,8 @@ import {
   getChallenge,
   clearChallenge,
   type VerificationChallenge,
-} from "@/lib/cex-verification";
-import { DEFAULT_BRIDGE_ADDRESS } from "@/lib/types";
+  DEFAULT_BRIDGE_ADDRESS,
+} from "@/lib";
 
 export interface CEXVerificationProps {
   onVerified: () => void;

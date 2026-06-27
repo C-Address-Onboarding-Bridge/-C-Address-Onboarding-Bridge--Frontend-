@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
-import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
 import { validateCAddress } from "@/utils/validation";
 import {
+  isValidStellarAddress,
+  isCAddress,
+  estimateOnrampOutput,
   STELLAR_ADDRESS_LENGTH,
   PROVIDER_MOONPAY,
   PROVIDER_TRANSAK,
@@ -18,8 +20,7 @@ import {
   ENV_TRANSAK_API_KEY,
   STEP_FORM,
   STEP_REDIRECT,
-} from "@/lib/constants";
-import { estimateOnrampOutput } from "@/lib/onramp";
+} from "@/lib";
 
 const MOONPAY_API_KEY = process.env.NEXT_PUBLIC_MOONPAY_API_KEY || "";
 const TRANSAK_API_KEY = process.env.NEXT_PUBLIC_TRANSAK_API_KEY || "";

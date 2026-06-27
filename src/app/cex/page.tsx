@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { Building2, Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
-import { CEX_LIST, DEFAULT_BRIDGE_ADDRESS, DEFAULT_BRIDGE_MEMO } from "@/lib/types";
-import { CEX_NETWORKS, CEX_NETWORK_STELLAR, COPY_FEEDBACK_MS } from "@/lib/constants";
+import {
+  CEX_LIST,
+  DEFAULT_BRIDGE_ADDRESS,
+  DEFAULT_BRIDGE_MEMO,
+  CEX_NETWORKS,
+  CEX_NETWORK_STELLAR,
+  COPY_FEEDBACK_MS,
+} from "@/lib";
 import { validateCAddress } from "@/utils/validation";
 
 export default function CexPage() {

@@ -1,9 +1,7 @@
 "use client";
 
 import { ArrowLeftRight, CreditCard, Building2, ExternalLink } from "lucide-react";
-import type { BridgeTransaction as BridgeTransactionData } from "@/lib/types";
-import { getExplorerUrl } from "@/lib/stellar";
-import { EXPLORER_BASE_URLS } from "@/lib/constants";
+import { type BridgeTransaction as BridgeTransactionData, getExplorerUrl, EXPLORER_BASE_URLS } from "@/lib";
 
 const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
   "g-to-c": { icon: ArrowLeftRight, label: "G → C Bridge", color: "text-[var(--primary-light)]" },

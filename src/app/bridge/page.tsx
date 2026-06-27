@@ -5,8 +5,7 @@ import {
   ArrowRightLeft, Wallet, Send, ArrowRight, Check, AlertCircle,
   Loader2, ExternalLink, XCircle, AlertTriangle, RotateCcw, RotateCw,
 } from "lucide-react";
-import { useWallet } from "@/components/wallet-provider";
-import { ToastContainer, useToast } from "@/components/toast";
+import { useWallet, ToastContainer, useToast } from "@/components";
 import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
 import { useMultiStepForm } from "@/hooks/useMultiStepForm";
 import { getBridgeContractId, NETWORK_CONFIG_ERRORS } from "@/config/networks";
@@ -19,9 +18,6 @@ import {
   loadAccountInfo,
   buildAndSubmitChangeTrust,
   getTransactionStatus,
-} from "@/lib/stellar";
-import { validateCAddress } from "@/utils/validation";
-import {
   ASSET_XLM,
   ASSET_USDC,
   XLM_RESERVE_BUFFER,
@@ -48,7 +44,8 @@ import {
   STEP_REVIEW,
   STEP_CONFIRM,
   USDC_ISSUERS,
-} from "@/lib/constants";
+} from "@/lib";
+import { validateCAddress } from "@/utils/validation";
 
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
 type PollStatus = "pending" | "confirmed" | "failed" | null;

@@ -10,6 +10,12 @@ import { getExplorerUrl } from "@/lib/stellar";
 import { useDashboardData } from "@/lib/use-dashboard-data";
 import { getBridgeContractId } from "@/config/networks";
 import {
+  getAccountBalances,
+  fetchRecentTransactions,
+  getExplorerUrl,
+  isCAddress,
+  getSorobanAccountBalances,
+  type BridgeTransaction,
   ASSET_XLM,
   NETWORK_DISPLAY,
   COPY_FEEDBACK_MS,
