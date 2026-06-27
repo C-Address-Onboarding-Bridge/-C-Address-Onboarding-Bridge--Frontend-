@@ -33,8 +33,20 @@ export const CEX_NETWORKS = ["Stellar", "Polygon", "Ethereum"] as const;
 
 /** Time intervals in milliseconds */
 export const WALLET_INITIAL_DELAY_MS = 0;
+/** Polling interval while the wallet is already connected (keep-alive check). */
 export const WALLET_POLL_INTERVAL_MS = 3000;
+/** Polling interval used when the wallet is not yet connected (back-off base). */
+export const WALLET_DISCONNECTED_POLL_MS = 3000;
+/** Maximum polling interval after exponential back-off for wallet checks. */
+export const WALLET_MAX_BACKOFF_MS = 30000;
+
+/** Dashboard polling interval used when Horizon streaming is unavailable (fallback). */
+export const DASHBOARD_FALLBACK_POLL_MS = 60000;
+/** Maximum polling interval after exponential back-off on dashboard fetch errors. */
+export const DASHBOARD_MAX_BACKOFF_MS = 300000;
+/** @deprecated Use DASHBOARD_FALLBACK_POLL_MS instead. */
 export const DASHBOARD_REFRESH_MS = 30000;
+
 export const TX_POLL_INTERVAL_MS = 5000;
 export const COPY_FEEDBACK_MS = 2000;
 export const REDIRECT_DELAY_MS = 1500;

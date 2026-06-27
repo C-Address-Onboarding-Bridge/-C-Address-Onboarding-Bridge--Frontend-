@@ -617,3 +617,138 @@ export async function approveToken(
   }
   return sendResult.hash;
 }
+
+// --- Contract Admin ---
+
+export interface ContractDeployResult {
+  contractId: string;
+  wasmHash: string;
+  txHash: string;
+}
+
+export interface ContractState {
+  contractId: string;
+  wasmHash: string | null;
+  ledger: number;
+}
+
+/**
+ * Upload WASM bytes + deploy a new contract instance in two steps,
+ * both signed by Freighter. Returns the new contract C-address.
+ */
+export async function deployContract(
+  deployerAddress: string,
+  wasmBytes: Uint8Array,
+  network: "PUBLIC" | "TESTNET"
+): Promise<ContractDeployResult> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(deployerAddress);
+
+  // Step 1: upload WASM
+  const uploadTx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(Operation.uploadContractWasm({ wasm: wasmBytes }))
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
+    .build();
+
+  const preparedUpload = await server.prepareTransaction(uploadTx);
+  const signedUpload = await signTransaction(preparedUpload.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signedUpload && signedUpload.error) throw new Error(`Signing failed: ${signedUpload.error}`);
+  const uploadResult = await server.sendTransaction(
+    TransactionBuilder.fromXDR((signedUpload as { signedTxXdr: string }).signedTxXdr, passphrase)
+  );
+  if (uploadResult.status === "ERROR") throw new Error(`WASM upload failed: ${JSON.stringify(uploadResult.errorResult)}`);
+  const uploadPolled = await server.pollTransaction(uploadResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
+  if (uploadPolled.status !== "SUCCESS") throw new Error(`WASM upload did not succeed: ${uploadPolled.status}`);
+
+  const wasmHash = scValToNative((uploadPolled as rpc.Api.GetSuccessfulTransactionResponse).returnValue!) as string;
+
+  // Step 2: create contract instance
+  const account2 = await server.getAccount(deployerAddress);
+  const createTx = new TransactionBuilder(account2, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(
+      Operation.createStellarAssetContract({ asset: Asset.native() }) // placeholder shape — real invocation uses invokeHostFunction
+    )
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
+    .build();
+
+  // Use invokeHostFunction via raw XDR for contract creation from wasm hash
+  const deployTx = new TransactionBuilder(account2, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(
+      Operation.createCustomContract({
+        wasmHash: Buffer.from(wasmHash, "hex"),
+        address: Address.fromString(deployerAddress),
+        salt: Buffer.from(crypto.getRandomValues(new Uint8Array(32))),
+      })
+    )
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
+    .build();
+
+  void createTx; // unused placeholder above
+
+  const preparedDeploy = await server.prepareTransaction(deployTx);
+  const signedDeploy = await signTransaction(preparedDeploy.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signedDeploy && signedDeploy.error) throw new Error(`Signing failed: ${signedDeploy.error}`);
+  const deployResult = await server.sendTransaction(
+    TransactionBuilder.fromXDR((signedDeploy as { signedTxXdr: string }).signedTxXdr, passphrase)
+  );
+  if (deployResult.status === "ERROR") throw new Error(`Contract deploy failed: ${JSON.stringify(deployResult.errorResult)}`);
+  const deployPolled = await server.pollTransaction(deployResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
+  if (deployPolled.status !== "SUCCESS") throw new Error(`Contract deploy did not succeed: ${deployPolled.status}`);
+
+  const contractId = scValToNative((deployPolled as rpc.Api.GetSuccessfulTransactionResponse).returnValue!) as string;
+
+  return { contractId, wasmHash: typeof wasmHash === "string" ? wasmHash : Buffer.from(wasmHash).toString("hex"), txHash: deployResult.hash };
+}
+
+/**
+ * Upgrade an existing contract to a new WASM hash by calling __upgrade.
+ */
+export async function upgradeContract(
+  adminAddress: string,
+  contractId: string,
+  newWasmHash: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<string> {
+  const server = getSorobanRpcServer(network);
+  const passphrase = getNetworkPassphrase(network);
+  const account = await server.getAccount(adminAddress);
+  const contract = new Contract(contractId);
+
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
+    .addOperation(contract.call("__upgrade", nativeToScVal(Buffer.from(newWasmHash, "hex"), { type: "bytes" })))
+    .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
+    .build();
+
+  const prepared = await server.prepareTransaction(tx);
+  const signed = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
+  if ("error" in signed && signed.error) throw new Error(`Signing failed: ${signed.error}`);
+  const result = await server.sendTransaction(
+    TransactionBuilder.fromXDR((signed as { signedTxXdr: string }).signedTxXdr, passphrase)
+  );
+  if (result.status === "ERROR") throw new Error(`Upgrade failed: ${JSON.stringify(result.errorResult)}`);
+  const polled = await server.pollTransaction(result.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
+  if (polled.status !== "SUCCESS") throw new Error(`Upgrade did not succeed: ${polled.status}`);
+  return result.hash;
+}
+
+/**
+ * Fetch on-chain state (ledger sequence + wasm hash) for a deployed contract.
+ */
+export async function getContractState(
+  contractId: string,
+  network: "PUBLIC" | "TESTNET"
+): Promise<ContractState> {
+  const server = getSorobanRpcServer(network);
+  try {
+    const ledgerKey = new Contract(contractId).getFootprint();
+    const response = await server.getLedgerEntries(ledgerKey);
+    const entry = response.entries[0];
+    const wasmHash = entry
+      ? Buffer.from((entry.val as { contractData?: { val?: { wasm_hash?: Uint8Array } } })?.contractData?.val?.wasm_hash ?? []).toString("hex")
+      : null;
+    return { contractId, wasmHash, ledger: response.latestLedger };
+  } catch {
+    return { contractId, wasmHash: null, ledger: 0 };
+  }
+}

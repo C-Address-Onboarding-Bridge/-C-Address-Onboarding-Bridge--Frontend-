@@ -326,6 +326,48 @@ html {
   animation: slide-in 0.4s ease-out;
 }
 
+/* Step transition animations */
+@keyframes step-enter {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes step-enter-back {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.step-enter {
+  animation: step-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.step-enter-back {
+  animation: step-enter-back 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Step indicator progress bar */
+.step-progress-bar {
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-dot {
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
+
+.step-dot-active {
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-enter,
+  .step-enter-back,
+  .step-progress-bar,
+  .step-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* Smooth transitions for theme changes (already defined above) */
 .theme-transition {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
