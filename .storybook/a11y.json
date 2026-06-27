@@ -1,0 +1,7 @@
+export default {
+  // Disable rules that are overly strict for a library/component showcase
+  "color-contrast": "warn",
+  "region": "warn",
+  "landmark-one-main": "warn",
+  "page-has-heading-one": "warn",
+};
