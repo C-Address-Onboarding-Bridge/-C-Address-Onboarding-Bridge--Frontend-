@@ -88,14 +88,17 @@ export default function CexPage() {
               <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
               <input
                 type="text"
+                id="cex-c-address"
                 value={cAddress}
                 onChange={(e) => setCAddress(e.target.value)}
                 placeholder="CABC...DEF"
                 className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                aria-describedby="cex-c-address-error"
+                aria-invalid={!!cAddressError && !!cAddress}
               />
             </div>
             {cAddressError && cAddress && (
-              <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
+              <p id="cex-c-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
             )}
           </div>
 

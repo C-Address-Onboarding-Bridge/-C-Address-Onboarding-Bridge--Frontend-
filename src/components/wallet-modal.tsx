@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Download, CheckCircle } from "lucide-react";
+import { FocusTrap } from "./focus-trap";
 
 interface Wallet {
   name: string;
@@ -81,6 +82,7 @@ export default function WalletModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
       <div className="relative w-full max-w-md mx-4 bg-[var(--background)] rounded-xl border border-[var(--border)] shadow-2xl animate-in zoom-in-95 duration-200">
+        <FocusTrap active={isOpen} onClose={onClose}>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
@@ -170,6 +172,7 @@ export default function WalletModal({
             Close
           </button>
         </div>
+        </FocusTrap>
       </div>
     </div>
   );

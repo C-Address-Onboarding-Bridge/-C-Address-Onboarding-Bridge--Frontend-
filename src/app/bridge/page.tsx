@@ -8,6 +8,7 @@ import {
 import { useWallet, ToastContainer, useToast } from "@/components";
 import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
 import { useMultiStepForm } from "@/hooks/useMultiStepForm";
+import { useConnectivity } from "@/components/connectivity-provider";
 import { getBridgeContractId, NETWORK_CONFIG_ERRORS } from "@/config/networks";
 import {
   isValidStellarAddress,
@@ -50,6 +51,34 @@ import { validateCAddress } from "@/utils/validation";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
 type PollStatus = "pending" | "confirmed" | "failed" | null;
 
+type CachedBridgeState = {
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  asset: string;
+  selectedFee: string;
+};
+
+type CachedAccountInfo = {
+  exists: boolean | null;
+  balances: { asset: string; amount: string }[];
+  sourceBalance: string | null;
+};
+
+type QueuedBridgeSubmission = {
+  id: string;
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  asset: string;
+  network: "PUBLIC" | "TESTNET";
+  selectedFee: string;
+};
+
+const BRIDGE_FORM_STATE_KEY = "c_bridge_cached_form_state";
+const BRIDGE_ACCOUNT_INFO_KEY = "c_bridge_cached_account_info";
+const BRIDGE_OFFLINE_QUEUE_KEY = "c_bridge_offline_submission_queue";
+
 export default function BridgePage() {
   const { isConnected, address, network, connect } = useWallet();
   const { toasts, add: addToast, update: updateToast, remove: removeToast } = useToast();
@@ -67,6 +96,9 @@ export default function BridgePage() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [selectedFee, setSelectedFee] = useState<string>("100");
+  const { isOffline } = useConnectivity();
+  const mountedRef = useRef(true);
+  const [pendingOfflineSubmissions, setPendingOfflineSubmissions] = useState(0);
 
   const formState = useMemo(
     () => ({ fromAddress, toAddress, amount, asset }),
@@ -83,6 +115,151 @@ export default function BridgePage() {
     formState,
     restoreFormState
   );
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    if (typeof window === "undefined") return undefined;
+
+    const cachedForm = localStorage.getItem(BRIDGE_FORM_STATE_KEY);
+    if (cachedForm) {
+      try {
+        const parsed = JSON.parse(cachedForm) as CachedBridgeState;
+        if (parsed.fromAddress) setFromAddress(parsed.fromAddress);
+        if (parsed.toAddress) setToAddress(parsed.toAddress);
+        if (parsed.amount) setAmount(parsed.amount);
+        if (parsed.asset) setAsset(parsed.asset);
+        if (parsed.selectedFee) setSelectedFee(parsed.selectedFee);
+      } catch {
+        // ignore malformed cache
+      }
+    }
+
+    const cachedAccount = localStorage.getItem(BRIDGE_ACCOUNT_INFO_KEY);
+    if (cachedAccount) {
+      try {
+        const parsed = JSON.parse(cachedAccount) as { fromAddress: string; info: CachedAccountInfo };
+        if (parsed.fromAddress && parsed.info && parsed.info.balances) {
+          setAccountExists(parsed.info.exists);
+          setAllBalances(parsed.info.balances);
+          setSourceBalance(parsed.info.sourceBalance);
+        }
+      } catch {
+        // ignore malformed cache
+      }
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cachedState: CachedBridgeState = {
+      fromAddress,
+      toAddress,
+      amount,
+      asset,
+      selectedFee,
+    };
+    localStorage.setItem(BRIDGE_FORM_STATE_KEY, JSON.stringify(cachedState));
+  }, [fromAddress, toAddress, amount, asset, selectedFee]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !fromAddress) return;
+    const accountCache = {
+      fromAddress,
+      info: {
+        exists: accountExists,
+        balances: allBalances,
+        sourceBalance,
+      },
+    };
+    localStorage.setItem(BRIDGE_ACCOUNT_INFO_KEY, JSON.stringify(accountCache));
+  }, [fromAddress, accountExists, allBalances, sourceBalance]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const data = localStorage.getItem(BRIDGE_OFFLINE_QUEUE_KEY);
+    if (!data) {
+      setPendingOfflineSubmissions(0);
+      return;
+    }
+
+    try {
+      const queued = JSON.parse(data) as QueuedBridgeSubmission[];
+      setPendingOfflineSubmissions(queued.length);
+    } catch {
+      setPendingOfflineSubmissions(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOffline) {
+      const data = localStorage.getItem(BRIDGE_OFFLINE_QUEUE_KEY);
+      if (!data) return;
+
+      try {
+        const queued = JSON.parse(data) as QueuedBridgeSubmission[];
+        if (!queued.length) return;
+        localStorage.removeItem(BRIDGE_OFFLINE_QUEUE_KEY);
+        setPendingOfflineSubmissions(0);
+
+        queued.forEach(async (submission) => {
+          try {
+            const result = await bridgeViaContract(
+              submission.fromAddress,
+              submission.toAddress,
+              submission.amount,
+              submission.asset,
+              submission.network,
+              submission.selectedFee,
+            );
+            const toastId = addToast(
+              "Queued transaction submitted successfully",
+              "success",
+              5000,
+              {
+                txHash: result.hash,
+                explorerUrl: getExplorerUrl(submission.network, "tx", result.hash),
+              },
+            );
+            startPolling(result.hash, toastId);
+          } catch (error: unknown) {
+            addToast(
+              error instanceof Error ? error.message : "Queued transaction failed",
+              "error",
+              6000,
+            );
+          }
+        });
+      } catch {
+        // ignore malformed queue data
+      }
+    }
+  }, [isOffline, addToast, startPolling, network]);
+
+  const enqueueOfflineSubmission = (payload: Omit<QueuedBridgeSubmission, "id">) => {
+    if (typeof window === "undefined") return;
+    const data = localStorage.getItem(BRIDGE_OFFLINE_QUEUE_KEY);
+    let queued: QueuedBridgeSubmission[] = [];
+    if (data) {
+      try {
+        queued = JSON.parse(data) as QueuedBridgeSubmission[];
+      } catch {
+        queued = [];
+      }
+    }
+
+    const nextItem: QueuedBridgeSubmission = {
+      id: `${Date.now()}-${queued.length}`,
+      ...payload,
+    };
+    queued.push(nextItem);
+    localStorage.setItem(BRIDGE_OFFLINE_QUEUE_KEY, JSON.stringify(queued));
+    setPendingOfflineSubmissions(queued.length);
+  };
 
   // Account info (fetched async)
   const [allBalances, setAllBalances] = useState<{ asset: string; amount: string }[]>([]);
@@ -192,6 +369,7 @@ export default function BridgePage() {
   }, []);
 
   const handleApprove = async () => {
+    if (isOffline) return;
     if (!fromAddress || !amount || !bridgeContractId || !needsAllowanceCheck) return;
     const tokenContractId = USDC_ISSUERS[network];
 
@@ -297,27 +475,63 @@ export default function BridgePage() {
   };
 
   const handleSubmit = () => {
-    if (!canProceed) return;
+    if (!canProceed) {
+      if (!fromAddress || !validFrom) {
+        document.getElementById("from-address")?.focus();
+      } else if (!toAddress || !validTo) {
+        document.getElementById("to-address")?.focus();
+      } else if (!validAmount || balanceError) {
+        document.getElementById("amount")?.focus();
+      }
+      return;
+    }
     goStep(STEP_REVIEW);
     setTxError(null);
     setAllowanceStatus("idle");
     setAllowanceError(null);
-    if (!isNativeAsset(asset) && bridgeContractId && asset === "USDC" && fromAddress && amount) {
+
+    if (!isOffline && !isNativeAsset(asset) && bridgeContractId && asset === "USDC" && fromAddress && amount) {
       checkAllowance(fromAddress, amount, network);
     }
+
+    if (isOffline) {
+      setSimStatus("done");
+      setSimMinFee(null);
+      setSimError(null);
+      return;
+    }
+
     // Run pre-flight simulation (non-blocking)
-    buildBridgeTransaction(fromAddress, toAddress, amount, network).then((draftTx) =>
-      simulateSorobanTransaction(draftTx, network)
-    ).then(({ minFee, error }) => {
-      setSimMinFee(minFee);
-      setSimError(error);
-      setSimStatus(error ? "error" : "done");
-      if (minFee && !feeOverride) setFeeOverride(minFee);
-    }).catch(() => setSimStatus("done"));
+    buildBridgeTransaction(fromAddress, toAddress, amount, network)
+      .then((draftTx) => simulateSorobanTransaction(draftTx, network))
+      .then(({ minFee, error }) => {
+        setSimMinFee(minFee);
+        setSimError(error);
+        setSimStatus(error ? "error" : "done");
+        if (minFee && !feeOverride) setFeeOverride(minFee);
+      })
+      .catch(() => setSimStatus("done"));
   };
 
   const handleConfirm = async () => {
     if (!fromAddress || !toAddress || !amount) return;
+    if (isOffline) {
+      enqueueOfflineSubmission({
+        fromAddress,
+        toAddress,
+        amount,
+        asset,
+        network,
+        selectedFee,
+      });
+      addToast(
+        "Offline: transaction queued and will retry automatically when online.",
+        "info",
+        6000,
+      );
+      return;
+    }
+
     setTxStatus(STATUS_SIGNING);
     setTxError(null);
     recordSubmissionAttempt("bridge_submission");
@@ -476,6 +690,7 @@ export default function BridgePage() {
                     <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="from-address"
                       value={fromAddress}
                       onChange={(e) => {
                         const sanitized = sanitizeStellarAddress(e.target.value) || e.target.value;
@@ -487,13 +702,15 @@ export default function BridgePage() {
                       placeholder={isConnected ? address! : "GABC...DEF or connect wallet"}
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
+                      aria-describedby="from-address-error"
+                      aria-invalid={!validFrom && !!fromAddress}
                     />
                   </div>
                   {!validFrom && fromAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid Stellar address</p>
+                    <p id="from-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">Invalid Stellar address</p>
                   )}
                   {accountExists === false && (
-                    <p className="text-xs text-[var(--error)] mt-1">
+                    <p id="from-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">
                       Account not found on the {network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET]} network. It needs to be funded first.
                     </p>
                   )}
@@ -525,6 +742,7 @@ export default function BridgePage() {
                     <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="to-address"
                       value={toAddress}
                       onChange={(e) => {
                         const sanitized = sanitizeCAddress(e.target.value) || e.target.value;
@@ -533,10 +751,12 @@ export default function BridgePage() {
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
+                      aria-describedby="to-address-error"
+                      aria-invalid={!validTo && !!toAddress}
                     />
                   </div>
                   {!validTo && toAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">
+                    <p id="to-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">
                       {toAddressError}
                     </p>
                   )}
@@ -549,11 +769,14 @@ export default function BridgePage() {
                     <div className="relative flex-1">
                       <input
                         type="text"
+                        id="amount"
                         value={amount}
                         onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                         placeholder="0.00"
                         className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== "idle"}
+                        aria-describedby="amount-error"
+                        aria-invalid={!!balanceError}
                       />
                     </div>
                     <select
@@ -567,7 +790,7 @@ export default function BridgePage() {
                     </select>
                   </div>
                   {balanceError && (
-                    <p className="text-xs text-[var(--error)] mt-1">{balanceError}</p>
+                    <p id="amount-error" role="alert" className="text-xs text-[var(--error)] mt-1">{balanceError}</p>
                   )}
                 </div>
 
@@ -725,7 +948,7 @@ export default function BridgePage() {
                 )}
 
                 {txError && (
-                  <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
+                  <div aria-live="polite" className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-[var(--error)]">

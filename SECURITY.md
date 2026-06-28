@@ -66,6 +66,38 @@ If you discover a security vulnerability, please email security@c-address-bridge
 
 **Do not** open public GitHub issues for security vulnerabilities.
 
+### Supported versions
+
+| Version | Supported |
+|---------|-----------|
+| `main` (latest) | ✅ Yes |
+| Older branches  | ❌ No — please update to `main` |
+
+### Expected response timeline
+
+| Milestone | Target |
+|-----------|--------|
+| Acknowledgement | Within 48 hours |
+| Initial assessment | Within 5 business days |
+| Fix or mitigation plan | Within 30 days (critical: 7 days) |
+| Public disclosure | Coordinated with reporter after fix is shipped |
+
+We follow responsible disclosure: please give us a reasonable window to fix the
+issue before publishing details publicly.
+
+### PGP key
+
+A PGP public key for encrypted reports is not yet published.  Until one is
+available, send reports to the email address above.  If you require encrypted
+communication, mention this in your initial message and we will arrange a
+secure channel.
+
+### Bug bounty
+
+There is currently no formal bug bounty programme.  Significant findings will
+be acknowledged in the project changelog and, where the reporter consents,
+credited by name or handle.
+
 ## Security Best Practices
 
 When using the C-Address Bridge:
