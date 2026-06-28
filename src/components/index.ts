@@ -38,6 +38,8 @@ export { ResourcePanel } from "./resource-panel";
 
 // ─── Theme provider and hook ─────────────────────────────────────────────────
 export { ThemeProvider, useTheme } from "./theme-provider";
+export { ConnectivityProvider, useConnectivity } from "./connectivity-provider";
+export { OfflineBanner } from "./offline-banner";
 
 // ─── Theme toggle button ─────────────────────────────────────────────────────
 export { ThemeToggle } from "./theme-toggle";

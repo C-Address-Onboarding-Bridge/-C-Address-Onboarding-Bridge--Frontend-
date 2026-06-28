@@ -3,6 +3,8 @@ import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/components/wallet-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ConnectivityProvider } from "@/components/connectivity-provider";
+import { OfflineBanner } from "@/components/offline-banner";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";
@@ -28,14 +30,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         <ThemeProvider>
-          <WalletProvider>
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1 pt-16">{children}</main>
-              <Footer />
-              <KeyboardShortcutsInfo />
-            </div>
-          </WalletProvider>
+          <ConnectivityProvider>
+            <WalletProvider>
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <OfflineBanner />
+                <main className="flex-1 pt-16">{children}</main>
+                <Footer />
+                <KeyboardShortcutsInfo />
+              </div>
+            </WalletProvider>
+          </ConnectivityProvider>
         </ThemeProvider>
       </body>
     </html>
