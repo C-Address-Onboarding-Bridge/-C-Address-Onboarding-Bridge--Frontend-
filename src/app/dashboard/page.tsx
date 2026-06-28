@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus } from "lucide-react";
+import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Radio } from "lucide-react";
 import { Skeleton } from "@/components/skeleton";
 import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
-import { getExplorerUrl } from "@/lib/stellar";
+import { getExplorerUrl, isCAddress } from "@/lib/stellar";
 import { useDashboardData } from "@/lib/use-dashboard-data";
 import { getBridgeContractId } from "@/config/networks";
+import { QRCodeCard } from "@/components/qr-code-card";
 import {
   getAccountBalances,
   fetchRecentTransactions,
-  getExplorerUrl,
-  isCAddress,
   getSorobanAccountBalances,
   type BridgeTransaction,
   ASSET_XLM,
@@ -116,7 +115,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="w-4 h-4 text-[var(--primary-light)]" />
@@ -154,7 +153,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="space-y-6">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
           <div className="text-xs text-[var(--text-muted)] mb-1">{ASSET_XLM} Balance</div>
           {loading ? (
             <div className="space-y-2 mt-1">
@@ -188,6 +188,12 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {isCAddress(address ?? "") && address ? (
+        <div className="mb-8">
+          <QRCodeCard address={address} />
+        </div>
+      ) : null}
 
       {allBalances.length > 0 && (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6 card-entrance">
