@@ -1,9 +1,24 @@
 import {
   isConnected,
   getAddress,
-  signTransaction,
+  signTransaction as freighterSignTransaction,
   getNetwork,
 } from "@stellar/freighter-api";
+
+/**
+ * Wallet-agnostic signer function.  Matches the signature of each
+ * WalletAdapter.signTransaction so callers can pass any adapter's signer
+ * instead of being hard-wired to Freighter.
+ * Falls back to Freighter when omitted.
+ */
+export type TxSigner = (xdr: string, networkPassphrase: string) => Promise<string>;
+
+/** Default signer — wraps Freighter's API into the TxSigner shape. */
+async function defaultSigner(xdr: string, networkPassphrase: string): Promise<string> {
+  const result = await freighterSignTransaction(xdr, { networkPassphrase });
+  if ("error" in result && result.error) throw new Error(`Freighter signing failed: ${result.error}`);
+  return (result as { signedTxXdr: string }).signedTxXdr;
+}
 import {
   TransactionBuilder,
   Operation,
@@ -204,7 +219,9 @@ export async function buildAndSubmitPayment(
   amount: string,
   assetCode: string,
   network: "PUBLIC" | "TESTNET",
-  feeStroops?: string
+  feeStroops?: string,
+  /** Optional wallet signer — defaults to Freighter. Pass adapter.signTransaction for other wallets. */
+  signer: TxSigner = defaultSigner
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
@@ -214,47 +231,32 @@ export async function buildAndSubmitPayment(
   if (assetCode === "XLM") {
     asset = Asset.native();
   } else {
+    // For non-native assets we must find the issuer from the account's trustlines.
+    // Stellar assets are identified by (code, issuer) pairs — the same code can
+    // exist from different issuers, so we can't hard-code one.
     const balances = account.balances as HorizonBalance[];
-    const matchingBalance = balances.find(
-      (b) => b.asset_code === assetCode
-    );
+    const matchingBalance = balances.find((b) => b.asset_code === assetCode);
     if (!matchingBalance) {
       throw new Error(`No ${assetCode} trustline found for this account`);
     }
     asset = new Asset(assetCode, matchingBalance.asset_issuer);
   }
 
+  // BASE_FEE (100 stroops) is the network minimum; callers can pass a higher
+  // fee from fee-bump or fee-stats to improve inclusion speed during congestion.
+  // See: https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering
   const tx = new TransactionBuilder(account, {
     fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
-    .addOperation(
-      Operation.payment({
-        destination: destinationAddress,
-        asset,
-        amount,
-      })
-    )
+    .addOperation(Operation.payment({ destination: destinationAddress, asset, amount }))
     .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
-  const signedResult = await signTransaction(tx.toXDR(), {
-    networkPassphrase: passphrase,
-  });
-
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
-
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedXDR = await signer(tx.toXDR(), passphrase);
   const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
-
   const result = await server.submitTransaction(signedTx);
-
-  return {
-    hash: result.hash,
-    successful: result.successful,
-  };
+  return { hash: result.hash, successful: result.successful };
 }
 
 export async function buildBridgeTransaction(
@@ -279,15 +281,17 @@ export async function bridgeViaContract(
   amount: string,
   assetCode: string,
   network: "PUBLIC" | "TESTNET",
-  feeStroops?: string
+  feeStroops?: string,
+  /** Optional wallet signer — defaults to Freighter. */
+  signer: TxSigner = defaultSigner
 ): Promise<PaymentResult> {
   if (!BRIDGE_CONTRACT_ID) {
-    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network, feeStroops);
+    // No contract deployed: fall back to a direct G→C payment.
+    return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network, feeStroops, signer);
   }
 
   const server = getSorobanRpcServer(network);
   const passphrase = getNetworkPassphrase(network);
-  const fee = feeStroop ?? BASE_FEE;
 
   let account;
   try {
@@ -300,17 +304,15 @@ export async function bridgeViaContract(
     fee: feeStroops ?? BASE_FEE,
     networkPassphrase: passphrase,
   })
-    .addOperation(
-      Operation.payment({
-        destination: BRIDGE_CONTRACT_ID,
-        asset: Asset.native(),
-        amount,
-      })
-    )
+    .addOperation(Operation.payment({ destination: BRIDGE_CONTRACT_ID, asset: Asset.native(), amount }))
     .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
-  // prepareTransaction runs simulation and populates Soroban footprint + fees
+  // prepareTransaction runs a simulation against Soroban RPC to:
+  //  1. Determine the ledger footprint (which contract storage keys are read/written)
+  //  2. Compute the resource fee on top of the inclusion fee
+  // The returned transaction has these fields populated and is ready to sign.
+  // Ref: https://developers.stellar.org/docs/build/guides/dapps/get-started-with-soroban
   let prepared;
   try {
     prepared = await server.prepareTransaction(tx);
@@ -319,21 +321,17 @@ export async function bridgeViaContract(
     throw new Error(`Soroban simulation failed: ${msg}`);
   }
 
-  const signedResult = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
-
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedXDR = await signer(prepared.toXDR(), passphrase);
   const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
 
   const sendResult = await server.sendTransaction(signedTx);
   if (sendResult.status === "ERROR") {
-    throw new Error(
-      `Contract invocation failed: ${JSON.stringify(sendResult.errorResult)}`
-    );
+    throw new Error(`Contract invocation failed: ${JSON.stringify(sendResult.errorResult)}`);
   }
 
+  // Soroban transactions are async: sendTransaction enqueues the tx and returns
+  // immediately.  We must poll until the ledger that includes it is closed.
+  // pollTransaction handles the retry loop (up to `attempts` ledger closes).
   let polled;
   try {
     polled = await server.pollTransaction(sendResult.hash, {
@@ -406,25 +404,20 @@ export async function buildAndSubmitChangeTrust(
   sourceAddress: string,
   assetCode: string,
   issuer: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET",
+  /** Optional wallet signer — defaults to Freighter. */
+  signer: TxSigner = defaultSigner
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
   const account = await server.loadAccount(sourceAddress);
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: passphrase,
-  })
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
     .addOperation(changeTrustOperation(assetCode, issuer))
     .setTimeout(STELLAR_TX_TIMEOUT_SECONDS)
     .build();
 
-  const signedResult = await signTransaction(tx.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedXDR = await signer(tx.toXDR(), passphrase);
   const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
   const result = await server.submitTransaction(signedTx);
   return { hash: result.hash, successful: result.successful };
@@ -452,8 +445,18 @@ export function isNativeAsset(assetCode: string): boolean {
 }
 
 // A well-known funded account used as simulation source for read-only calls.
+// Soroban simulation requires a valid source account to build the transaction
+// envelope, but for view-only calls (balance, symbol, decimals) we don't need
+// to own the account or pay fees — simulation never hits the network ledger.
+// This specific address is the Stellar laboratory's funded testnet faucet account
+// and is safe to use as a stand-in source on both TESTNET and PUBLIC.
 const SIM_SOURCE = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
 
+/**
+ * Simulate a read-only Soroban contract call and return the return value ScVal.
+ * Simulation is cheap (no on-chain fee) and sufficient for view functions.
+ * Ref: https://developers.stellar.org/docs/data/rpc/api-reference/methods/simulateTransaction
+ */
 async function simulateContractRead(
   contractId: string,
   method: string,
@@ -540,6 +543,16 @@ export async function getSorobanAccountBalances(
   return { total, balances: results };
 }
 
+/**
+ * Convert a Stellar address string to an ScVal of type Address for use as a
+ * Soroban contract argument.
+ *
+ * Stellar has two address spaces:
+ *  - G-addresses (Ed25519 public keys) — classic accounts
+ *  - C-addresses (contract IDs)        — Soroban smart contracts / smart accounts
+ * The SDK encodes them differently inside ScVal, so we branch on key type.
+ * Ref: https://developers.stellar.org/docs/learn/encyclopedia/contract-development/types/built-in-types#address
+ */
 function addressToScVal(address: string) {
   if (StrKey.isValidEd25519PublicKey(address)) {
     return nativeToScVal(Address.account(StrKey.decodeEd25519PublicKey(address)), { type: "address" });
@@ -585,6 +598,9 @@ export async function approveToken(
   const contract = new Contract(tokenContractId);
 
   const latestLedger = (await server.getLatestLedger()).sequence;
+  // Soroban token allowances expire at a specific ledger number, not a timestamp.
+  // 535 680 ledgers ≈ 30 days at the ~5 s target close time.
+  // Ref: https://developers.stellar.org/docs/tokens/token-interface-specification
   const expirationLedger = latestLedger + 535680; // ~30 days at 5s/ledger
 
   const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: passphrase })
@@ -601,11 +617,7 @@ export async function approveToken(
     .build();
 
   const prepared = await server.prepareTransaction(tx);
-  const signedResult = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+  const signedXDR = await defaultSigner(prepared.toXDR(), passphrase);
   const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
   const sendResult = await server.sendTransaction(signedTx);
   if (sendResult.status === "ERROR") {
@@ -652,11 +664,8 @@ export async function deployContract(
     .build();
 
   const preparedUpload = await server.prepareTransaction(uploadTx);
-  const signedUpload = await signTransaction(preparedUpload.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signedUpload && signedUpload.error) throw new Error(`Signing failed: ${signedUpload.error}`);
-  const uploadResult = await server.sendTransaction(
-    TransactionBuilder.fromXDR((signedUpload as { signedTxXdr: string }).signedTxXdr, passphrase)
-  );
+  const signedUploadXDR = await defaultSigner(preparedUpload.toXDR(), passphrase);
+  const uploadResult = await server.sendTransaction(TransactionBuilder.fromXDR(signedUploadXDR, passphrase));
   if (uploadResult.status === "ERROR") throw new Error(`WASM upload failed: ${JSON.stringify(uploadResult.errorResult)}`);
   const uploadPolled = await server.pollTransaction(uploadResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (uploadPolled.status !== "SUCCESS") throw new Error(`WASM upload did not succeed: ${uploadPolled.status}`);
@@ -687,11 +696,8 @@ export async function deployContract(
   void createTx; // unused placeholder above
 
   const preparedDeploy = await server.prepareTransaction(deployTx);
-  const signedDeploy = await signTransaction(preparedDeploy.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signedDeploy && signedDeploy.error) throw new Error(`Signing failed: ${signedDeploy.error}`);
-  const deployResult = await server.sendTransaction(
-    TransactionBuilder.fromXDR((signedDeploy as { signedTxXdr: string }).signedTxXdr, passphrase)
-  );
+  const signedDeployXDR = await defaultSigner(preparedDeploy.toXDR(), passphrase);
+  const deployResult = await server.sendTransaction(TransactionBuilder.fromXDR(signedDeployXDR, passphrase));
   if (deployResult.status === "ERROR") throw new Error(`Contract deploy failed: ${JSON.stringify(deployResult.errorResult)}`);
   const deployPolled = await server.pollTransaction(deployResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (deployPolled.status !== "SUCCESS") throw new Error(`Contract deploy did not succeed: ${deployPolled.status}`);
@@ -721,11 +727,8 @@ export async function upgradeContract(
     .build();
 
   const prepared = await server.prepareTransaction(tx);
-  const signed = await signTransaction(prepared.toXDR(), { networkPassphrase: passphrase });
-  if ("error" in signed && signed.error) throw new Error(`Signing failed: ${signed.error}`);
-  const result = await server.sendTransaction(
-    TransactionBuilder.fromXDR((signed as { signedTxXdr: string }).signedTxXdr, passphrase)
-  );
+  const signedXDR = await defaultSigner(prepared.toXDR(), passphrase);
+  const result = await server.sendTransaction(TransactionBuilder.fromXDR(signedXDR, passphrase));
   if (result.status === "ERROR") throw new Error(`Upgrade failed: ${JSON.stringify(result.errorResult)}`);
   const polled = await server.pollTransaction(result.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (polled.status !== "SUCCESS") throw new Error(`Upgrade did not succeed: ${polled.status}`);
