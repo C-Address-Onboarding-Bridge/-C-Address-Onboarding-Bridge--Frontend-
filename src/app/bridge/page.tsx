@@ -475,7 +475,16 @@ export default function BridgePage() {
   };
 
   const handleSubmit = () => {
-    if (!canProceed) return;
+    if (!canProceed) {
+      if (!fromAddress || !validFrom) {
+        document.getElementById("from-address")?.focus();
+      } else if (!toAddress || !validTo) {
+        document.getElementById("to-address")?.focus();
+      } else if (!validAmount || balanceError) {
+        document.getElementById("amount")?.focus();
+      }
+      return;
+    }
     goStep(STEP_REVIEW);
     setTxError(null);
     setAllowanceStatus("idle");
@@ -681,6 +690,7 @@ export default function BridgePage() {
                     <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="from-address"
                       value={fromAddress}
                       onChange={(e) => {
                         const sanitized = sanitizeStellarAddress(e.target.value) || e.target.value;
@@ -692,13 +702,15 @@ export default function BridgePage() {
                       placeholder={isConnected ? address! : "GABC...DEF or connect wallet"}
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
+                      aria-describedby="from-address-error"
+                      aria-invalid={!validFrom && !!fromAddress}
                     />
                   </div>
                   {!validFrom && fromAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid Stellar address</p>
+                    <p id="from-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">Invalid Stellar address</p>
                   )}
                   {accountExists === false && (
-                    <p className="text-xs text-[var(--error)] mt-1">
+                    <p id="from-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">
                       Account not found on the {network === NETWORK_PUBLIC ? NETWORK_DISPLAY[NETWORK_PUBLIC] : NETWORK_DISPLAY[NETWORK_TESTNET]} network. It needs to be funded first.
                     </p>
                   )}
@@ -730,6 +742,7 @@ export default function BridgePage() {
                     <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="to-address"
                       value={toAddress}
                       onChange={(e) => {
                         const sanitized = sanitizeCAddress(e.target.value) || e.target.value;
@@ -738,10 +751,12 @@ export default function BridgePage() {
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                       disabled={txStatus !== STATUS_IDLE}
+                      aria-describedby="to-address-error"
+                      aria-invalid={!validTo && !!toAddress}
                     />
                   </div>
                   {!validTo && toAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">
+                    <p id="to-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">
                       {toAddressError}
                     </p>
                   )}
@@ -754,11 +769,14 @@ export default function BridgePage() {
                     <div className="relative flex-1">
                       <input
                         type="text"
+                        id="amount"
                         value={amount}
                         onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
                         placeholder="0.00"
                         className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== "idle"}
+                        aria-describedby="amount-error"
+                        aria-invalid={!!balanceError}
                       />
                     </div>
                     <select
@@ -772,7 +790,7 @@ export default function BridgePage() {
                     </select>
                   </div>
                   {balanceError && (
-                    <p className="text-xs text-[var(--error)] mt-1">{balanceError}</p>
+                    <p id="amount-error" role="alert" className="text-xs text-[var(--error)] mt-1">{balanceError}</p>
                   )}
                 </div>
 
@@ -930,7 +948,7 @@ export default function BridgePage() {
                 )}
 
                 {txError && (
-                  <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
+                  <div aria-live="polite" className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-[var(--error)]">

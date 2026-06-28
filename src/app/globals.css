@@ -359,12 +359,29 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .step-enter,
-  .step-enter-back,
-  .step-progress-bar,
-  .step-dot {
+  .step-enter-back {
     animation: none !important;
-    transition: none !important;
+  }
+
+  .feature-card:hover,
+  .interactive-element:hover,
+  .interactive-element:active,
+  .cex-logo:hover,
+  .cex-logo:active,
+  .cex-logo.selected,
+  .card-hover:hover {
+    transform: none !important;
+    filter: none !important;
   }
 }
 

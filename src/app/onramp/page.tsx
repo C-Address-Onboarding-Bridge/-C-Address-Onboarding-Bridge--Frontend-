@@ -63,7 +63,14 @@ export default function OnrampPage() {
   const canProceed = cAddress && fiatAmount && validAddress && validAmount;
 
   const handleProviderRedirect = () => {
-    if (!canProceed) return;
+    if (!canProceed) {
+      if (!cAddress || !validAddress) {
+        document.getElementById("c-address")?.focus();
+      } else if (!fiatAmount || !validAmount) {
+        document.getElementById("fiat-amount")?.focus();
+      }
+      return;
+    }
     setError(null);
 
     const provider = providers.find((p) => p.id === selectedProvider);
@@ -155,14 +162,17 @@ export default function OnrampPage() {
                     <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="c-address"
                       value={cAddress}
                       onChange={(e) => setCAddress(e.target.value)}
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      aria-describedby="c-address-error"
+                      aria-invalid={!validAddress && !!cAddress}
                     />
                   </div>
                   {!validAddress && cAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
+                    <p id="c-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
                   )}
                 </div>
 
@@ -172,14 +182,17 @@ export default function OnrampPage() {
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="fiat-amount"
                       value={fiatAmount}
                       onChange={(e) => setFiatAmount(e.target.value)}
                       placeholder="100.00"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      aria-describedby="fiat-amount-error"
+                      aria-invalid={!validAmount && !!fiatAmount}
                     />
                   </div>
                   {!validAmount && fiatAmount && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid amount format</p>
+                    <p id="fiat-amount-error" role="alert" className="text-xs text-[var(--error)] mt-1">Invalid amount format</p>
                   )}
                 </div>
 
@@ -206,7 +219,7 @@ export default function OnrampPage() {
                 </div>
 
                 {error && (
-                  <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
+                  <div aria-live="polite" className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-[var(--error)]">{error}</p>
                   </div>

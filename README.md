@@ -62,6 +62,33 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 | `npm run typecheck` | Run TypeScript type checking |
 | `npm run test` | Run Vitest test suite |
 
+## Mock Data (Development)
+
+Developers without a Freighter wallet or live Stellar network can use the built-in mock layer:
+
+1. Enable mock mode:
+
+   ```bash
+   # Option A: environment variable (persists across restarts)
+   echo 'NEXT_PUBLIC_DEV_MOCK=true' >> .env.local
+
+   # Option B: browser console (session only)
+   localStorage.setItem('dev_mock', 'true')
+   ```
+
+2. The app will use mock addresses, balances, and transaction history instead of live data.
+
+3. Available mock states:
+   - **Funded account**: 100 XLM + 50 USDC balance with transaction history
+   - **Empty account**: 1 XLM balance, no transactions
+   - **Network error**: Simulates Horizon connection failure
+
+4. Import mocks directly in tests:
+
+   ```typescript
+   import { mockFreighterApi, MOCK_TRANSACTIONS, mockHorizonAccount } from "@/lib/mock-data";
+   ```
+
 ## Architecture
 
 ```

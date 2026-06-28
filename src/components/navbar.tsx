@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useWallet } from "./wallet-provider";
 import { ThemeToggle } from "./theme-toggle";
 import { useEscapeKey } from "@/hooks/use-keyboard-shortcuts";
+import { FocusTrap } from "./focus-trap";
 
 const navLinks = [
   { href: "/bridge", label: "Bridge", icon: ArrowLeftRight },
@@ -98,6 +99,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]">
+          <FocusTrap active={mobileOpen} onClose={() => setMobileOpen(false)}>
           <div className="px-4 py-3 space-y-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -140,6 +142,7 @@ export default function Navbar() {
               </button>
             )}
           </div>
+          </FocusTrap>
         </div>
       )}
 
