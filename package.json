@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:mutation": "stryker run",
     "test:e2e": "playwright test",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "prepare": "husky"
   },
   "dependencies": {
@@ -38,6 +40,13 @@
     "eslint-config-next": "16.2.7",
     "husky": "^9.1.7",
     "jsdom": "29.1.1",
+    "storybook": "^8.6.0",
+    "@storybook/addon-a11y": "^8.6.0",
+    "@storybook/addon-essentials": "^8.6.0",
+    "@storybook/addon-interactions": "^8.6.0",
+    "@storybook/addon-links": "^8.6.0",
+    "@storybook/react": "^8.6.0",
+    "@storybook/nextjs": "^8.6.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8"
