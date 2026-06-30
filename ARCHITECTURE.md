@@ -126,3 +126,18 @@ A backend server would become necessary when:
   verification steps that cannot be done in the browser.
 - **Private RPC node** — for production reliability, a dedicated Soroban RPC
   node behind the backend avoids dependency on public infrastructure uptime.
+
+## Backend Architecture Decision (Issue #108)
+
+Following an assessment of the project's requirements, it was determined that a lightweight backend service is beneficial for:
+1. **Transaction history persistence**: Storing user transaction history securely across sessions.
+2. **User accounts**: Managing user profiles and settings beyond local storage.
+
+**Decision**:
+We will use **Next.js API Routes (`src/app/api/`)** as our backend scaffolding. This keeps the monolithic repository structure and leverages our existing Next.js deployment. 
+
+**Authentication**:
+Backend endpoints are protected via simple Bearer Token authentication (scaffolded). As the application grows, this will be expanded to a more robust JWT or session-based authentication system (e.g., NextAuth).
+
+**Database**:
+For scaffolding, the API routes currently use mocked data responses. When a full database is integrated, an ORM like Prisma or Drizzle will be introduced to manage the schema and migrations.
