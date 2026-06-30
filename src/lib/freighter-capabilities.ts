@@ -1,9 +1,6 @@
-import { isConnected } from "@stellar/freighter-api";
+import { isConnected } from '@stellar/freighter-api';
 
-export type CapabilityType =
-  | "signTransaction"
-  | "getAddress"
-  | "getNetwork";
+export type CapabilityType = 'signTransaction' | 'getAddress' | 'getNetwork';
 
 export interface FreighterCapability {
   type: CapabilityType;
@@ -11,20 +8,23 @@ export interface FreighterCapability {
   required: boolean;
 }
 
-export const FREIGHTER_CAPABILITIES: Record<CapabilityType, FreighterCapability> = {
+export const FREIGHTER_CAPABILITIES: Record<
+  CapabilityType,
+  FreighterCapability
+> = {
   getAddress: {
-    type: "getAddress",
-    description: "Read your Stellar address",
+    type: 'getAddress',
+    description: 'Read your Stellar address',
     required: true,
   },
   getNetwork: {
-    type: "getNetwork",
-    description: "Read current network (Public/Testnet)",
+    type: 'getNetwork',
+    description: 'Read current network (Public/Testnet)',
     required: true,
   },
   signTransaction: {
-    type: "signTransaction",
-    description: "Sign transactions for bridge operations",
+    type: 'signTransaction',
+    description: 'Sign transactions for bridge operations',
     required: false,
   },
 };
@@ -33,7 +33,7 @@ export interface GrantedCapabilities {
   [key: string]: boolean;
 }
 
-const CAPABILITIES_STORAGE_KEY = "freighter_granted_capabilities";
+const CAPABILITIES_STORAGE_KEY = 'freighter_granted_capabilities';
 
 export async function getGrantedCapabilities(): Promise<GrantedCapabilities> {
   try {
@@ -44,15 +44,22 @@ export async function getGrantedCapabilities(): Promise<GrantedCapabilities> {
   }
 }
 
-export async function saveGrantedCapabilities(capabilities: GrantedCapabilities): Promise<void> {
+export async function saveGrantedCapabilities(
+  capabilities: GrantedCapabilities
+): Promise<void> {
   try {
-    localStorage.setItem(CAPABILITIES_STORAGE_KEY, JSON.stringify(capabilities));
+    localStorage.setItem(
+      CAPABILITIES_STORAGE_KEY,
+      JSON.stringify(capabilities)
+    );
   } catch (error) {
-    console.error("Failed to save granted capabilities:", error);
+    console.error('Failed to save granted capabilities:', error);
   }
 }
 
-export async function revokeCapability(capability: CapabilityType): Promise<void> {
+export async function revokeCapability(
+  capability: CapabilityType
+): Promise<void> {
   const granted = await getGrantedCapabilities();
   delete granted[capability];
   await saveGrantedCapabilities(granted);
@@ -62,11 +69,13 @@ export async function revokeAllCapabilities(): Promise<void> {
   await saveGrantedCapabilities({});
 }
 
-export async function requestCapabilities(capabilities: CapabilityType[]): Promise<boolean> {
+export async function requestCapabilities(
+  capabilities: CapabilityType[]
+): Promise<boolean> {
   try {
     const conn = await isConnected();
     if (!conn.isConnected) {
-      console.error("Freighter not connected");
+      console.error('Freighter not connected');
       return false;
     }
 
@@ -85,7 +94,7 @@ export async function requestCapabilities(capabilities: CapabilityType[]): Promi
 
     const confirmMessage = `C-Address Bridge is requesting the following permissions:\n\n${toGrant
       .map((c) => `• ${FREIGHTER_CAPABILITIES[c].description}`)
-      .join("\n")}\n\nDo you approve?`;
+      .join('\n')}\n\nDo you approve?`;
 
     if (confirm(confirmMessage)) {
       const newGranted = { ...granted };
@@ -98,17 +107,21 @@ export async function requestCapabilities(capabilities: CapabilityType[]): Promi
 
     return false;
   } catch (error) {
-    console.error("Failed to request capabilities:", error);
+    console.error('Failed to request capabilities:', error);
     return false;
   }
 }
 
-export async function hasCapability(capability: CapabilityType): Promise<boolean> {
+export async function hasCapability(
+  capability: CapabilityType
+): Promise<boolean> {
   const granted = await getGrantedCapabilities();
   return granted[capability] === true;
 }
 
-export async function requireCapability(capability: CapabilityType): Promise<boolean> {
+export async function requireCapability(
+  capability: CapabilityType
+): Promise<boolean> {
   const has = await hasCapability(capability);
   if (!has) {
     return await requestCapabilities([capability]);

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * useDashboardData
@@ -27,26 +27,26 @@
  * `address` / `network` changes.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getAccountBalances,
   fetchRecentTransactions,
   isCAddress,
   getSorobanAccountBalances,
-} from "./stellar";
-import { streamPayments, isStreamingSupported } from "./horizon-stream";
-import type { BridgeTransaction } from "./types";
-import type { AccountBalances } from "./types";
+} from './stellar';
+import { streamPayments, isStreamingSupported } from './horizon-stream';
+import type { BridgeTransaction } from './types';
+import type { AccountBalances } from './types';
 import {
   DEFAULT_TX_LIMIT,
   DASHBOARD_FALLBACK_POLL_MS,
   DASHBOARD_MAX_BACKOFF_MS,
   USDC_ISSUERS,
-} from "./constants";
+} from './constants';
 
 export interface DashboardData {
   balance: string | null;
-  allBalances: AccountBalances["balances"];
+  allBalances: AccountBalances['balances'];
   transactions: BridgeTransaction[];
   loading: boolean;
   error: string | null;
@@ -58,11 +58,13 @@ export interface DashboardData {
 
 export function useDashboardData(
   address: string | null,
-  network: "PUBLIC" | "TESTNET",
+  network: 'PUBLIC' | 'TESTNET',
   isConnected: boolean
 ): DashboardData {
   const [balance, setBalance] = useState<string | null>(null);
-  const [allBalances, setAllBalances] = useState<AccountBalances["balances"]>([]);
+  const [allBalances, setAllBalances] = useState<AccountBalances['balances']>(
+    []
+  );
   const [transactions, setTransactions] = useState<BridgeTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function useDashboardData(
         backoffRef.current = DASHBOARD_FALLBACK_POLL_MS;
       } catch (e: unknown) {
         if (!mountedRef.current) return;
-        setError(e instanceof Error ? e.message : "Failed to fetch data");
+        setError(e instanceof Error ? e.message : 'Failed to fetch data');
         // Double the backoff interval up to the ceiling on consecutive errors.
         backoffRef.current = Math.min(
           backoffRef.current * 2,
@@ -145,7 +147,7 @@ export function useDashboardData(
     let streamActive = false;
     if (isStreamingSupported() && !isCAddress(address)) {
       const cleanup = streamPayments(address, network, {
-        cursor: "now",
+        cursor: 'now',
         onRecord: () => {
           // A new payment arrived – refresh data immediately in quiet mode
           // so the loading spinner doesn't flash.
@@ -161,10 +163,13 @@ export function useDashboardData(
       streamActive = true;
       // Defer the state update: calling setState synchronously in the effect
       // body triggers the react-hooks/set-state-in-effect lint rule.
-      let streamingTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-        streamingTimer = null;
-        if (mountedRef.current && streamActive) setIsStreaming(true);
-      }, 0);
+      let streamingTimer: ReturnType<typeof setTimeout> | null = setTimeout(
+        () => {
+          streamingTimer = null;
+          if (mountedRef.current && streamActive) setIsStreaming(true);
+        },
+        0
+      );
       streamCleanupRef.current = () => {
         if (streamingTimer !== null) clearTimeout(streamingTimer);
         cleanup();

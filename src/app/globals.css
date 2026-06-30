@@ -1,36 +1,43 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@source "../components";
+@source "../app";
+@source "../ui";
+
 
 :root,
 :root.dark-theme {
   --background: #0a0b0e;
-  --foreground: #e8eaed;
-  --primary: #6c5ce7;
-  --primary-light: #a29bfe;
-  --secondary: #00cec9;
+  --foreground: #ffffff;
+  --primary: #8b7cf7;
+  --primary-light: #b8aeff;
+  --secondary: #00e5d9;
   --accent: #fd79a8;
   --surface: #141519;
   --surface-2: #1e1f25;
-  --border: #2a2b32;
-  --text-muted: #8a8c93;
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --error: #e17055;
+  --border: #55585e;
+  --text-muted: #ffffff;
+  --success: #00d4a0;
+  --warning: #fddb7a;
+  --error: #f57a6b;
+  --focus-ring: #8b7cf7;
 }
 
 :root.light-theme {
   --background: #ffffff;
-  --foreground: #1a1a1a;
-  --primary: #6c5ce7;
-  --primary-light: #7e6fe8;
+  --foreground: #000000;
+  --primary: #4a3bd1;
+  --primary-light: #6e5fe8;
   --secondary: #00b8a9;
   --accent: #d63031;
   --surface: #f5f5f5;
   --surface-2: #e8e8e8;
-  --border: #d0d0d0;
-  --text-muted: #6b7280;
+  --border: #b8b8b8;
+  --text-muted: #000000;
   --success: #10b981;
   --warning: #f59e0b;
-  --error: #ef4444;
+  --error: #dc2626;
+  --focus-ring: #4a3bd1;
 }
 
 @theme inline {
@@ -46,13 +53,17 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-focus-ring: var(--focus-ring);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 * {
   box-sizing: border-box;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 html {
@@ -83,30 +94,32 @@ body {
   border-radius: 3px;
 }
 
-.gradient-text {
+@utility gradient-text {
   background: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-border {
+@utility gradient-border {
   position: relative;
 }
 
-.gradient-border::before {
+@utility gradient-border::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
   background: linear-gradient(135deg, #6c5ce7, #00cec9);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 
-.glow {
+@utility glow {
   box-shadow: 0 0 20px rgba(108, 92, 231, 0.15), 0 0 40px rgba(0, 206, 201, 0.05);
 }
 
@@ -127,33 +140,31 @@ textarea:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Skip to main content link */
-.skip-to-main {
+.skip-to-content {
   position: absolute;
-  top: -40px;
-  left: 0;
+  top: -9999px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
   background: var(--primary);
   color: white;
-  padding: 8px 16px;
-  text-decoration: none;
-  z-index: 100;
+  border-radius: 0 0 8px 8px;
+  z-index: 9999;
+  font-weight: 600;
 }
 
-.skip-to-main:focus {
+.skip-to-content:focus {
   top: 0;
   outline: none;
 }
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
   }
   50% {
@@ -230,80 +241,82 @@ html {
 }
 
 /* Micro-interaction classes */
-.pulse-glow {
+@utility pulse-glow {
   animation: pulse-glow 2s infinite;
 }
 
-.slide-in {
+@utility slide-in {
   animation: slide-in 0.3s ease-out;
 }
 
-.fade-in {
+@utility fade-in {
   animation: fade-in 0.3s ease-out;
 }
 
-.bounce-in {
+@utility bounce-in {
   animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.checkmark-animation {
+@utility checkmark-animation {
   animation: checkmark 0.6s ease-out;
 }
 
-.rotate-scale-animation {
+@utility rotate-scale-animation {
   animation: rotate-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Enhanced hover effects */
-.feature-card {
+@utility feature-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.feature-card:hover {
+@utility feature-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15), 0 0 30px rgba(0, 206, 201, 0.05);
+  box-shadow:
+    0 20px 40px rgba(108, 92, 231, 0.15),
+    0 0 30px rgba(0, 206, 201, 0.05);
 }
 
-.interactive-element {
+@utility interactive-element {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
-.interactive-element:hover {
+@utility interactive-element:hover {
   transform: scale(1.05);
 }
 
-.interactive-element:active {
+@utility interactive-element:active {
   transform: scale(0.98);
 }
 
 /* Logo animation */
-.cex-logo {
+@utility cex-logo {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
-.cex-logo:hover {
+@utility cex-logo:hover {
   transform: scale(1.15) rotateY(10deg);
   filter: drop-shadow(0 0 20px rgba(108, 92, 231, 0.3));
 }
 
-.cex-logo:active {
+@utility cex-logo:active {
   transform: scale(0.95);
 }
 
-.cex-logo.selected {
+@utility cex-logo.selected {
   animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   filter: drop-shadow(0 0 15px rgba(108, 92, 231, 0.5));
 }
 
 /* Button ripple effect */
-.ripple-button {
+@utility ripple-button {
   position: relative;
   overflow: hidden;
 }
 
-.ripple-button::before {
+@utility ripple-button::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -313,10 +326,12 @@ html {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
-.ripple-button:active::before {
+@utility ripple-button:active::before {
   width: 300px;
   height: 300px;
 }
@@ -328,13 +343,25 @@ html {
 
 /* Step transition animations */
 @keyframes step-enter {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes step-enter-back {
-  from { opacity: 0; transform: translateX(-24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .step-enter {
@@ -351,7 +378,9 @@ html {
 }
 
 .step-dot {
-  transition: background-color 0.25s ease, transform 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease;
 }
 
 .step-dot-active {
@@ -387,5 +416,8 @@ html {
 
 /* Smooth transitions for theme changes (already defined above) */
 .theme-transition {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }

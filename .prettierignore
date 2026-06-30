@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+coverage
+*.log
+.next
+.git
+.claude
+.storybook/*.json

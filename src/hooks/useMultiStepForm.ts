@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export interface Step<T extends string> {
   id: T;
@@ -12,7 +12,8 @@ export function useMultiStepForm<T extends string>(steps: T[], initial?: T) {
   const goTo = (step: T) => setCurrentStep(step);
 
   const next = () => {
-    if (currentIndex < steps.length - 1) setCurrentStep(steps[currentIndex + 1]);
+    if (currentIndex < steps.length - 1)
+      setCurrentStep(steps[currentIndex + 1]);
   };
 
   const back = () => {

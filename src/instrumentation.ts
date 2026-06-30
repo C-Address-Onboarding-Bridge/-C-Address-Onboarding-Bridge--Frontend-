@@ -6,8 +6,8 @@
 export async function register() {
   // Only validate on the server; NEXT_PUBLIC_* vars are also available in the
   // browser, but startup validation belongs to the server process.
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { validateEnv } = await import("./lib/env");
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { validateEnv } = await import('./lib/env');
     validateEnv();
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface FormState {
   fromAddress: string;
@@ -12,7 +12,10 @@ interface HistoryEntry {
   timestamp: number;
 }
 
-export function useFormHistory(formState: FormState, onRestore: (state: FormState) => void): {
+export function useFormHistory(
+  formState: FormState,
+  onRestore: (state: FormState) => void
+): {
   updateHistory: (newState: FormState) => void;
   undo: () => boolean;
   redo: () => boolean;
@@ -28,7 +31,10 @@ export function useFormHistory(formState: FormState, onRestore: (state: FormStat
   const updateHistory = useCallback((newState: FormState) => {
     // Remove future entries if we're not at the end
     if (currentIndexRef.current < historyRef.current.length - 1) {
-      historyRef.current = historyRef.current.slice(0, currentIndexRef.current + 1);
+      historyRef.current = historyRef.current.slice(
+        0,
+        currentIndexRef.current + 1
+      );
     }
 
     // Add new state to history
@@ -75,7 +81,7 @@ export function useFormHistory(formState: FormState, onRestore: (state: FormStat
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
         if (e.shiftKey) {
           if (redo()) {
@@ -89,8 +95,8 @@ export function useFormHistory(formState: FormState, onRestore: (state: FormStat
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
   return {
