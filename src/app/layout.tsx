@@ -4,6 +4,7 @@ import "./globals.css";
 import { WalletProvider } from "@/components/wallet-provider";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import CookieConsent from "@/components/cookie-consent";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Navbar />
             <main className="flex-1 pt-16">{children}</main>
             <Footer />
+            <CookieConsent />
           </div>
         </WalletProvider>
       </body>
