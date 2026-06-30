@@ -67,3 +67,6 @@ export * from "./transaction-simulation";
 
 // ─── Encrypted user preferences ──────────────────────────────────────────────
 export * from "./user-preferences";
+
+// ─── Error logging and reporting ─────────────────────────────────────────────
+export * from "./error-reporting";
