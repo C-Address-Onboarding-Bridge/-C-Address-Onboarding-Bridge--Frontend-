@@ -33,127 +33,151 @@ export default function Navbar() {
   });
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl"
-      aria-label="Primary navigation"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-lg">C-Address Bridge</span>
-          </Link>
+    <>
+      {/* Skip link for keyboard users */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
 
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {isConnected ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] bounce-in">
-                <div className="w-2 h-2 rounded-full bg-[var(--success)] pulse-glow" />
-                <span className="text-xs font-mono text-[var(--text-muted)]">
-                  {address?.slice(0, 4)}...{address?.slice(-4)}
-                </span>
-              </button>
-            ) : (
-              <button
-                onClick={handleConnectClick}
-                disabled={isConnecting}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
-              >
-                <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
-              </button>
-            )}
-
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)]"
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl"
+        aria-label="Primary navigation"
+        role="navigation"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link
+              href="/"
+              className="flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] rounded-lg"
+              aria-label="C-Address Bridge - Home"
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center" aria-hidden="true">
+                <Wallet className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-semibold text-lg">C-Address Bridge</span>
+            </Link>
 
-      {mobileOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]">
-          <FocusTrap active={mobileOpen} onClose={() => setMobileOpen(false)}>
-          <div className="px-4 py-3 space-y-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
-                  }`}
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-1" role="menubar">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    role="menuitem"
+                    aria-current={isActive ? "page" : undefined}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] ${
+                      isActive
+                        ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
+                        : "text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" aria-hidden="true" />
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {isConnected ? (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] bounce-in">
+                  <div className="w-2 h-2 rounded-full bg-[var(--success)] pulse-glow" aria-hidden="true" />
+                  <span className="text-xs font-mono text-[var(--text-muted)]" aria-label={`Connected wallet address: ${address}`}>
+                    {address?.slice(0, 4)}...{address?.slice(-4)}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectClick}
+                  disabled={isConnecting}
+                  aria-label="Connect wallet"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
                 >
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </Link>
-              );
-            })}
-            {!isConnected && (
-              <button
-                onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
-                disabled={isConnecting}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium"
-              >
-                <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
-              </button>
-            )}
-            {isConnected && (
-              <button
-                onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--surface-2)] text-[var(--foreground)] text-sm font-medium border border-[var(--border)]"
-              >
-                <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
-                <span className="font-mono text-xs">
-                  {address?.slice(0, 4)}...{address?.slice(-4)}
-                </span>
-              </button>
-            )}
-          </div>
-          </FocusTrap>
-        </div>
-      )}
+                  <Wallet className="w-4 h-4" aria-hidden="true" />
+                  {isConnecting ? "Connecting..." : "Connect Wallet"}
+                </button>
+              )}
 
-      <WalletModal
-        isOpen={walletModalOpen}
-        onClose={() => setWalletModalOpen(false)}
-        onConnect={connect}
-        connectedAddress={address}
-        network={network}
-        isConnecting={isConnecting}
-      />
-    </nav>
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-menu"
+              >
+                {mobileOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-[var(--border)] bg-[var(--background)]" id="mobile-menu" role="menu" aria-label="Mobile navigation">
+            <FocusTrap active={mobileOpen} onClose={() => setMobileOpen(false)}>
+              <div className="px-4 py-3 space-y-1">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      role="menuitem"
+                      onClick={() => setMobileOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] ${
+                        isActive
+                          ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
+                          : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" aria-hidden="true" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
+                {!isConnected && (
+                  <button
+                    onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
+                    disabled={isConnecting}
+                    aria-label="Connect wallet"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                  >
+                    <Wallet className="w-4 h-4" aria-hidden="true" />
+                    {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  </button>
+                )}
+                {isConnected && (
+                  <button
+                    onClick={() => { setWalletModalOpen(true); setMobileOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--surface-2)] text-[var(--foreground)] text-sm font-medium border border-[var(--border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                    aria-label={`Connected wallet: ${address}`}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[var(--success)]" aria-hidden="true" />
+                    <span className="font-mono text-xs">
+                      {address?.slice(0, 4)}...{address?.slice(-4)}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </FocusTrap>
+          </div>
+        )}
+
+        <WalletModal
+          isOpen={walletModalOpen}
+          onClose={() => setWalletModalOpen(false)}
+          onConnect={connect}
+          connectedAddress={address}
+          network={network}
+          isConnecting={isConnecting}
+        />
+      </nav>
+    </>
   );
 }
