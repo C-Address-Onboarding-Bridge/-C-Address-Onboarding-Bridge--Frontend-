@@ -16,7 +16,7 @@ export interface SimulationResult {
  */
 export async function simulateSorobanTransaction(
   tx: Transaction | FeeBumpTransaction,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<SimulationResult> {
   try {
     const server = getSorobanRpcServer(network);
@@ -29,13 +29,16 @@ export async function simulateSorobanTransaction(
     const minFee = getSimulationMinFee(sim as rpc.Api.SimulateTransactionSuccessResponse);
     return { minFee, error: null };
   } catch (e) {
-    console.warn("Soroban pre-flight unavailable, falling back to manual fee:", e);
+    console.warn(
+      'Soroban pre-flight unavailable, falling back to manual fee:',
+      e
+    );
     return { minFee: null, error: null };
   }
 }
 
 function parseSimError(raw: string): string {
-  if (!raw) return "Simulation failed: Unknown error.";
+  if (!raw) return 'Simulation failed: Unknown error.';
   const revert = raw.match(/(?:panic|revert)[^:]*:\s*(.+?)(?:\n|$)/i);
   if (revert) return `Contract reverted: ${revert[1].trim()}`;
   const host = raw.match(/HostError:\s*(.+?)(?:\n|$)/i);
@@ -46,5 +49,5 @@ function parseSimError(raw: string): string {
 /** Converts stroops string to XLM display string. */
 export function stroopsToXlm(stroops: string): string {
   const n = Number(stroops);
-  return isNaN(n) ? "0.0000100" : (n / 10_000_000).toFixed(7);
+  return isNaN(n) ? '0.0000100' : (n / 10_000_000).toFixed(7);
 }

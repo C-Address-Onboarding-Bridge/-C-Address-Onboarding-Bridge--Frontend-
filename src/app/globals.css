@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @source "../components";
 @source "../app";
@@ -57,7 +57,10 @@
 
 * {
   box-sizing: border-box;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 html {
@@ -106,7 +109,9 @@ body {
   border-radius: inherit;
   padding: 1px;
   background: linear-gradient(135deg, #6c5ce7, #00cec9);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
@@ -158,7 +163,8 @@ html {
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
   }
   50% {
@@ -266,7 +272,9 @@ html {
 
 @utility feature-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15), 0 0 30px rgba(0, 206, 201, 0.05);
+  box-shadow:
+    0 20px 40px rgba(108, 92, 231, 0.15),
+    0 0 30px rgba(0, 206, 201, 0.05);
 }
 
 @utility interactive-element {
@@ -318,7 +326,9 @@ html {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 @utility ripple-button:active::before {
@@ -333,13 +343,25 @@ html {
 
 /* Step transition animations */
 @keyframes step-enter {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes step-enter-back {
-  from { opacity: 0; transform: translateX(-24px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .step-enter {
@@ -356,7 +378,9 @@ html {
 }
 
 .step-dot {
-  transition: background-color 0.25s ease, transform 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease;
 }
 
 .step-dot-active {
@@ -392,5 +416,8 @@ html {
 
 /* Smooth transitions for theme changes (already defined above) */
 .theme-transition {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }

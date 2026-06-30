@@ -28,7 +28,7 @@ import { Networks, checkFreighterConnection, getFreighterAddress, getFreighterNe
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
-export type WalletId = "freighter" | "lobstr" | "xbull" | "albedo";
+export type WalletId = 'freighter' | 'lobstr' | 'xbull' | 'albedo';
 
 export interface WalletAdapter {
   id: WalletId;
@@ -40,25 +40,27 @@ export interface WalletAdapter {
   /** Return the currently authorised public key without prompting. */
   getAddress(): Promise<string | null>;
   /** Return "PUBLIC" or "TESTNET" for the wallet's active network. */
-  getNetwork(): Promise<"PUBLIC" | "TESTNET">;
+  getNetwork(): Promise<'PUBLIC' | 'TESTNET'>;
   /** Sign an XDR-encoded transaction envelope and return the signed XDR. */
   signTransaction(xdr: string, networkPassphrase: string): Promise<string>;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function networkFromPassphrase(passphrase: string | undefined): "PUBLIC" | "TESTNET" {
-  return passphrase === Networks.PUBLIC ? "PUBLIC" : "TESTNET";
+function networkFromPassphrase(
+  passphrase: string | undefined
+): 'PUBLIC' | 'TESTNET' {
+  return passphrase === Networks.PUBLIC ? 'PUBLIC' : 'TESTNET';
 }
 
 // ─── Freighter adapter ───────────────────────────────────────────────────────
 
 export const freighterAdapter: WalletAdapter = {
-  id: "freighter",
-  name: "Freighter",
+  id: 'freighter',
+  name: 'Freighter',
 
   isAvailable() {
-    return typeof window !== "undefined" && "freighter" in window;
+    return typeof window !== 'undefined' && 'freighter' in window;
   },
 
   async connect() {
@@ -99,11 +101,11 @@ interface LobstrWindow {
 }
 
 export const lobstrAdapter: WalletAdapter = {
-  id: "lobstr",
-  name: "Lobstr",
+  id: 'lobstr',
+  name: 'Lobstr',
 
   isAvailable() {
-    return typeof window !== "undefined" && "lobstr" in window;
+    return typeof window !== 'undefined' && 'lobstr' in window;
   },
 
   async connect() {
@@ -130,17 +132,17 @@ export const lobstrAdapter: WalletAdapter = {
   async getNetwork() {
     try {
       const lobstr = (window as LobstrWindow).lobstr;
-      if (!lobstr) return "TESTNET";
+      if (!lobstr) return 'TESTNET';
       const { networkPassphrase } = await lobstr.getNetwork();
       return networkFromPassphrase(networkPassphrase);
     } catch {
-      return "TESTNET";
+      return 'TESTNET';
     }
   },
 
   async signTransaction(xdr) {
     const lobstr = (window as LobstrWindow).lobstr;
-    if (!lobstr) throw new Error("Lobstr wallet not found");
+    if (!lobstr) throw new Error('Lobstr wallet not found');
     const { signedXDR } = await lobstr.signTransaction(xdr);
     return signedXDR;
   },
@@ -155,16 +157,20 @@ interface XBullWindow {
     connect(): Promise<{ publicKey: string }>;
     getPublicKey(): Promise<string>;
     getNetwork(): Promise<{ networkPassphrase: string }>;
-    sign(params: { xdr: string; publicKey: string; network: string }): Promise<{ signedXDR: string }>;
+    sign(params: {
+      xdr: string;
+      publicKey: string;
+      network: string;
+    }): Promise<{ signedXDR: string }>;
   };
 }
 
 export const xbullAdapter: WalletAdapter = {
-  id: "xbull",
-  name: "xBull",
+  id: 'xbull',
+  name: 'xBull',
 
   isAvailable() {
-    return typeof window !== "undefined" && "xBullSDK" in window;
+    return typeof window !== 'undefined' && 'xBullSDK' in window;
   },
 
   async connect() {
@@ -190,19 +196,23 @@ export const xbullAdapter: WalletAdapter = {
   async getNetwork() {
     try {
       const sdk = (window as XBullWindow).xBullSDK;
-      if (!sdk) return "TESTNET";
+      if (!sdk) return 'TESTNET';
       const { networkPassphrase } = await sdk.getNetwork();
       return networkFromPassphrase(networkPassphrase);
     } catch {
-      return "TESTNET";
+      return 'TESTNET';
     }
   },
 
   async signTransaction(xdr, networkPassphrase) {
     const sdk = (window as XBullWindow).xBullSDK;
-    if (!sdk) throw new Error("xBull wallet not found");
+    if (!sdk) throw new Error('xBull wallet not found');
     const publicKey = await sdk.getPublicKey();
-    const { signedXDR } = await sdk.sign({ xdr, publicKey, network: networkPassphrase });
+    const { signedXDR } = await sdk.sign({
+      xdr,
+      publicKey,
+      network: networkPassphrase,
+    });
     return signedXDR;
   },
 };
@@ -215,17 +225,21 @@ export const xbullAdapter: WalletAdapter = {
 interface AlbedoWindow {
   albedo?: {
     publicKey(params: Record<string, unknown>): Promise<{ pubkey: string }>;
-    tx(params: { xdr: string; network: string; submit?: boolean }): Promise<{ signed_envelope_xdr: string }>;
+    tx(params: {
+      xdr: string;
+      network: string;
+      submit?: boolean;
+    }): Promise<{ signed_envelope_xdr: string }>;
   };
 }
 
 export const albedoAdapter: WalletAdapter = {
-  id: "albedo",
-  name: "Albedo",
+  id: 'albedo',
+  name: 'Albedo',
 
   // Albedo loads via a bundled SDK; we check for the injected global.
   isAvailable() {
-    return typeof window !== "undefined" && "albedo" in window;
+    return typeof window !== 'undefined' && 'albedo' in window;
   },
 
   async connect() {
@@ -252,15 +266,20 @@ export const albedoAdapter: WalletAdapter = {
 
   // Albedo does not expose a getNetwork call; default to TESTNET unless overridden.
   async getNetwork() {
-    return "TESTNET";
+    return 'TESTNET';
   },
 
   async signTransaction(xdr, networkPassphrase) {
     const albedo = (window as AlbedoWindow).albedo;
-    if (!albedo) throw new Error("Albedo wallet not found");
+    if (!albedo) throw new Error('Albedo wallet not found');
     // Albedo expects "testnet" or "public" (lowercase).
-    const network = networkPassphrase === Networks.PUBLIC ? "public" : "testnet";
-    const { signed_envelope_xdr } = await albedo.tx({ xdr, network, submit: false });
+    const network =
+      networkPassphrase === Networks.PUBLIC ? 'public' : 'testnet';
+    const { signed_envelope_xdr } = await albedo.tx({
+      xdr,
+      network,
+      submit: false,
+    });
     return signed_envelope_xdr;
   },
 };

@@ -52,16 +52,16 @@ Key principle: keep all Stellar/Soroban network calls inside `src/lib/stellar.ts
 
 ## Stellar / Soroban Concepts You Need
 
-| Term | What it means |
-|---|---|
-| G-address | Classic Stellar account (`G` + 55 chars). Holds XLM/tokens, signs transactions. |
-| C-address | Soroban smart contract address (`C` + 55 chars). Cannot sign; controlled by contract logic. |
-| Horizon | Stellar's HTTP API for classic (non-contract) operations. |
-| Soroban RPC | JSON-RPC endpoint for simulating and submitting contract transactions. |
-| Freighter | Browser wallet extension that stores the user's key and signs transactions. |
-| Stroop | Smallest XLM unit. 1 XLM = 10,000,000 stroops. Fees are denominated in stroops. |
-| SEP-41 | Token standard for Soroban (analogous to ERC-20). |
-| Trustline | Permission an account must grant before it can hold a non-XLM asset. |
+| Term        | What it means                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| G-address   | Classic Stellar account (`G` + 55 chars). Holds XLM/tokens, signs transactions.             |
+| C-address   | Soroban smart contract address (`C` + 55 chars). Cannot sign; controlled by contract logic. |
+| Horizon     | Stellar's HTTP API for classic (non-contract) operations.                                   |
+| Soroban RPC | JSON-RPC endpoint for simulating and submitting contract transactions.                      |
+| Freighter   | Browser wallet extension that stores the user's key and signs transactions.                 |
+| Stroop      | Smallest XLM unit. 1 XLM = 10,000,000 stroops. Fees are denominated in stroops.             |
+| SEP-41      | Token standard for Soroban (analogous to ERC-20).                                           |
+| Trustline   | Permission an account must grant before it can hold a non-XLM asset.                        |
 
 ## Coding Standards
 

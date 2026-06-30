@@ -11,22 +11,26 @@ import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";
 import { MonitoringProvider } from "@/components/monitoring-provider";
 
 const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
+  subsets: ['latin'],
+  variable: '--font-geist',
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
 });
 
 export const metadata: Metadata = {
-  title: "C-Address Bridge | Soroban Onboarding Protocol",
+  title: 'C-Address Bridge | Soroban Onboarding Protocol',
   description:
-    "Fund any Soroban smart account (C-address) directly — from a CEX withdrawal, a credit card, or an existing G-address.",
+    'Fund any Soroban smart account (C-address) directly — from a CEX withdrawal, a credit card, or an existing G-address.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">

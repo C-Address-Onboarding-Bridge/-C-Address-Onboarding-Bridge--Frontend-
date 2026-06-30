@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ArrowRightLeft,
   Wallet,
@@ -55,11 +55,11 @@ import {
   STEP_REVIEW,
   STEP_CONFIRM,
   USDC_ISSUERS,
-} from "@/lib";
-import { validateCAddress } from "@/utils/validation";
+} from '@/lib';
+import { validateCAddress } from '@/utils/validation';
 
-type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
-type PollStatus = "pending" | "confirmed" | "failed" | null;
+type TxStatus = 'idle' | 'signing' | 'submitting' | 'success' | 'error';
+type PollStatus = 'pending' | 'confirmed' | 'failed' | null;
 
 type CachedBridgeState = {
   fromAddress: string;
@@ -81,13 +81,13 @@ type QueuedBridgeSubmission = {
   toAddress: string;
   amount: string;
   asset: string;
-  network: "PUBLIC" | "TESTNET";
+  network: 'PUBLIC' | 'TESTNET';
   selectedFee: string;
 };
 
-const BRIDGE_FORM_STATE_KEY = "c_bridge_cached_form_state";
-const BRIDGE_ACCOUNT_INFO_KEY = "c_bridge_cached_account_info";
-const BRIDGE_OFFLINE_QUEUE_KEY = "c_bridge_offline_submission_queue";
+const BRIDGE_FORM_STATE_KEY = 'c_bridge_cached_form_state';
+const BRIDGE_ACCOUNT_INFO_KEY = 'c_bridge_cached_account_info';
+const BRIDGE_OFFLINE_QUEUE_KEY = 'c_bridge_offline_submission_queue';
 
 export default function BridgePage() {
   const { isConnected, address, network, connect } = useWallet();
@@ -100,17 +100,17 @@ export default function BridgePage() {
 
   const bridgeContractId = getBridgeContractId(network);
 
-  const [fromAddress, setFromAddress] = useState("");
-  const [toAddress, setToAddress] = useState("");
-  const [amount, setAmount] = useState("");
+  const [fromAddress, setFromAddress] = useState('');
+  const [toAddress, setToAddress] = useState('');
+  const [amount, setAmount] = useState('');
   const [asset, setAsset] = useState<string>(ASSET_XLM);
   const [step, setStep] = useState<Step>(STEP_FORM);
   const prevStepRef = useRef<Step>(STEP_FORM);
-  const [stepDir, setStepDir] = useState<"forward" | "back">("forward");
+  const [stepDir, setStepDir] = useState<'forward' | 'back'>('forward');
   const [txStatus, setTxStatus] = useState<TxStatus>(STATUS_IDLE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
-  const [selectedFee, setSelectedFee] = useState<string>("100");
+  const [selectedFee, setSelectedFee] = useState<string>('100');
   const { isOffline } = useConnectivity();
   const mountedRef = useRef(true);
   const [pendingOfflineSubmissions, setPendingOfflineSubmissions] = useState(0);
@@ -132,7 +132,7 @@ export default function BridgePage() {
   useEffect(() => {
     mountedRef.current = true;
 
-    if (typeof window === "undefined") return undefined;
+    if (typeof window === 'undefined') return undefined;
 
     const cachedForm = localStorage.getItem(BRIDGE_FORM_STATE_KEY);
     if (cachedForm) {
@@ -171,7 +171,7 @@ export default function BridgePage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     const cachedState: CachedBridgeState = {
       fromAddress,
       toAddress,
@@ -183,7 +183,7 @@ export default function BridgePage() {
   }, [fromAddress, toAddress, amount, asset, selectedFee]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !fromAddress) return;
+    if (typeof window === 'undefined' || !fromAddress) return;
     const accountCache = {
       fromAddress,
       info: {
@@ -196,7 +196,7 @@ export default function BridgePage() {
   }, [fromAddress, accountExists, allBalances, sourceBalance]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     const data = localStorage.getItem(BRIDGE_OFFLINE_QUEUE_KEY);
     if (!data) {
       setPendingOfflineSubmissions(0);
@@ -230,11 +230,11 @@ export default function BridgePage() {
               submission.amount,
               submission.asset,
               submission.network,
-              submission.selectedFee,
+              submission.selectedFee
             );
             const toastId = addToast(
-              "Queued transaction submitted successfully",
-              "success",
+              'Queued transaction submitted successfully',
+              'success',
               5000,
               {
                 txHash: result.hash,
@@ -318,11 +318,11 @@ export default function BridgePage() {
   const [allowanceError, setAllowanceError] = useState<string | null>(null);
 
   // Pre-flight simulation state
-  type SimStatus = "idle" | "running" | "done" | "error";
-  const [simStatus, setSimStatus] = useState<SimStatus>("idle");
+  type SimStatus = 'idle' | 'running' | 'done' | 'error';
+  const [simStatus, setSimStatus] = useState<SimStatus>('idle');
   const [simMinFee, setSimMinFee] = useState<string | null>(null);
   const [simError, setSimError] = useState<string | null>(null);
-  const [feeOverride, setFeeOverride] = useState<string>("");
+  const [feeOverride, setFeeOverride] = useState<string>('');
 
   // For native XLM or when no bridge contract is set, approval is never needed
   const needsAllowanceCheck =
@@ -358,7 +358,7 @@ export default function BridgePage() {
 
   // --- Computed values (derived from state, no extra renders needed) ---
 
-  const trustlineStatus: "unknown" | "has" | "missing" =
+  const trustlineStatus: 'unknown' | 'has' | 'missing' =
     asset !== ASSET_USDC || accountExists !== true
       ? STATUS_UNKNOWN
       : allBalances.some((b) => b.asset === ASSET_USDC)
@@ -389,7 +389,7 @@ export default function BridgePage() {
 
   // Update history when form state changes (only on form step)
   useEffect(() => {
-    if (step === "form") {
+    if (step === 'form') {
       updateHistory(formState);
     }
   }, [fromAddress, toAddress, amount, asset, step, formState, updateHistory]);
@@ -438,7 +438,7 @@ export default function BridgePage() {
       return;
     const tokenContractId = USDC_ISSUERS[network];
 
-    setAllowanceStatus("approving");
+    setAllowanceStatus('approving');
     setAllowanceError(null);
     try {
       const amountRaw = BigInt(Math.round(parseFloat(amount) * 10_000_000));
@@ -451,8 +451,8 @@ export default function BridgePage() {
       );
       setAllowanceStatus("approved");
     } catch (e) {
-      setAllowanceError(e instanceof Error ? e.message : "Approval failed");
-      setAllowanceStatus("error");
+      setAllowanceError(e instanceof Error ? e.message : 'Approval failed');
+      setAllowanceStatus('error');
     }
   };
 
@@ -460,7 +460,7 @@ export default function BridgePage() {
 
   const startPolling = (hash: string, toastId?: string) => {
     pollActiveRef.current = true;
-    setPollStatus("pending");
+    setPollStatus('pending');
     setPollTimedOut(false);
 
     let attempts = 0;
@@ -539,13 +539,13 @@ export default function BridgePage() {
         canProceed
       ) {
         e.preventDefault();
-        goStep("review");
+        goStep('review');
         setTxError(null);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [step, canProceed, setStep]);
 
   // --- Helpers ---
@@ -555,7 +555,7 @@ export default function BridgePage() {
   const goStep = (next: Step) => {
     const cur = STEP_ORDER.indexOf(prevStepRef.current);
     const nxt = STEP_ORDER.indexOf(next);
-    setStepDir(nxt >= cur ? "forward" : "back");
+    setStepDir(nxt >= cur ? 'forward' : 'back');
     prevStepRef.current = next;
     setStep(next);
   };
@@ -569,17 +569,17 @@ export default function BridgePage() {
   const handleSubmit = () => {
     if (!canProceed) {
       if (!fromAddress || !validFrom) {
-        document.getElementById("from-address")?.focus();
+        document.getElementById('from-address')?.focus();
       } else if (!toAddress || !validTo) {
-        document.getElementById("to-address")?.focus();
+        document.getElementById('to-address')?.focus();
       } else if (!validAmount || balanceError) {
-        document.getElementById("amount")?.focus();
+        document.getElementById('amount')?.focus();
       }
       return;
     }
     goStep(STEP_REVIEW);
     setTxError(null);
-    setAllowanceStatus("idle");
+    setAllowanceStatus('idle');
     setAllowanceError(null);
 
     if (
@@ -594,7 +594,7 @@ export default function BridgePage() {
     }
 
     if (isOffline) {
-      setSimStatus("done");
+      setSimStatus('done');
       setSimMinFee(null);
       setSimError(null);
       return;
@@ -606,10 +606,10 @@ export default function BridgePage() {
       .then(({ minFee, error }) => {
         setSimMinFee(minFee);
         setSimError(error);
-        setSimStatus(error ? "error" : "done");
+        setSimStatus(error ? 'error' : 'done');
         if (minFee && !feeOverride) setFeeOverride(minFee);
       })
-      .catch(() => setSimStatus("done"));
+      .catch(() => setSimStatus('done'));
   };
 
   const handleConfirm = async () => {
@@ -624,16 +624,16 @@ export default function BridgePage() {
         selectedFee,
       });
       addToast(
-        "Offline: transaction queued and will retry automatically when online.",
-        "info",
-        6000,
+        'Offline: transaction queued and will retry automatically when online.',
+        'info',
+        6000
       );
       return;
     }
 
     setTxStatus(STATUS_SIGNING);
     setTxError(null);
-    recordSubmissionAttempt("bridge_submission");
+    recordSubmissionAttempt('bridge_submission');
     recordTransactionSubmission(fromAddress, toAddress, amount, asset);
 
     try {
@@ -648,13 +648,13 @@ export default function BridgePage() {
       setTxHash(result.hash);
       setTxStatus(STATUS_SUCCESS);
       goStep(STEP_CONFIRM);
-      const toastId = addToast("Transaction submitted", "pending", 0, {
+      const toastId = addToast('Transaction submitted', 'pending', 0, {
         txHash: result.hash,
-        explorerUrl: getExplorerUrl(network, "tx", result.hash),
+        explorerUrl: getExplorerUrl(network, 'tx', result.hash),
       });
       startPolling(result.hash, toastId);
     } catch (e: unknown) {
-      setTxError(e instanceof Error ? e.message : "Transaction failed");
+      setTxError(e instanceof Error ? e.message : 'Transaction failed');
       setTxStatus(STATUS_ERROR);
       addToast(
         e instanceof Error ? e.message : "Transaction failed",
@@ -699,33 +699,33 @@ export default function BridgePage() {
     setPollTimedOut(false);
     setTrustlineActionStatus(STATUS_IDLE);
     setTrustlineError(null);
-    setAllowanceStatus("idle");
+    setAllowanceStatus('idle');
     setAllowanceError(null);
-    setSimStatus("idle");
+    setSimStatus('idle');
     setSimMinFee(null);
     setSimError(null);
-    setFeeOverride("");
+    setFeeOverride('');
   };
 
   const handleUndo = () => {
     if (undo()) {
-      addToast("Undo: Form state restored", "info", 2000);
+      addToast('Undo: Form state restored', 'info', 2000);
     }
   };
 
   const handleRedo = () => {
     if (redo()) {
-      addToast("Redo: Form state restored", "info", 2000);
+      addToast('Redo: Form state restored', 'info', 2000);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {!bridgeContractId && (
-        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-sm text-amber-400">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-400">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           {NETWORK_CONFIG_ERRORS.NO_CONTRACT}
         </div>
       )}
@@ -740,25 +740,25 @@ export default function BridgePage() {
         )}
 
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h1 className="text-3xl font-bold">G → C Bridge</h1>
-          {step === "form" && (
+          {step === 'form' && (
             <div className="flex gap-2">
               <button
                 onClick={handleUndo}
                 disabled={!canUndo}
-                className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-[var(--surface-2)] p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
                 title="Undo (Ctrl+Z)"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="h-4 w-4" />
               </button>
               <button
                 onClick={handleRedo}
                 disabled={!canRedo}
-                className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-[var(--surface-2)] p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
                 title="Redo (Ctrl+Shift+Z)"
               >
-                <RotateCw className="w-4 h-4" />
+                <RotateCw className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -769,7 +769,7 @@ export default function BridgePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {/* Step indicator */}
           {(() => {
@@ -781,7 +781,7 @@ export default function BridgePage() {
             const idx = step === STEP_FORM ? 0 : step === STEP_REVIEW ? 1 : 2;
             return (
               <div className="mb-4">
-                <div className="flex items-center gap-0 mb-2">
+                <div className="mb-2 flex items-center gap-0">
                   {steps.map((s, i) => (
                     <div
                       key={s.label}
@@ -1346,25 +1346,25 @@ export default function BridgePage() {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">About G → C Bridging</h3>
+            <h3 className="mb-3 font-semibold">About G → C Bridging</h3>
             <ul className="space-y-3 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
-                <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--success)]" />
                 <span>Bridge XLM or USDC from any G-address</span>
               </li>
               <li className="flex gap-2">
-                <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--success)]" />
                 <span>Supports all Soroban C-addresses</span>
               </li>
               <li className="flex gap-2">
-                <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--success)]" />
                 <span>Low network fees via Stellar network</span>
               </li>
             </ul>
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">Quick Info</h3>
+            <h3 className="mb-3 font-semibold">Quick Info</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">Network</span>
@@ -1382,9 +1382,9 @@ export default function BridgePage() {
           {!isConnected && (
             <button
               onClick={connect}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--primary)]/30 text-[var(--primary-light)] font-medium hover:bg-[var(--primary)]/5 transition-colors text-sm"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/30 px-4 py-3 text-sm font-medium text-[var(--primary-light)] transition-colors hover:bg-[var(--primary)]/5"
             >
-              <Wallet className="w-4 h-4" />
+              <Wallet className="h-4 w-4" />
               Connect Freighter Wallet
             </button>
           )}

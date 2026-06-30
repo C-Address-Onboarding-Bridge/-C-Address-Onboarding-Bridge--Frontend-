@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import {
@@ -10,7 +10,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-export type ToastType = "success" | "error" | "info" | "pending";
+export type ToastType = 'success' | 'error' | 'info' | 'pending';
 
 export interface Toast {
   id: string;
@@ -35,10 +35,10 @@ function ToastItem({
   }, [toast, onClose]);
 
   const icons = {
-    success: <CheckCircle className="w-5 h-5 flex-shrink-0" />,
-    error: <AlertCircle className="w-5 h-5 flex-shrink-0" />,
-    info: <Info className="w-5 h-5 flex-shrink-0" />,
-    pending: <Clock className="w-5 h-5 flex-shrink-0 animate-pulse" />,
+    success: <CheckCircle className="h-5 w-5 flex-shrink-0" />,
+    error: <AlertCircle className="h-5 w-5 flex-shrink-0" />,
+    info: <Info className="h-5 w-5 flex-shrink-0" />,
+    pending: <Clock className="h-5 w-5 flex-shrink-0 animate-pulse" />,
   };
 
   const colors = {
@@ -61,16 +61,16 @@ function ToastItem({
       className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${colors[toast.type]} animate-in fade-in slide-in-from-bottom-2 max-w-sm w-full`}
     >
       {icons[toast.type]}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{toast.message}</p>
         {toast.explorerUrl && toast.txHash && (
           <a
             href={toast.explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs mt-1 opacity-80 hover:opacity-100 underline underline-offset-2"
+            className="mt-1 inline-flex items-center gap-1 text-xs underline underline-offset-2 opacity-80 hover:opacity-100"
           >
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="h-3 w-3" />
             {toast.txHash.slice(0, 8)}…{toast.txHash.slice(-6)}
           </a>
         )}

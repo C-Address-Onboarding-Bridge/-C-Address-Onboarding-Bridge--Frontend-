@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 import {
   ENV_BRIDGE_CONTRACT_ID,
   ENV_MOONPAY_API_KEY,
@@ -7,13 +7,19 @@ import {
   STATUS_CONFIGURED,
   STATUS_MISSING,
   DEFAULT_NETWORK,
-} from "@/lib/constants";
+} from '@/lib/constants';
 
 export async function GET() {
   return NextResponse.json({
-    bridgeContractId: process.env[ENV_BRIDGE_CONTRACT_ID] ? STATUS_CONFIGURED : STATUS_MISSING,
-    moonpayApiKey: process.env[ENV_MOONPAY_API_KEY] ? STATUS_CONFIGURED : STATUS_MISSING,
-    transakApiKey: process.env[ENV_TRANSAK_API_KEY] ? STATUS_CONFIGURED : STATUS_MISSING,
+    bridgeContractId: process.env[ENV_BRIDGE_CONTRACT_ID]
+      ? STATUS_CONFIGURED
+      : STATUS_MISSING,
+    moonpayApiKey: process.env[ENV_MOONPAY_API_KEY]
+      ? STATUS_CONFIGURED
+      : STATUS_MISSING,
+    transakApiKey: process.env[ENV_TRANSAK_API_KEY]
+      ? STATUS_CONFIGURED
+      : STATUS_MISSING,
     stellarNetwork: process.env[ENV_STELLAR_NETWORK] || DEFAULT_NETWORK,
   });
 }

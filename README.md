@@ -36,12 +36,12 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Required env vars (see `.env.example` for all options):
 
-   | Variable | Required | Description |
-   |---|---|---|
-   | `NEXT_PUBLIC_STELLAR_NETWORK` | Yes | `TESTNET` or `PUBLIC` |
-   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No | Soroban bridge contract (omits direct payment) |
-   | `NEXT_PUBLIC_MOONPAY_API_KEY` | For onramp | From [Moonpay dashboard](https://buy.moonpay.com) |
-   | `NEXT_PUBLIC_TRANSAK_API_KEY` | For onramp | From [Transak dashboard](https://global.transak.com) |
+   | Variable                         | Required   | Description                                          |
+   | -------------------------------- | ---------- | ---------------------------------------------------- |
+   | `NEXT_PUBLIC_STELLAR_NETWORK`    | Yes        | `TESTNET` or `PUBLIC`                                |
+   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No         | Soroban bridge contract (omits direct payment)       |
+   | `NEXT_PUBLIC_MOONPAY_API_KEY`    | For onramp | From [Moonpay dashboard](https://buy.moonpay.com)    |
+   | `NEXT_PUBLIC_TRANSAK_API_KEY`    | For onramp | From [Transak dashboard](https://global.transak.com) |
 
 3. Run:
 
@@ -80,14 +80,14 @@ Keep secrets out of Docker image layers. Use `.env.local` or shell environment v
 
 ## Available Commands
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start development server     |
+| `npm run build`     | Production build             |
+| `npm run start`     | Start production server      |
+| `npm run lint`      | Run ESLint                   |
 | `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run Vitest test suite |
+| `npm run test`      | Run Vitest test suite        |
 
 ## Mock Data (Development)
 
@@ -113,7 +113,11 @@ Developers without a Freighter wallet or live Stellar network can use the built-
 4. Import mocks directly in tests:
 
    ```typescript
-   import { mockFreighterApi, MOCK_TRANSACTIONS, mockHorizonAccount } from "@/lib/mock-data";
+   import {
+     mockFreighterApi,
+     MOCK_TRANSACTIONS,
+     mockHorizonAccount,
+   } from '@/lib/mock-data';
    ```
 
 ## Architecture

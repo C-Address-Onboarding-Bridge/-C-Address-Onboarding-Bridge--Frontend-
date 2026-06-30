@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import Navbar from "@/components/navbar";
+import type { Meta, StoryObj } from '@storybook/react';
+import Navbar from '@/components/navbar';
 
 const meta: Meta<typeof Navbar> = {
-  title: "Layout/Navbar",
+  title: 'Layout/Navbar',
   component: Navbar,
   parameters: {
-    layout: "fullscreen",
-    backgrounds: { default: "dark" },
+    layout: 'fullscreen',
+    backgrounds: { default: 'dark' },
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 };
 
 export default meta;
@@ -18,7 +18,7 @@ export const Default: Story = {};
 
 export const LightTheme: Story = {
   parameters: {
-    backgrounds: { default: "light" },
+    backgrounds: { default: 'light' },
   },
-  globals: { theme: "light" },
+  globals: { theme: 'light' },
 };
