@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  NEXT_PUBLIC_NETWORK: SANDBOX
+  NEXT_PUBLIC_HORIZON_URL: http://localhost:8000
+  NEXT_PUBLIC_SOROBAN_RPC_URL: http://localhost:8000/soroban/rpc
+  NEXT_PUBLIC_FRIENDBOT_URL: http://localhost:8000/friendbot
+
 jobs:
   frontend:
     name: Frontend build
@@ -27,6 +33,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck
+      - run: chmod +x sandbox/scripts/seed-sandbox.sh && bash sandbox/scripts/seed-sandbox.sh
       - run: npm run test
       - run: npm run build
       - name: Visual tests

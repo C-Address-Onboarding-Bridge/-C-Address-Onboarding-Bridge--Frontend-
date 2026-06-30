@@ -39,6 +39,9 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   failed: { label: 'Failed', color: 'text-[var(--error)]' },
 };
 
+const ROW_HEIGHT = 73;
+const OVERSCAN = 5;
+
 interface Props {
   transactions: BridgeTransactionData[];
   loading: boolean;

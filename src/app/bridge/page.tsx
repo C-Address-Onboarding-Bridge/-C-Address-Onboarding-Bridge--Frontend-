@@ -291,6 +291,24 @@ export default function BridgePage() {
   >([]);
   const [accountExists, setAccountExists] = useState<boolean | null>(null);
   const [sourceBalance, setSourceBalance] = useState<string | null>(null);
+  const [congestion, setCongestion] = useState<CongestionInfo | null>(null);
+  const [congestionError, setCongestionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isConnected || !network) return;
+    const check = async () => {
+      try {
+        const info = await checkCongestion(network);
+        setCongestion(info);
+        setCongestionError(null);
+      } catch {
+        setCongestionError("Failed to check network conditions");
+      }
+    };
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [isConnected, network]);
 
   // Trustline add-flow
   const [trustlineActionStatus, setTrustlineActionStatus] = useState<
