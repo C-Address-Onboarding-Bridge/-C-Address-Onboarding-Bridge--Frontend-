@@ -51,6 +51,33 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Open [http://localhost:3000](http://localhost:3000).
 
+
+## Docker Development
+
+The repository includes Docker files for both hot-reload development and production-style local builds. Copy the environment file first so compose can pass the same public configuration into the container:
+
+```bash
+cp .env.example .env.local
+docker compose up --build frontend
+```
+
+The development service mounts the repository into `/app`, keeps `node_modules` and `.next` in named volumes, enables file polling for reliable hot reloads, and serves the app at `http://localhost:3000`.
+
+To verify the production image locally, use the production profile:
+
+```bash
+docker compose --profile production up --build frontend-prod
+```
+
+You can also build the images directly:
+
+```bash
+docker build -f Dockerfile.dev -t c-address-bridge:dev .
+docker build -t c-address-bridge:prod .
+```
+
+Keep secrets out of Docker image layers. Use `.env.local` or shell environment variables for `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_BRIDGE_CONTRACT_ID`, `NEXT_PUBLIC_MOONPAY_API_KEY`, and `NEXT_PUBLIC_TRANSAK_API_KEY`.
+
 ## Available Commands
 
 | Command | Description |

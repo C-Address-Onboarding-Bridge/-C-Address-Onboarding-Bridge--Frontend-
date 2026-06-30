@@ -43,6 +43,7 @@ export default function Footer() {
               <li><a href="/bridge" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">G → C Bridge</a></li>
               <li><a href="/onramp" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Fiat Onramp</a></li>
               <li><a href="/cex" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">CEX Withdrawal</a></li>
+              <li><a href="/status" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Status Page</a></li>
             </ul>
           </nav>
 

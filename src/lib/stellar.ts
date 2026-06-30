@@ -45,6 +45,7 @@ import {
   type AccountBalances,
   type BridgeTransaction,
 } from "./types";
+import { validateHorizonBalance, validateHorizonPayment } from "./horizon-schema";
 import {
   ASSET_XLM,
   NATIVE_ASSET_TYPE,
@@ -246,9 +247,9 @@ export async function getAccountBalances(
   const server = getHorizonServer(network);
   try {
     const account = await server.loadAccount(address);
-    const balances = (account.balances as HorizonBalance[]).map((b) => ({
+    const balances = (account.balances).map(validateHorizonBalance).map((b) => ({
       asset: b.asset_type === NATIVE_ASSET_TYPE ? ASSET_XLM : (b.asset_code || UNKNOWN_ASSET),
-      amount: b.balance,
+      amount: b.balance || "0",
     }));
     const total = balances.find((b) => b.asset === ASSET_XLM)?.amount || BALANCE_INITIAL;
     return { total, balances };
@@ -280,8 +281,8 @@ export async function fetchRecentTransactions(
       .order("desc")
       .call();
 
-    return (payments.records as HorizonPayment[]).map((p) => ({
-      id: p.id,
+    return payments.records.map(validateHorizonPayment).map((p) => ({
+      id: p.id || "",
       fromAddress: p.from || "",
       toAddress: p.to || "",
       amount: p.amount || "0",
@@ -330,6 +331,9 @@ export async function buildAndSubmitPayment(
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
 
+  // Horizon account loading and transaction signing must use the same network
+  // passphrase; otherwise Freighter can sign an XDR that Horizon will reject.
+  // https://developers.stellar.org/docs/build/guides/transactions
   const account = await server.loadAccount(sourceAddress);
   let asset: Asset;
   if (assetCode === "XLM") {
@@ -338,9 +342,9 @@ export async function buildAndSubmitPayment(
     // For non-native assets we must find the issuer from the account's trustlines.
     // Stellar assets are identified by (code, issuer) pairs — the same code can
     // exist from different issuers, so we can't hard-code one.
-    const balances = account.balances as HorizonBalance[];
+    const balances = account.balances.map(validateHorizonBalance);
     const matchingBalance = balances.find((b) => b.asset_code === assetCode);
-    if (!matchingBalance) {
+    if (!matchingBalance || !matchingBalance.asset_issuer) {
       throw new Error(`No ${assetCode} trustline found for this account`);
     }
     asset = new Asset(assetCode, matchingBalance.asset_issuer);
@@ -532,9 +536,9 @@ export async function loadAccountInfo(
   const server = getHorizonServer(network);
   try {
     const account = await server.loadAccount(address);
-    const balances = (account.balances as HorizonBalance[]).map((b) => ({
+    const balances = account.balances.map(validateHorizonBalance).map((b) => ({
       asset: b.asset_type === NATIVE_ASSET_TYPE ? ASSET_XLM : (b.asset_code || UNKNOWN_ASSET),
-      amount: b.balance,
+      amount: b.balance || "0",
     }));
     return { exists: true, balances };
   } catch (e: unknown) {

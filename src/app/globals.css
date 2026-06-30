@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@source "../components";
+@source "../app";
+@source "../ui";
+
+
 :root,
 :root.dark-theme {
   --background: #0a0b0e;
@@ -83,18 +88,18 @@ body {
   border-radius: 3px;
 }
 
-.gradient-text {
+@utility gradient-text {
   background: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-border {
+@utility gradient-border {
   position: relative;
 }
 
-.gradient-border::before {
+@utility gradient-border::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -106,7 +111,7 @@ body {
   mask-composite: exclude;
 }
 
-.glow {
+@utility glow {
   box-shadow: 0 0 20px rgba(108, 92, 231, 0.15), 0 0 40px rgba(0, 206, 201, 0.05);
 }
 
@@ -230,80 +235,80 @@ html {
 }
 
 /* Micro-interaction classes */
-.pulse-glow {
+@utility pulse-glow {
   animation: pulse-glow 2s infinite;
 }
 
-.slide-in {
+@utility slide-in {
   animation: slide-in 0.3s ease-out;
 }
 
-.fade-in {
+@utility fade-in {
   animation: fade-in 0.3s ease-out;
 }
 
-.bounce-in {
+@utility bounce-in {
   animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.checkmark-animation {
+@utility checkmark-animation {
   animation: checkmark 0.6s ease-out;
 }
 
-.rotate-scale-animation {
+@utility rotate-scale-animation {
   animation: rotate-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Enhanced hover effects */
-.feature-card {
+@utility feature-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.feature-card:hover {
+@utility feature-card:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15), 0 0 30px rgba(0, 206, 201, 0.05);
 }
 
-.interactive-element {
+@utility interactive-element {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
-.interactive-element:hover {
+@utility interactive-element:hover {
   transform: scale(1.05);
 }
 
-.interactive-element:active {
+@utility interactive-element:active {
   transform: scale(0.98);
 }
 
 /* Logo animation */
-.cex-logo {
+@utility cex-logo {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
-.cex-logo:hover {
+@utility cex-logo:hover {
   transform: scale(1.15) rotateY(10deg);
   filter: drop-shadow(0 0 20px rgba(108, 92, 231, 0.3));
 }
 
-.cex-logo:active {
+@utility cex-logo:active {
   transform: scale(0.95);
 }
 
-.cex-logo.selected {
+@utility cex-logo.selected {
   animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   filter: drop-shadow(0 0 15px rgba(108, 92, 231, 0.5));
 }
 
 /* Button ripple effect */
-.ripple-button {
+@utility ripple-button {
   position: relative;
   overflow: hidden;
 }
 
-.ripple-button::before {
+@utility ripple-button::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -316,7 +321,7 @@ html {
   transition: width 0.6s, height 0.6s;
 }
 
-.ripple-button:active::before {
+@utility ripple-button:active::before {
   width: 300px;
   height: 300px;
 }
