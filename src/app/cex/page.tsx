@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
-import { CEX_LIST, DEFAULT_BRIDGE_ADDRESS, DEFAULT_BRIDGE_MEMO } from "@/lib/types";
-
-const networks = ["Stellar", "Polygon", "Ethereum"];
+import { Building2, Copy, Check, ExternalLink, Wallet } from "lucide-react";
+import { CEX_LIST } from "@/lib/types";
 
 export default function CexPage() {
   const [selectedCex, setSelectedCex] = useState(CEX_LIST[0]);
-  const [selectedNetwork, setSelectedNetwork] = useState("Stellar");
   const [cAddress, setCAddress] = useState("");
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -53,26 +50,7 @@ export default function CexPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">2. Choose Withdrawal Network</h3>
-            <div className="flex flex-wrap gap-2">
-              {networks.map((net) => (
-                <button
-                  key={net}
-                  onClick={() => setSelectedNetwork(net)}
-                  className={`px-4 py-2 rounded-lg border text-sm transition-all ${
-                    selectedNetwork === net
-                      ? "border-[var(--primary)] bg-[var(--primary)]/5 text-[var(--primary-light)]"
-                      : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {net}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">3. Enter Your C-Address</h3>
+            <h3 className="font-semibold mb-4">2. Enter Your C-Address</h3>
             <p className="text-xs text-[var(--text-muted)] mb-3">
               This is the Soroban smart account address you want to fund.
               It will be linked to your deposit via the bridge memo.
@@ -90,26 +68,8 @@ export default function CexPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">4. Withdrawal Details for {selectedCex.name}</h3>
+            <h3 className="font-semibold mb-4">3. Withdrawal Details for {selectedCex.name}</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-[var(--text-muted)] mb-1">Bridge Deposit Address</label>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs font-mono break-all">
-                    {DEFAULT_BRIDGE_ADDRESS}
-                  </code>
-                  <button
-                    onClick={() => handleCopy(DEFAULT_BRIDGE_ADDRESS, "address")}
-                    className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
-                  >
-                    {copiedField === "address" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
-                  </button>
-                </div>
-                <p className="text-xs text-[var(--text-muted)] mt-1">
-                  Send your withdrawal to this bridge address. The bridge will route funds to your C-address.
-                </p>
-              </div>
-
               {cAddress && (
                 <div>
                   <label className="block text-xs text-[var(--text-muted)] mb-1">Your C-Address (for reference)</label>
@@ -126,34 +86,6 @@ export default function CexPage() {
                   </div>
                 </div>
               )}
-
-              {selectedNetwork === "Stellar" && (
-                <div>
-                  <label className="block text-xs text-[var(--text-muted)] mb-1">Memo (Required for Stellar)</label>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono">
-                      {DEFAULT_BRIDGE_MEMO}
-                    </code>
-                    <button
-                      onClick={() => handleCopy(DEFAULT_BRIDGE_MEMO, "memo")}
-                      className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
-                    >
-                      {copiedField === "memo" ? <Check className="w-4 h-4 text-[var(--success)]" /> : <Copy className="w-4 h-4 text-[var(--text-muted)]" />}
-                    </button>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
-                    <Info className="w-3 h-3" />
-                    This memo maps your deposit to your C-address ({cAddress || "enter a C-address above"})
-                  </p>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20">
-                <Info className="w-4 h-4 text-[var(--warning)] flex-shrink-0" />
-                <p className="text-xs text-[var(--warning)]">
-                  Send only Stellar assets (XLM, USDC) to this address. Using the wrong network will result in lost funds.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -173,10 +105,6 @@ export default function CexPage() {
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">Fee</span>
                 <span>{selectedCex.fee}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Network</span>
-                <span>{selectedNetwork}</span>
               </div>
             </div>
           </div>
