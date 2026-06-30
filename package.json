@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -13,7 +14,9 @@
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:bundle-size": "node scripts/check-bundle-size.mjs",
+    "compare:bundle-size": "node scripts/compare-bundle-size.mjs"
   },
   "dependencies": {
     "@stellar/freighter-api": "^6.0.1",
@@ -24,6 +27,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.3.2",
     "@pact-foundation/pact": "^17.0.0",
     "@playwright/test": "1.49.1",
     "@stryker-mutator/core": "^9.6.1",

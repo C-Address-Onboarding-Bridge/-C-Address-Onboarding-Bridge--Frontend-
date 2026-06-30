@@ -1,0 +1,7 @@
+{
+  "budgets": {
+    "initialJs": "300 KB",
+    "initialCss": "100 KB",
+    "totalAssets": "600 KB"
+  }
+}

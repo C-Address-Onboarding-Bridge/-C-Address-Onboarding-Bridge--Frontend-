@@ -44,3 +44,6 @@ next-env.d.ts
 
 # pact contract testing
 pact-logs/
+
+# bundle analysis
+.next/analyze/

@@ -158,3 +158,67 @@ Enter any contract C-address in the **Inspect Contract** panel to fetch its on-c
 ## License
 
 MIT
+
+## Bundle Size Monitoring
+
+### Local check
+
+```bash
+npm run build:analyze   # builds with ANALYZE=true (generates report)
+npm run check:bundle-size  # validates sizes against budgets
+```
+
+To view the interactive bundle visualization (opened in browser):
+
+```bash
+ANALYZE=true npm run build
+# HTML reports written to .next/analyze/
+```
+
+### Budget configuration
+
+Budgets are defined in `.bundlebudgetrc.json` at the project root:
+
+```json
+{
+  "budgets": {
+    "initialJs": "300 KB",
+    "initialCss": "100 KB",
+    "totalAssets": "600 KB"
+  }
+}
+```
+
+Supported units: `B`, `KB` (1024 bytes), `MB` (1048576 bytes). Values are per-asset-category, not per-file.
+
+| Budget | What it measures |
+|---|---|
+| `initialJs` | JS loaded on first page visit (framework + app + polyfills) |
+| `initialCss` | CSS loaded on first page visit |
+| `totalAssets` | All JS + CSS under `.next/static/` |
+
+### CI integration
+
+Every PR and push to `main` runs a bundle size check that:
+
+1. Builds the app with `ANALYZE=true` (generates `.next/analyze/` reports via `@next/bundle-analyzer`)
+2. Validates sizes against `.bundlebudgetrc.json` budgets
+3. **Fails CI** if any budget is exceeded
+4. Posts a PR comment with current sizes, baseline comparison, and pass/fail status
+
+The baseline artifact is stored from the latest successful `main` branch build and retained for 90 days.
+
+### Reviewing intentional bundle increases
+
+If a feature intentionally increases bundle size:
+
+1. **Adjust the budget** in `.bundlebudgetrc.json` to the new expected size, or
+2. **Add a justification** in the PR description referencing the budget change
+
+Budget increases should be reviewed as part of code review. Use the `.next/analyze/` HTML reports to identify which modules contribute to the growth:
+
+```bash
+# Generate visual report
+ANALYZE=true npm run build
+open .next/analyze/client.html
+```

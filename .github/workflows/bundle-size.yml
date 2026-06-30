@@ -1,0 +1,117 @@
+name: Bundle Size
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: bundle-size-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check bundle sizes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Build with bundle analysis
+        run: npm run build:analyze
+        env:
+          ANALYZE: "true"
+
+      - name: Validate bundle size budgets
+        id: budget-check
+        run: npm run check:bundle-size
+
+      - name: Upload size report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-report-${{ github.sha }}
+          path: .next/bundle-size-report.json
+          retention-days: 30
+
+      - name: Upload baseline (main branch only)
+        if: github.ref == 'refs/heads/main' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-baseline
+          path: .next/bundle-size-report.json
+          retention-days: 90
+
+      - name: Download baseline from main
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .next/baseline
+          RUN_ID=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow bundle-size.yml \
+            --branch main \
+            --status success \
+            --json databaseId \
+            --jq '.[0].databaseId' \
+            --limit 1 2>/dev/null || echo "")
+          if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+            gh run download "$RUN_ID" \
+              --repo ${{ github.repository }} \
+              --name bundle-size-baseline \
+              --dir .next/baseline 2>/dev/null || echo "No baseline artifact in latest run"
+          else
+            echo "No successful main run found"
+          fi
+
+      - name: Generate PR comment
+        if: github.event_name == 'pull_request'
+        run: node scripts/compare-bundle-size.mjs > /tmp/bundle-size-pr-comment.md
+
+      - name: Post or update PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const body = fs.readFileSync("/tmp/bundle-size-pr-comment.md", "utf8").trim();
+            if (!body) { console.log("Empty comment — skipping"); return; }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(
+              (c) => c.user.type === "Bot" && c.body.includes("Bundle Size Report")
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
