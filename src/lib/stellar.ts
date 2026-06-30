@@ -338,6 +338,9 @@ export async function buildAndSubmitPayment(
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
 
+  // Horizon account loading and transaction signing must use the same network
+  // passphrase; otherwise Freighter can sign an XDR that Horizon will reject.
+  // https://developers.stellar.org/docs/build/guides/transactions
   const account = await server.loadAccount(sourceAddress);
   let asset: Asset;
   if (assetCode === "XLM") {
