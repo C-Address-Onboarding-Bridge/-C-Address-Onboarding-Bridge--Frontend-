@@ -13,32 +13,76 @@ env:
   NEXT_PUBLIC_FRIENDBOT_URL: http://localhost:8000/friendbot
 
 jobs:
-  lint-typecheck-test:
+  frontend:
+    name: Frontend build
     runs-on: ubuntu-latest
-    services:
-      stellar:
-        image: stellar/quickstart:testing
-        env:
-          ENABLE_SOROBAN_RPC: yes
-        options: "--platform linux/amd64"
-        ports:
-          - "8000:8000"
-        command: ["--standalone"]
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
+      # Add this step to enforce Prettier formatting
+      - name: Check Formatting
+        run: npm run format:check
+        
+      - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck
       - run: chmod +x sandbox/scripts/seed-sandbox.sh && bash sandbox/scripts/seed-sandbox.sh
       - run: npm run test
+      - run: npm run build
+      - name: Visual tests
+        run: npm run test:visual
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
-  build:
+  storybook:
+    name: Storybook build
     runs-on: ubuntu-latest
-    needs: lint-typecheck-test
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build-storybook
+      - name: Upload Storybook static build
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static/
+          retention-days: 14
+
+  backend:
+    name: Backend build
+    runs-on: ubuntu-latest
+    if: hashFiles('backend/package.json') != ''
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    needs: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,4 +90,128 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npm run build
+      - run: npx playwright test
+        env:
+          CI: true
+
+  pact:
+    name: Pact contract tests
+    runs-on: ubuntu-latest
+    needs: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:contract
+      - name: Upload pact files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pacts
+          path: pacts/
+
+  contract:
+    name: Contract build + tests
+    runs-on: ubuntu-latest
+    if: hashFiles('contracts/Cargo.toml') != ''
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: stellar/actions/install-soroban@v3
+      - run: cargo build --release
+      - run: cargo test
+
+  mutation:
+    name: Mutation testing (advisory)
+    runs-on: ubuntu-latest
+    needs: frontend
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:mutation
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          path: pr-branch
+
+      - name: Setup Node (PR Branch)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pr-branch/package-lock.json
+
+      - name: Install dependencies (PR Branch)
+        run: |
+          cd pr-branch
+          npm ci
+
+      - name: Build site (PR Branch)
+        run: |
+          cd pr-branch
+          npm run build
+
+      - name: Run Lighthouse (PR Branch)
+        run: |
+          cd pr-branch
+          npx lhci collect
+          cp .lighthouseci/manifest.json ../.lighthouseci-pr-manifest.json
+
+      - name: Checkout Main Branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref || 'main' }}
+          path: main-branch
+
+      - name: Setup Node (Main Branch)
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: main-branch/package-lock.json
+
+      - name: Build and Run Lighthouse (Main Branch)
+        if: github.event_name == 'pull_request'
+        run: |
+          cp pr-branch/lighthouserc.js main-branch/lighthouserc.js || true
+          cd main-branch
+          npm ci
+          npm run build
+          npx lhci collect
+          cp .lighthouseci/manifest.json ../.lighthouseci-main-manifest.json
+
+      - name: Compare Lighthouse Scores
+        run: |
+          node pr-branch/scripts/compare-lighthouse.js
+
+      - name: Comment PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && github.event_name == 'pull_request'
+        with:
+          path: lighthouse-comment.md
+

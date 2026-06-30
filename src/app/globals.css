@@ -1,19 +1,43 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
+@source "../components";
+@source "../app";
+@source "../ui";
+
+
+:root,
+:root.dark-theme {
   --background: #0a0b0e;
-  --foreground: #e8eaed;
-  --primary: #6c5ce7;
-  --primary-light: #a29bfe;
-  --secondary: #00cec9;
+  --foreground: #ffffff;
+  --primary: #8b7cf7;
+  --primary-light: #b8aeff;
+  --secondary: #00e5d9;
   --accent: #fd79a8;
   --surface: #141519;
   --surface-2: #1e1f25;
-  --border: #2a2b32;
-  --text-muted: #8a8c93;
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --error: #e17055;
+  --border: #55585e;
+  --text-muted: #ffffff;
+  --success: #00d4a0;
+  --warning: #fddb7a;
+  --error: #f57a6b;
+  --focus-ring: #8b7cf7;
+}
+
+:root.light-theme {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #4a3bd1;
+  --primary-light: #6e5fe8;
+  --secondary: #00b8a9;
+  --accent: #d63031;
+  --surface: #f5f5f5;
+  --surface-2: #e8e8e8;
+  --border: #b8b8b8;
+  --text-muted: #000000;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #dc2626;
+  --focus-ring: #4a3bd1;
 }
 
 @theme inline {
@@ -29,12 +53,21 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-focus-ring: var(--focus-ring);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 * {
   box-sizing: border-box;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
@@ -61,30 +94,32 @@ body {
   border-radius: 3px;
 }
 
-.gradient-text {
+@utility gradient-text {
   background: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-border {
+@utility gradient-border {
   position: relative;
 }
 
-.gradient-border::before {
+@utility gradient-border::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
   background: linear-gradient(135deg, #6c5ce7, #00cec9);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 
-.glow {
+@utility glow {
   box-shadow: 0 0 20px rgba(108, 92, 231, 0.15), 0 0 40px rgba(0, 206, 201, 0.05);
 }
 
@@ -95,4 +130,294 @@ body {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(108, 92, 231, 0.12);
+}
+
+/* Focus indicators for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-to-content {
+  position: absolute;
+  top: -9999px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 0 0 8px 8px;
+  z-index: 9999;
+  font-weight: 600;
+}
+
+.skip-to-content:focus {
+  top: 0;
+  outline: none;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(108, 92, 231, 0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes rotate-scale {
+  0% {
+    transform: scale(0.8) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Micro-interaction classes */
+@utility pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+@utility slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+@utility fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@utility bounce-in {
+  animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@utility checkmark-animation {
+  animation: checkmark 0.6s ease-out;
+}
+
+@utility rotate-scale-animation {
+  animation: rotate-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Enhanced hover effects */
+@utility feature-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@utility feature-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(108, 92, 231, 0.15),
+    0 0 30px rgba(0, 206, 201, 0.05);
+}
+
+@utility interactive-element {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+@utility interactive-element:hover {
+  transform: scale(1.05);
+}
+
+@utility interactive-element:active {
+  transform: scale(0.98);
+}
+
+/* Logo animation */
+@utility cex-logo {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+@utility cex-logo:hover {
+  transform: scale(1.15) rotateY(10deg);
+  filter: drop-shadow(0 0 20px rgba(108, 92, 231, 0.3));
+}
+
+@utility cex-logo:active {
+  transform: scale(0.95);
+}
+
+@utility cex-logo.selected {
+  animation: bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  filter: drop-shadow(0 0 15px rgba(108, 92, 231, 0.5));
+}
+
+/* Button ripple effect */
+@utility ripple-button {
+  position: relative;
+  overflow: hidden;
+}
+
+@utility ripple-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+@utility ripple-button:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Card entrance animation */
+.card-entrance {
+  animation: slide-in 0.4s ease-out;
+}
+
+/* Step transition animations */
+@keyframes step-enter {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes step-enter-back {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-enter {
+  animation: step-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.step-enter-back {
+  animation: step-enter-back 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Step indicator progress bar */
+.step-progress-bar {
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-dot {
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.step-dot-active {
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .step-enter,
+  .step-enter-back {
+    animation: none !important;
+  }
+
+  .feature-card:hover,
+  .interactive-element:hover,
+  .interactive-element:active,
+  .cex-logo:hover,
+  .cex-logo:active,
+  .cex-logo.selected,
+  .card-hover:hover {
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* Smooth transitions for theme changes (already defined above) */
+.theme-transition {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }

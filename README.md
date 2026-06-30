@@ -36,12 +36,12 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Required env vars (see `.env.example` for all options):
 
-   | Variable | Required | Description |
-   |---|---|---|
-   | `NEXT_PUBLIC_STELLAR_NETWORK` | Yes | `TESTNET` or `PUBLIC` |
-   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No | Soroban bridge contract (omits direct payment) |
-   | `NEXT_PUBLIC_MOONPAY_API_KEY` | For onramp | From [Moonpay dashboard](https://buy.moonpay.com) |
-   | `NEXT_PUBLIC_TRANSAK_API_KEY` | For onramp | From [Transak dashboard](https://global.transak.com) |
+   | Variable                         | Required   | Description                                          |
+   | -------------------------------- | ---------- | ---------------------------------------------------- |
+   | `NEXT_PUBLIC_STELLAR_NETWORK`    | Yes        | `TESTNET` or `PUBLIC`                                |
+   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No         | Soroban bridge contract (omits direct payment)       |
+   | `NEXT_PUBLIC_MOONPAY_API_KEY`    | For onramp | From [Moonpay dashboard](https://buy.moonpay.com)    |
+   | `NEXT_PUBLIC_TRANSAK_API_KEY`    | For onramp | From [Transak dashboard](https://global.transak.com) |
 
 3. Run:
 
@@ -51,16 +51,74 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Open [http://localhost:3000](http://localhost:3000).
 
+
+## Docker Development
+
+The repository includes Docker files for both hot-reload development and production-style local builds. Copy the environment file first so compose can pass the same public configuration into the container:
+
+```bash
+cp .env.example .env.local
+docker compose up --build frontend
+```
+
+The development service mounts the repository into `/app`, keeps `node_modules` and `.next` in named volumes, enables file polling for reliable hot reloads, and serves the app at `http://localhost:3000`.
+
+To verify the production image locally, use the production profile:
+
+```bash
+docker compose --profile production up --build frontend-prod
+```
+
+You can also build the images directly:
+
+```bash
+docker build -f Dockerfile.dev -t c-address-bridge:dev .
+docker build -t c-address-bridge:prod .
+```
+
+Keep secrets out of Docker image layers. Use `.env.local` or shell environment variables for `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_BRIDGE_CONTRACT_ID`, `NEXT_PUBLIC_MOONPAY_API_KEY`, and `NEXT_PUBLIC_TRANSAK_API_KEY`.
+
 ## Available Commands
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start development server     |
+| `npm run build`     | Production build             |
+| `npm run start`     | Start production server      |
+| `npm run lint`      | Run ESLint                   |
 | `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run Vitest test suite |
+| `npm run test`      | Run Vitest test suite        |
+
+## Mock Data (Development)
+
+Developers without a Freighter wallet or live Stellar network can use the built-in mock layer:
+
+1. Enable mock mode:
+
+   ```bash
+   # Option A: environment variable (persists across restarts)
+   echo 'NEXT_PUBLIC_DEV_MOCK=true' >> .env.local
+
+   # Option B: browser console (session only)
+   localStorage.setItem('dev_mock', 'true')
+   ```
+
+2. The app will use mock addresses, balances, and transaction history instead of live data.
+
+3. Available mock states:
+   - **Funded account**: 100 XLM + 50 USDC balance with transaction history
+   - **Empty account**: 1 XLM balance, no transactions
+   - **Network error**: Simulates Horizon connection failure
+
+4. Import mocks directly in tests:
+
+   ```typescript
+   import {
+     mockFreighterApi,
+     MOCK_TRANSACTIONS,
+     mockHorizonAccount,
+   } from '@/lib/mock-data';
+   ```
 
 ## Architecture
 
@@ -93,6 +151,42 @@ src/
 3. **Enter** the Soroban C-address you want to fund.
 4. **Confirm** — sign with Freighter and submit to the Stellar network.
 
+## Contract Deployment
+
+The `/contracts` admin page lets developers deploy and manage Soroban bridge contracts directly from the browser using Freighter.
+
+### Enable the admin page
+
+```bash
+# .env.local
+NEXT_PUBLIC_CONTRACTS_ADMIN=true
+```
+
+Navigate to [http://localhost:3000/contracts](http://localhost:3000/contracts). Freighter must be connected.
+
+### Deploy a new contract
+
+1. Build your Soroban contract: `cargo build --release --target wasm32-unknown-unknown`
+2. On the admin page, upload the `.wasm` file and click **Deploy**.
+3. Freighter will prompt for two signatures: one to upload the WASM, one to create the contract instance.
+4. Copy the resulting contract ID into `.env.local`:
+   ```
+   NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET=C…
+   NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET=C…
+   ```
+
+### Upgrade an existing contract
+
+The contract must expose a `__upgrade(new_wasm_hash: bytes)` entrypoint and the signing address must be the contract admin.
+
+1. Build and upload the new WASM to get its hash (use the **Deploy** flow or `stellar contract upload`).
+2. On the **Upgrade Contract** panel, enter the contract ID and new WASM hash, then click **Upgrade**.
+
+### Inspect contract state
+
+Enter any contract C-address in the **Inspect Contract** panel to fetch its on-chain WASM hash and latest ledger from Soroban RPC.
+
 ## License
 
 MIT
+ 

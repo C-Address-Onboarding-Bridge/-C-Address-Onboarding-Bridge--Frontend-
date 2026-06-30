@@ -1,21 +1,42 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowLeftRight, CreditCard, Building2, ExternalLink, Loader2 } from "lucide-react";
-import type { BridgeTransactionData } from "@/lib/stellar";
-import { getExplorerUrl } from "@/lib/stellar";
+import {
+  ArrowLeftRight,
+  CreditCard,
+  Building2,
+  ExternalLink,
+} from 'lucide-react';
+import {
+  type BridgeTransaction as BridgeTransactionData,
+  getExplorerUrl,
+  EXPLORER_BASE_URLS,
+} from '@/lib';
 
-const typeConfig: Record<string, { icon: typeof ArrowLeftRight; label: string; color: string }> = {
-  "g-to-c": { icon: ArrowLeftRight, label: "G → C Bridge", color: "text-[var(--primary-light)]" },
-  fiat: { icon: CreditCard, label: "Fiat Onramp", color: "text-[var(--secondary)]" },
-  cex: { icon: Building2, label: "CEX Withdrawal", color: "text-[var(--accent)]" },
+const typeConfig: Record<
+  string,
+  { icon: typeof ArrowLeftRight; label: string; color: string }
+> = {
+  'g-to-c': {
+    icon: ArrowLeftRight,
+    label: 'G → C Bridge',
+    color: 'text-[var(--primary-light)]',
+  },
+  fiat: {
+    icon: CreditCard,
+    label: 'Fiat Onramp',
+    color: 'text-[var(--secondary)]',
+  },
+  cex: {
+    icon: Building2,
+    label: 'CEX Withdrawal',
+    color: 'text-[var(--accent)]',
+  },
 };
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pending", color: "text-[var(--warning)]" },
-  confirmed: { label: "Confirmed", color: "text-[var(--success)]" },
-  failed: { label: "Failed", color: "text-[var(--error)]" },
+  pending: { label: 'Pending', color: 'text-[var(--warning)]' },
+  confirmed: { label: 'Confirmed', color: 'text-[var(--success)]' },
+  failed: { label: 'Failed', color: 'text-[var(--error)]' },
 };
 
 const ROW_HEIGHT = 73;
@@ -24,108 +45,131 @@ const OVERSCAN = 5;
 interface Props {
   transactions: BridgeTransactionData[];
   loading: boolean;
-  network: "PUBLIC" | "TESTNET" | "SANDBOX";
+  network: 'PUBLIC' | 'TESTNET';
 }
 
-function TransactionRow({ tx, network }: { tx: BridgeTransactionData; network: "PUBLIC" | "TESTNET" | "SANDBOX" }) {
-  const type = typeConfig[tx.type] || typeConfig["g-to-c"];
-  const status = statusConfig[tx.status];
-  const Icon = type.icon;
-  return (
-    <div className="p-4 hover:bg-[var(--surface-2)] transition-colors border-b border-[var(--border)]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[var(--surface-2)] flex items-center justify-center flex-shrink-0">
-            <Icon className={`w-4 h-4 ${type.color}`} />
+export default function TransactionHistory({
+  transactions,
+  loading,
+  network,
+}: Props) {
+  const columns: Column<BridgeTransactionData>[] = [
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      render: (value) => {
+        const type = typeConfig[String(value)] || typeConfig['g-to-c'];
+        const Icon = type.icon;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--surface-2)]">
+              <Icon className={`h-4 w-4 ${type.color}`} />
+            </div>
+            <span>{type.label}</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">{type.label}</p>
-            <p className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">
-              {tx.amount} {tx.asset} → {tx.toAddress}
-            </p>
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p className={`text-xs font-medium ${status.color}`}>{status.label}</p>
-          <p className="text-xs text-[var(--text-muted)]">
-            {new Date(tx.timestamp).toLocaleDateString()}
-          </p>
-          {tx.hash && (
-            <a
-              href={getExplorerUrl(network, "tx", tx.hash)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[var(--primary-light)] hover:underline inline-flex items-center gap-0.5"
-            >
-              <ExternalLink className="w-3 h-3" />
-              View
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function TransactionHistory({ transactions, loading, network }: Props) {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: transactions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: OVERSCAN,
-  });
-
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]">
-      <div className="p-5 border-b border-[var(--border)]">
-        <h3 className="font-semibold">Recent Transactions</h3>
-      </div>
-      {loading ? (
-        <div className="p-12 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-[var(--text-muted)]" />
-        </div>
-      ) : transactions.length === 0 ? (
-        <div className="p-12 text-center">
-          <p className="text-sm text-[var(--text-muted)]">No transactions found for this account.</p>
-        </div>
-      ) : (
-        <div ref={parentRef} className="overflow-auto" style={{ maxHeight: ROW_HEIGHT * 10, contain: "strict" }}>
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative",
-            }}
+        );
+      },
+    },
+    {
+      key: 'asset',
+      label: 'Asset',
+      sortable: true,
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (value) => <span className="font-mono">{value}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (value) => {
+        const status = statusConfig[String(value)];
+        return (
+          <span className={`font-medium ${status.color}`}>{status.label}</span>
+        );
+      },
+    },
+    {
+      key: 'timestamp',
+      label: 'Date',
+      sortable: true,
+      render: (value) => new Date(String(value)).toLocaleDateString(),
+    },
+    {
+      key: 'hash',
+      label: 'Explorer',
+      render: (value) =>
+        value ? (
+          <a
+            href={getExplorerUrl(network, 'tx', String(value))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[var(--primary-light)] transition-colors hover:underline"
           >
-            {virtualizer.getVirtualItems().map((virtualItem) => (
-              <div
-                key={transactions[virtualItem.index].id}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-              >
-                <TransactionRow tx={transactions[virtualItem.index]} network={network} />
-              </div>
-            ))}
+            <ExternalLink className="h-4 w-4" />
+            View
+          </a>
+        ) : (
+          <span className="text-[var(--text-muted)]">—</span>
+        ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="mb-1 text-lg font-semibold">Recent Transactions</h3>
+        <p className="text-sm text-[var(--text-muted)]">
+          View and manage your transaction history
+        </p>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={transactions}
+        keyExtractor={(tx) => tx.id}
+        loading={loading}
+        emptyMessage="No transactions found for this account."
+        expandable
+        renderExpanded={(tx) => (
+          <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+            <div>
+              <p className="mb-1 text-xs text-[var(--text-muted)]">FROM</p>
+              <p className="font-mono text-xs break-all">{tx.fromAddress}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-[var(--text-muted)]">TO</p>
+              <p className="font-mono text-xs break-all">{tx.toAddress}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-[var(--text-muted)]">
+                TRANSACTION HASH
+              </p>
+              <p className="font-mono text-xs break-all">{tx.hash || '—'}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-[var(--text-muted)]">TIMESTAMP</p>
+              <p className="text-xs">
+                {new Date(tx.timestamp).toLocaleString()}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
-      <div className="p-4 border-t border-[var(--border)]">
+        )}
+      />
+
+      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
         <a
-          href={`https://stellar.expert/explorer/${network === "PUBLIC" ? "public" : "testnet"}`}
+          href={EXPLORER_BASE_URLS[network]}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-[var(--primary-light)] transition-colors hover:text-[var(--primary)]"
         >
-          View all on Stellar Expert
-          <ExternalLink className="w-3 h-3" />
+          View all transactions on Stellar Expert
+          <ExternalLink className="h-4 w-4" />
         </a>
       </div>
     </div>
