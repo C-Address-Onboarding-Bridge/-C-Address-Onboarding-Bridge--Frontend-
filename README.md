@@ -89,6 +89,33 @@ Keep secrets out of Docker image layers. Use `.env.local` or shell environment v
 | `npm run typecheck` | Run TypeScript type checking |
 | `npm run test` | Run Vitest test suite |
 
+## Mock Data (Development)
+
+Developers without a Freighter wallet or live Stellar network can use the built-in mock layer:
+
+1. Enable mock mode:
+
+   ```bash
+   # Option A: environment variable (persists across restarts)
+   echo 'NEXT_PUBLIC_DEV_MOCK=true' >> .env.local
+
+   # Option B: browser console (session only)
+   localStorage.setItem('dev_mock', 'true')
+   ```
+
+2. The app will use mock addresses, balances, and transaction history instead of live data.
+
+3. Available mock states:
+   - **Funded account**: 100 XLM + 50 USDC balance with transaction history
+   - **Empty account**: 1 XLM balance, no transactions
+   - **Network error**: Simulates Horizon connection failure
+
+4. Import mocks directly in tests:
+
+   ```typescript
+   import { mockFreighterApi, MOCK_TRANSACTIONS, mockHorizonAccount } from "@/lib/mock-data";
+   ```
+
 ## Architecture
 
 ```
@@ -119,6 +146,41 @@ src/
 2. **Choose** a funding source: G-address, fiat card, or CEX withdrawal.
 3. **Enter** the Soroban C-address you want to fund.
 4. **Confirm** — sign with Freighter and submit to the Stellar network.
+
+## Contract Deployment
+
+The `/contracts` admin page lets developers deploy and manage Soroban bridge contracts directly from the browser using Freighter.
+
+### Enable the admin page
+
+```bash
+# .env.local
+NEXT_PUBLIC_CONTRACTS_ADMIN=true
+```
+
+Navigate to [http://localhost:3000/contracts](http://localhost:3000/contracts). Freighter must be connected.
+
+### Deploy a new contract
+
+1. Build your Soroban contract: `cargo build --release --target wasm32-unknown-unknown`
+2. On the admin page, upload the `.wasm` file and click **Deploy**.
+3. Freighter will prompt for two signatures: one to upload the WASM, one to create the contract instance.
+4. Copy the resulting contract ID into `.env.local`:
+   ```
+   NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET=C…
+   NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET=C…
+   ```
+
+### Upgrade an existing contract
+
+The contract must expose a `__upgrade(new_wasm_hash: bytes)` entrypoint and the signing address must be the contract admin.
+
+1. Build and upload the new WASM to get its hash (use the **Deploy** flow or `stellar contract upload`).
+2. On the **Upgrade Contract** panel, enter the contract ID and new WASM hash, then click **Upgrade**.
+
+### Inspect contract state
+
+Enter any contract C-address in the **Inspect Contract** panel to fetch its on-chain WASM hash and latest ledger from Soroban RPC.
 
 ## License
 

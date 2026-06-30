@@ -1,117 +1,100 @@
-# Contributing
+# Contributing to C-Address Bridge
 
-Thanks for helping improve the C-Address Bridge frontend. This guide covers the local setup, project structure, Stellar/Soroban context, coding standards, and pull request checks expected for frontend contributions.
+## Prerequisites
 
-## Development Setup
+- Node.js 22+
+- npm 10+
+- [Freighter](https://freighter.app/) browser extension (for manual testing)
+- Git
 
-1. Fork and clone the repository:
+## Setup
 
-   ```bash
-   git clone https://github.com/<your-user>/-C-Address-Onboarding-Bridge--Frontend-.git
-   cd -C-Address-Onboarding-Bridge--Frontend-
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Create a local environment file:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-4. Configure the required variables:
-
-   | Variable | Required | Purpose |
-   | --- | --- | --- |
-   | `NEXT_PUBLIC_STELLAR_NETWORK` | Yes | Use `TESTNET` for development and `PUBLIC` for production. |
-   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | Optional | Soroban bridge contract ID when contract routing is enabled. |
-   | `NEXT_PUBLIC_MOONPAY_API_KEY` | Onramp flows | Moonpay publishable API key for fiat funding. |
-   | `NEXT_PUBLIC_TRANSAK_API_KEY` | Onramp flows | Transak publishable API key for fiat funding. |
-
-5. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-6. Open `http://localhost:3000` and connect a Freighter wallet configured for the same Stellar network as `NEXT_PUBLIC_STELLAR_NETWORK`.
-
-## Useful Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Next.js development server. |
-| `npm run build` | Build the production application. |
-| `npm run start` | Serve a production build locally. |
-| `npm run lint` | Run ESLint checks. |
-| `npm run typecheck` | Run TypeScript without emitting files. |
-| `npm run test` | Run the Vitest test suite. |
-
-Run `npm run lint`, `npm run typecheck`, and `npm run test` before opening a pull request. Run `npm run build` when changing routing, app shell behavior, environment handling, or wallet transaction flows.
-
-## Project Structure
-
-```text
-src/
-├── app/                  # Next.js App Router pages, layouts, and route states
-│   ├── bridge/           # G-address to C-address bridge flow
-│   ├── cex/              # CEX withdrawal routing flow
-│   ├── dashboard/        # Wallet dashboard and balance views
-│   └── onramp/           # Moonpay and Transak fiat funding flow
-├── components/           # Shared UI and wallet provider components
-└── lib/                  # Stellar integration, shared types, and constants
+```bash
+git clone <repo-url>
+cd c-address-bridge
+npm install
+cp .env.example .env.local
 ```
 
-Keep route-specific behavior inside the matching `src/app/*` route. Put reusable visual elements in `src/components`, and keep network, wallet, transaction, and Soroban helper logic in `src/lib`.
+Edit `.env.local` and set at minimum:
 
-## Stellar and Soroban Concepts
+```
+NEXT_PUBLIC_STELLAR_NETWORK=TESTNET
+```
 
-Contributors should understand these terms before changing funding or wallet flows:
+Start the dev server:
 
-- **G address**: a classic Stellar account address used for normal Stellar payments.
-- **C address**: a Soroban smart contract address that can receive contract-routed funding.
-- **Horizon**: the Stellar API used for classic account and payment data.
-- **Soroban RPC**: the API used to simulate, submit, and inspect smart contract transactions.
-- **Freighter**: the browser wallet used to connect accounts and sign Stellar transactions.
-- **Testnet versus Public**: testnet is for development and must not be mixed with production contract IDs or live onramp configuration.
+```bash
+npm run dev   # http://localhost:3000
+```
 
-When changing transaction code, verify that the selected network, contract ID, destination address type, and signer account all refer to the same environment.
+## Project Architecture
+
+```
+src/
+├── app/           # Next.js App Router pages (server components by default)
+│   ├── bridge/    # G → C bridge flow
+│   ├── cex/       # CEX withdrawal routing
+│   ├── dashboard/ # Live wallet balances + transaction history
+│   ├── onramp/    # Fiat onramp (Moonpay / Transak)
+│   └── contracts/ # Admin: deploy / upgrade / inspect Soroban contracts
+├── components/    # Shared React components (client components use "use client")
+├── lib/
+│   ├── stellar.ts # All Stellar SDK + Freighter calls — the core library
+│   ├── types.ts   # Shared TypeScript types and constants
+│   └── ...        # Fee stats, rate limiting, sanitization, secure storage, etc.
+├── hooks/         # Reusable React hooks
+├── services/      # Soroban RPC service wrappers
+└── config/        # Network configuration
+```
+
+Key principle: keep all Stellar/Soroban network calls inside `src/lib/stellar.ts` or `src/services/`. Pages and components call these functions; they do not import the Stellar SDK directly.
+
+## Stellar / Soroban Concepts You Need
+
+| Term | What it means |
+|---|---|
+| G-address | Classic Stellar account (`G` + 55 chars). Holds XLM/tokens, signs transactions. |
+| C-address | Soroban smart contract address (`C` + 55 chars). Cannot sign; controlled by contract logic. |
+| Horizon | Stellar's HTTP API for classic (non-contract) operations. |
+| Soroban RPC | JSON-RPC endpoint for simulating and submitting contract transactions. |
+| Freighter | Browser wallet extension that stores the user's key and signs transactions. |
+| Stroop | Smallest XLM unit. 1 XLM = 10,000,000 stroops. Fees are denominated in stroops. |
+| SEP-41 | Token standard for Soroban (analogous to ERC-20). |
+| Trustline | Permission an account must grant before it can hold a non-XLM asset. |
 
 ## Coding Standards
 
-- Use TypeScript for application logic and keep public component props typed.
-- Prefer small, focused React components with explicit loading, error, and empty states.
-- Keep wallet and network side effects behind clear helper functions or provider methods.
-- Avoid hard-coded addresses, API keys, contract IDs, and network URLs in components.
-- Keep user-facing transaction copy precise; distinguish pending, submitted, confirmed, and failed states.
-- Follow the existing Tailwind CSS and Next.js App Router patterns already used in the project.
+- **TypeScript strict mode** — no `any` except where unavoidable (comment why).
+- **Server components by default.** Add `"use client"` only when interactivity requires it.
+- **CSS** — use Tailwind v4 utilities and the CSS variables defined in `globals.css`. No inline styles.
+- **No AI-generated comments** in source files unless the user explicitly requests them.
+- **No emoji** in code or commit messages.
+- Keep functions small and pure where possible. Side-effectful code belongs in `lib/` or `services/`.
 
-## Testing Requirements
+## Running Checks
 
-Every pull request should include the checks that match the change:
+All of these must pass before submitting a PR:
 
-- UI-only changes: run `npm run lint` and manually verify the affected route in the browser.
-- Type, helper, or integration changes: run `npm run typecheck` and `npm run test`.
-- Wallet, bridge, CEX, or onramp changes: test on Stellar testnet with a non-production Freighter account.
-- Routing or build configuration changes: run `npm run build`.
+```bash
+npm run lint        # ESLint — no errors
+npm run typecheck   # TypeScript — no errors
+npm run test        # Vitest unit tests — all pass
+npm run build       # Next.js production build — succeeds
+```
 
-If a check cannot be run, explain why in the pull request and describe the manual validation that was completed instead.
+E2E tests (requires a running dev server or built app):
 
-## Pull Request Process
+```bash
+npm run test:e2e
+```
 
-1. Create a branch with a focused name, such as `docs/contributing-guide` or `fix/bridge-error-state`.
-2. Keep each pull request scoped to one issue or one related change set.
-3. Include screenshots or recordings for visible UI changes.
-4. Link the issue being fixed and summarize testing results.
-5. Do not include secrets, personal wallet seeds, payment credentials, or production-only API keys in commits, screenshots, logs, or comments.
+## Submitting a Pull Request
 
-## Troubleshooting
+1. Branch off `main`: `git checkout -b feat/short-description`
+2. Make your changes and ensure all checks pass.
+3. Commit with a short, descriptive message (no emoji, no AI filler).
+4. Push and open a PR against `main`.
+5. Fill in the PR description: what changed, what was tested, any known limitations.
 
-- If Freighter does not connect, confirm the extension is installed, unlocked, and set to the same network as `NEXT_PUBLIC_STELLAR_NETWORK`.
-- If balances or transaction status do not load, confirm the configured Stellar network is reachable and the address type matches the route being tested.
-- If onramp flows fail locally, confirm the relevant Moonpay or Transak public key is configured and that the provider allows the selected test environment.
-- If TypeScript fails after dependency updates, delete `node_modules`, reinstall with `npm install`, and rerun `npm run typecheck`.
+PRs that fail lint, typecheck, or tests will not be merged.
