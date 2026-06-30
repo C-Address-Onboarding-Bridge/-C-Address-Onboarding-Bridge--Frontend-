@@ -1,14 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  Building2,
-  Copy,
-  Check,
-  ExternalLink,
-  Wallet,
-  Info,
-} from 'lucide-react';
+import { useState } from "react";
+import Image from "next/image";
+import { Copy, Check, ExternalLink, Wallet, Info } from "lucide-react";
 import {
   CEX_LIST,
   DEFAULT_BRIDGE_ADDRESS,
@@ -60,11 +54,17 @@ export default function CexPage() {
                       : 'cex-logo border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)]'
                   }`}
                 >
-                  <Building2 className="mb-2 h-8 w-8 text-[var(--text-muted)]" />
-                  <div className="text-sm font-medium">{cex.name}</div>
-                  <div className="text-xs text-[var(--text-muted)]">
-                    Min: {cex.minWithdrawal}
-                  </div>
+                  <Image
+                    src={cex.logo}
+                    alt={`${cex.name} logo`}
+                    width={32}
+                    height={32}
+                    className="mb-2 rounded-lg"
+                    unoptimized
+                    loading="lazy"
+                  />
+                  <div className="font-medium text-sm">{cex.name}</div>
+                  <div className="text-xs text-[var(--text-muted)]">Min: {cex.minWithdrawal}</div>
                 </button>
               ))}
             </div>

@@ -1,6 +1,6 @@
-import { rpc } from '@stellar/stellar-sdk';
-import type { Transaction, FeeBumpTransaction } from '@stellar/stellar-sdk';
-import { getSorobanRpcServer } from '@/lib/stellar';
+import { rpc, isSimulationError, getSimulationMinFee } from "@/lib/stellar-sdk";
+import type { Transaction, FeeBumpTransaction } from "@/lib/stellar-sdk";
+import { getSorobanRpcServer } from "@/lib/stellar";
 
 export interface SimulationResult {
   /** Recommended minimum fee in stroops, or null if unavailable. */
@@ -22,19 +22,12 @@ export async function simulateSorobanTransaction(
     const server = getSorobanRpcServer(network);
     const sim = await server.simulateTransaction(tx);
 
-    if (rpc.Api.isSimulationError(sim)) {
-      return {
-        minFee: null,
-        error: parseSimError(
-          (sim as rpc.Api.SimulateTransactionErrorResponse).error ?? ''
-        ),
-      };
+    if (isSimulationError(sim)) {
+      return { minFee: null, error: parseSimError((sim as rpc.Api.SimulateTransactionErrorResponse).error ?? "") };
     }
 
-    const minFee =
-      (sim as rpc.Api.SimulateTransactionSuccessResponse).minResourceFee ??
-      null;
-    return { minFee: minFee != null ? String(minFee) : null, error: null };
+    const minFee = getSimulationMinFee(sim as rpc.Api.SimulateTransactionSuccessResponse);
+    return { minFee, error: null };
   } catch (e) {
     console.warn(
       'Soroban pre-flight unavailable, falling back to manual fee:',

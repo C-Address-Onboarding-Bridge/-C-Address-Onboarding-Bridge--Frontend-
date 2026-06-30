@@ -3,7 +3,8 @@
  * Prevents users from submitting identical pending transactions
  */
 
-import { getHorizonServer } from './stellar';
+import { getHorizonServer } from "./stellar";
+import { validateHorizonTransaction } from "./horizon-schema";
 
 export interface MempoolTransaction {
   hash: string;
@@ -65,8 +66,8 @@ export async function checkMempoolForDuplicates(
 
     // Check each transaction for duplicates
     for (const tx of transactions.records) {
-      const txRecord = tx as unknown as Record<string, unknown>;
-      const hash = String(txRecord.id || txRecord.hash || '');
+      const txRecord = validateHorizonTransaction(tx);
+      const hash = String(txRecord.id || txRecord.hash || "");
 
       // Check if this transaction matches our criteria
       if (matchesTransactionDetails(txRecord)) {
@@ -127,8 +128,8 @@ export async function getMempoolTransactionDetails(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as unknown as Record<string, unknown>;
-    const createdAtStr = String(horizonTx.created_at || '');
+    const horizonTx = validateHorizonTransaction(tx);
+    const createdAtStr = String(horizonTx.created_at || "");
 
     return {
       hash: String(horizonTx.id || txHash),
@@ -181,7 +182,7 @@ export async function isTransactionPending(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as unknown as Record<string, unknown>;
+    const horizonTx = validateHorizonTransaction(tx);
 
     // If transaction exists in ledger, check if it was confirmed
     return !Boolean(horizonTx.successful); // Not confirmed = still pending or failed
@@ -210,8 +211,8 @@ export async function getTransactionStatusDetail(
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
-    const horizonTx = tx as unknown as Record<string, unknown>;
-    const createdAtStr = String(horizonTx.created_at || '');
+    const horizonTx = validateHorizonTransaction(tx);
+    const createdAtStr = String(horizonTx.created_at || "");
     const isSuccessful = Boolean(horizonTx.successful);
 
     const details: MempoolTransaction = {

@@ -100,7 +100,10 @@ export function QRCodeCard({ address }: QRCodeCardProps) {
             <img
               src={qrSrc}
               alt={`${formatLabel} QR code`}
-              className="block h-[220px] w-[220px]"
+              width={220}
+              height={220}
+              loading="lazy"
+              className="block"
             />
           ) : (
             <div className="h-[220px] w-[220px] animate-pulse rounded-3xl bg-[var(--surface-2)]" />

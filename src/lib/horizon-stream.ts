@@ -13,8 +13,9 @@
  * MUST invoke on unmount to prevent memory leaks.
  */
 
-import { Horizon } from '@stellar/stellar-sdk';
-import { HORIZON_URL } from './types';
+import { Horizon } from "./stellar-sdk";
+import { HORIZON_URL } from "./types";
+import { validateHorizonPayment } from "./horizon-schema";
 
 export interface StreamPaymentRecord {
   id: string;
@@ -76,7 +77,7 @@ export function streamPayments(
       .cursor(cursor)
       .stream({
         onmessage: (record) => {
-          onRecord(record as unknown as StreamPaymentRecord);
+          onRecord(validateHorizonPayment(record) as StreamPaymentRecord);
         },
         onerror: (event) => {
           const err =
@@ -124,7 +125,7 @@ export function streamTransactions(
       .cursor(cursor)
       .stream({
         onmessage: (record) => {
-          onRecord(record as unknown as StreamPaymentRecord);
+          onRecord(validateHorizonPayment(record) as StreamPaymentRecord);
         },
         onerror: (event) => {
           const err =

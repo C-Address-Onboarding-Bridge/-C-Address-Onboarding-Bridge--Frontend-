@@ -43,30 +43,10 @@ export default function Footer() {
           <nav aria-label="Protocol links">
             <h3 className="mb-3 text-sm font-semibold">Protocol</h3>
             <ul className="space-y-2">
-              <li>
-                <a
-                  href="/bridge"
-                  className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]"
-                >
-                  G → C Bridge
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/onramp"
-                  className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]"
-                >
-                  Fiat Onramp
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/cex"
-                  className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]"
-                >
-                  CEX Withdrawal
-                </a>
-              </li>
+              <li><a href="/bridge" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">G → C Bridge</a></li>
+              <li><a href="/onramp" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Fiat Onramp</a></li>
+              <li><a href="/cex" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">CEX Withdrawal</a></li>
+              <li><a href="/status" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Status Page</a></li>
             </ul>
           </nav>
 

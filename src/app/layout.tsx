@@ -1,13 +1,14 @@
-import type { Metadata } from 'next';
-import { Geist, JetBrains_Mono } from 'next/font/google';
-import './globals.css';
-import { WalletProvider } from '@/components/wallet-provider';
-import { ThemeProvider } from '@/components/theme-provider';
-import { ConnectivityProvider } from '@/components/connectivity-provider';
-import { OfflineBanner } from '@/components/offline-banner';
-import Navbar from '@/components/navbar';
-import Footer from '@/components/footer';
-import { KeyboardShortcutsInfo } from '@/components/keyboard-shortcuts-info';
+import type { Metadata } from "next";
+import { Geist, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import { WalletProvider } from "@/components/wallet-provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ConnectivityProvider } from "@/components/connectivity-provider";
+import { OfflineBanner } from "@/components/offline-banner";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";
+import { MonitoringProvider } from "@/components/monitoring-provider";
 
 const geist = Geist({
   subsets: ['latin'],
@@ -36,13 +37,15 @@ export default function RootLayout({
         <ThemeProvider>
           <ConnectivityProvider>
             <WalletProvider>
-              <div className="flex min-h-screen flex-col">
-                <Navbar />
-                <OfflineBanner />
-                <main className="flex-1 pt-16">{children}</main>
-                <Footer />
-                <KeyboardShortcutsInfo />
-              </div>
+              <MonitoringProvider>
+                <div className="min-h-screen flex flex-col">
+                  <Navbar />
+                  <OfflineBanner />
+                  <main className="flex-1 pt-16">{children}</main>
+                  <Footer />
+                  <KeyboardShortcutsInfo />
+                </div>
+              </MonitoringProvider>
             </WalletProvider>
           </ConnectivityProvider>
         </ThemeProvider>

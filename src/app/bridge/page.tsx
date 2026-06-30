@@ -14,12 +14,12 @@ import {
   AlertTriangle,
   RotateCcw,
   RotateCw,
-} from 'lucide-react';
-import { useWallet, ToastContainer, useToast } from '@/components';
-import { useFormHistory, type FormState } from '@/hooks/useFormHistory';
-import { useMultiStepForm } from '@/hooks/useMultiStepForm';
-import { useConnectivity } from '@/components/connectivity-provider';
-import { getBridgeContractId, NETWORK_CONFIG_ERRORS } from '@/config/networks';
+} from "lucide-react";
+import { useWallet, ToastContainer, useToast } from "@/components";
+import { useFormHistory, type FormState } from "@/hooks/useFormHistory";
+import { useMultiStepForm } from "@/hooks/useMultiStepForm";
+import { useConnectivity } from "@/components/connectivity-provider";
+import { getBridgeContractId, NETWORK_CONFIG_ERRORS } from "@/config/networks";
 import {
   isValidStellarAddress,
   isCAddress,
@@ -117,7 +117,7 @@ export default function BridgePage() {
 
   const formState = useMemo(
     () => ({ fromAddress, toAddress, amount, asset }),
-    [fromAddress, toAddress, amount, asset]
+    [fromAddress, toAddress, amount, asset],
   );
 
   const restoreFormState = useCallback((state: FormState): void => {
@@ -240,19 +240,19 @@ export default function BridgePage() {
                 txHash: result.hash,
                 explorerUrl: getExplorerUrl(
                   submission.network,
-                  'tx',
-                  result.hash
+                  "tx",
+                  result.hash,
                 ),
-              }
+              },
             );
             startPolling(result.hash, toastId);
           } catch (error: unknown) {
             addToast(
               error instanceof Error
                 ? error.message
-                : 'Queued transaction failed',
-              'error',
-              6000
+                : "Queued transaction failed",
+              "error",
+              6000,
             );
           }
         });
@@ -263,9 +263,9 @@ export default function BridgePage() {
   }, [isOffline, addToast, startPolling, network]);
 
   const enqueueOfflineSubmission = (
-    payload: Omit<QueuedBridgeSubmission, 'id'>
+    payload: Omit<QueuedBridgeSubmission, "id">,
   ) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const data = localStorage.getItem(BRIDGE_OFFLINE_QUEUE_KEY);
     let queued: QueuedBridgeSubmission[] = [];
     if (data) {
@@ -294,8 +294,8 @@ export default function BridgePage() {
 
   // Trustline add-flow
   const [trustlineActionStatus, setTrustlineActionStatus] = useState<
-    'idle' | 'signing' | 'error'
-  >('idle');
+    "idle" | "signing" | "error"
+  >("idle");
   const [trustlineError, setTrustlineError] = useState<string | null>(null);
 
   // Transaction polling
@@ -306,15 +306,15 @@ export default function BridgePage() {
 
   // Allowance state
   type AllowanceStatus =
-    | 'idle'
-    | 'checking'
-    | 'sufficient'
-    | 'required'
-    | 'approving'
-    | 'approved'
-    | 'error';
+    | "idle"
+    | "checking"
+    | "sufficient"
+    | "required"
+    | "approving"
+    | "approved"
+    | "error";
   const [allowanceStatus, setAllowanceStatus] =
-    useState<AllowanceStatus>('idle');
+    useState<AllowanceStatus>("idle");
   const [allowanceError, setAllowanceError] = useState<string | null>(null);
 
   // Pre-flight simulation state
@@ -326,17 +326,17 @@ export default function BridgePage() {
 
   // For native XLM or when no bridge contract is set, approval is never needed
   const needsAllowanceCheck =
-    step === 'review' &&
+    step === "review" &&
     !isNativeAsset(asset) &&
     !!bridgeContractId &&
-    asset === 'USDC';
+    asset === "USDC";
 
   const checkAllowance = async (
     owner: string,
     amtStr: string,
-    net: 'PUBLIC' | 'TESTNET'
+    net: "PUBLIC" | "TESTNET",
   ) => {
-    setAllowanceStatus('checking');
+    setAllowanceStatus("checking");
     setAllowanceError(null);
     try {
       const tokenContractId = USDC_ISSUERS[net];
@@ -345,14 +345,14 @@ export default function BridgePage() {
         tokenContractId,
         owner,
         bridgeContractId,
-        net
+        net,
       );
-      setAllowanceStatus(current >= amountRaw ? 'sufficient' : 'required');
+      setAllowanceStatus(current >= amountRaw ? "sufficient" : "required");
     } catch (e) {
       setAllowanceError(
-        e instanceof Error ? e.message : 'Allowance check failed'
+        e instanceof Error ? e.message : "Allowance check failed",
       );
-      setAllowanceStatus('error');
+      setAllowanceStatus("error");
     }
   };
 
@@ -371,13 +371,13 @@ export default function BridgePage() {
     if (isNaN(n) || n <= 0) return null;
     if (asset === ASSET_XLM) {
       const xlmBal = parseFloat(
-        allBalances.find((b) => b.asset === ASSET_XLM)?.amount ?? '0'
+        allBalances.find((b) => b.asset === ASSET_XLM)?.amount ?? "0",
       );
       if (n > xlmBal - XLM_RESERVE_BUFFER)
         return `Insufficient ${ASSET_XLM} balance. You have ${xlmBal.toFixed(XLM_PRECISE_DECIMALS)} ${ASSET_XLM}`;
     } else if (asset === ASSET_USDC) {
       const usdcBal = parseFloat(
-        allBalances.find((b) => b.asset === ASSET_USDC)?.amount ?? '0'
+        allBalances.find((b) => b.asset === ASSET_USDC)?.amount ?? "0",
       );
       if (n > usdcBal)
         return `Insufficient ${ASSET_USDC} balance. You have ${usdcBal.toFixed(XLM_DISPLAY_DECIMALS)} ${ASSET_USDC}`;
@@ -405,7 +405,7 @@ export default function BridgePage() {
           setAccountExists(info.exists);
           setAllBalances(info.balances);
           setSourceBalance(
-            info.balances.find((b) => b.asset === ASSET_XLM)?.amount ?? '0'
+            info.balances.find((b) => b.asset === ASSET_XLM)?.amount ?? "0",
           );
         }
       } catch {
@@ -447,9 +447,9 @@ export default function BridgePage() {
         fromAddress,
         bridgeContractId,
         amountRaw,
-        network
+        network,
       );
-      setAllowanceStatus('approved');
+      setAllowanceStatus("approved");
     } catch (e) {
       setAllowanceError(e instanceof Error ? e.message : 'Approval failed');
       setAllowanceStatus('error');
@@ -472,8 +472,8 @@ export default function BridgePage() {
         setPollTimedOut(true);
         if (toastId)
           updateToast(toastId, {
-            type: 'info',
-            message: 'Transaction status unknown — check explorer',
+            type: "info",
+            message: "Transaction status unknown — check explorer",
             duration: 8000,
           });
         return;
@@ -486,15 +486,15 @@ export default function BridgePage() {
         if (status === STATUS_CONFIRMED) {
           if (toastId)
             updateToast(toastId, {
-              type: 'success',
-              message: 'Transaction confirmed',
+              type: "success",
+              message: "Transaction confirmed",
               duration: 8000,
             });
         } else if (status === STATUS_FAILED) {
           if (toastId)
             updateToast(toastId, {
-              type: 'error',
-              message: 'Transaction failed on-chain',
+              type: "error",
+              message: "Transaction failed on-chain",
               duration: 8000,
             });
         } else {
@@ -534,8 +534,8 @@ export default function BridgePage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         (e.ctrlKey || e.metaKey) &&
-        e.key === 'Enter' &&
-        step === 'form' &&
+        e.key === "Enter" &&
+        step === "form" &&
         canProceed
       ) {
         e.preventDefault();
@@ -586,7 +586,7 @@ export default function BridgePage() {
       !isOffline &&
       !isNativeAsset(asset) &&
       bridgeContractId &&
-      asset === 'USDC' &&
+      asset === "USDC" &&
       fromAddress &&
       amount
     ) {
@@ -643,7 +643,7 @@ export default function BridgePage() {
         amount,
         asset,
         network,
-        selectedFee
+        selectedFee,
       );
       setTxHash(result.hash);
       setTxStatus(STATUS_SUCCESS);
@@ -657,9 +657,9 @@ export default function BridgePage() {
       setTxError(e instanceof Error ? e.message : 'Transaction failed');
       setTxStatus(STATUS_ERROR);
       addToast(
-        e instanceof Error ? e.message : 'Transaction failed',
-        'error',
-        6000
+        e instanceof Error ? e.message : "Transaction failed",
+        "error",
+        6000,
       );
     }
   };
@@ -673,7 +673,7 @@ export default function BridgePage() {
         fromAddress,
         ASSET_USDC,
         USDC_ISSUERS[network],
-        network
+        network,
       );
       setTrustlineActionStatus(STATUS_IDLE);
       // Re-fetch so trustlineStatus recomputes to "has"
@@ -682,7 +682,7 @@ export default function BridgePage() {
       setAllBalances(info.balances);
     } catch (e: unknown) {
       setTrustlineError(
-        e instanceof Error ? e.message : 'Failed to add trustline'
+        e instanceof Error ? e.message : "Failed to add trustline",
       );
       setTrustlineActionStatus(STATUS_ERROR);
     }
@@ -732,9 +732,9 @@ export default function BridgePage() {
 
       {isConnected &&
         !bridgeContractId &&
-        getBridgeContractId(network === 'PUBLIC' ? 'TESTNET' : 'PUBLIC') && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/10 p-3 text-sm text-[var(--error)]">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        getBridgeContractId(network === "PUBLIC" ? "TESTNET" : "PUBLIC") && (
+          <div className="mb-4 p-3 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-center gap-2 text-sm text-[var(--error)]">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {NETWORK_CONFIG_ERRORS.NETWORK_MISMATCH}
           </div>
         )}
@@ -774,9 +774,9 @@ export default function BridgePage() {
           {/* Step indicator */}
           {(() => {
             const steps = [
-              { label: 'Details' },
-              { label: 'Review' },
-              { label: 'Confirm' },
+              { label: "Details" },
+              { label: "Review" },
+              { label: "Confirm" },
             ];
             const idx = step === STEP_FORM ? 0 : step === STEP_REVIEW ? 1 : 2;
             return (
@@ -785,28 +785,28 @@ export default function BridgePage() {
                   {steps.map((s, i) => (
                     <div
                       key={s.label}
-                      className="flex flex-1 items-center last:flex-none"
+                      className="flex items-center flex-1 last:flex-none"
                     >
                       <div
-                        className={`step-dot flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold ${
+                        className={`step-dot w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border ${
                           i < idx
-                            ? 'border-[var(--primary)] bg-[var(--primary)] text-white'
+                            ? "bg-[var(--primary)] border-[var(--primary)] text-white"
                             : i === idx
-                              ? `step-dot-active border-[var(--primary)] bg-[var(--primary)]/20 text-[var(--primary-light)]`
-                              : 'border-[var(--border)] bg-transparent text-[var(--text-muted)]'
+                              ? `bg-[var(--primary)]/20 border-[var(--primary)] text-[var(--primary-light)] step-dot-active`
+                              : "bg-transparent border-[var(--border)] text-[var(--text-muted)]"
                         }`}
                       >
-                        {i < idx ? '✓' : i + 1}
+                        {i < idx ? "✓" : i + 1}
                       </div>
                       <span
-                        className={`ml-2 hidden text-xs font-medium sm:inline ${i === idx ? 'text-[var(--foreground)]' : 'text-[var(--text-muted)]'}`}
+                        className={`ml-2 text-xs font-medium hidden sm:inline ${i === idx ? "text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}
                       >
                         {s.label}
                       </span>
                       {i < steps.length - 1 && (
-                        <div className="mx-3 h-px flex-1 overflow-hidden bg-[var(--border)]">
+                        <div className="flex-1 mx-3 h-px bg-[var(--border)] overflow-hidden">
                           <div
-                            className={`step-progress-bar h-full bg-[var(--primary)] ${i < idx ? 'w-full' : 'w-0'}`}
+                            className={`step-progress-bar h-full bg-[var(--primary)] ${i < idx ? "w-full" : "w-0"}`}
                           />
                         </div>
                       )}
@@ -816,22 +816,22 @@ export default function BridgePage() {
               </div>
             );
           })()}
-          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 overflow-hidden">
             <div
               key={step}
               className={
-                stepDir === 'forward' ? 'step-enter' : 'step-enter-back'
+                stepDir === "forward" ? "step-enter" : "step-enter-back"
               }
             >
-              {step === 'form' && (
+              {step === "form" && (
                 <div className="space-y-6">
                   {/* From address */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
+                    <label className="block text-sm font-medium mb-2">
                       From (G-address)
                     </label>
                     <div className="relative">
-                      <Wallet className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                      <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                       <input
                         type="text"
                         id="from-address"
@@ -848,9 +848,9 @@ export default function BridgePage() {
                         placeholder={
                           isConnected
                             ? address!
-                            : 'GABC...DEF or connect wallet'
+                            : "GABC...DEF or connect wallet"
                         }
-                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] py-3 pr-4 pl-10 font-mono text-sm transition-colors focus:border-[var(--primary)] focus:outline-none"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== STATUS_IDLE}
                         aria-describedby="from-address-error"
                         aria-invalid={!validFrom && !!fromAddress}
@@ -860,7 +860,7 @@ export default function BridgePage() {
                       <p
                         id="from-address-error"
                         role="alert"
-                        className="mt-1 text-xs text-[var(--error)]"
+                        className="text-xs text-[var(--error)] mt-1"
                       >
                         Invalid Stellar address
                       </p>
@@ -869,47 +869,51 @@ export default function BridgePage() {
                       <p
                         id="from-address-error"
                         role="alert"
-                        className="mt-1 text-xs text-[var(--error)]"
+                        className="text-xs text-[var(--error)] mt-1"
                       >
-                        Account not found on the{' '}
+                        Account not found on the{" "}
                         {network === NETWORK_PUBLIC
                           ? NETWORK_DISPLAY[NETWORK_PUBLIC]
-                          : NETWORK_DISPLAY[NETWORK_TESTNET]}{' '}
+                          : NETWORK_DISPLAY[NETWORK_TESTNET]}{" "}
                         network. It needs to be funded first.
                       </p>
                     )}
                     {isConnected && (
                       <button
                         onClick={handleUseConnected}
-                        className="mt-1 text-xs text-[var(--primary-light)] hover:underline"
+                        className="text-xs text-[var(--primary-light)] mt-1 hover:underline"
                       >
                         Use connected wallet
                       </button>
                     )}
                     {sourceBalance !== null && (
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">
-                        Balance:{' '}
+                      <p
+                        className="text-xs text-[var(--text-muted)] mt-1"
+                        aria-live="polite"
+                        aria-atomic="true"
+                      >
+                        Balance:{" "}
                         {parseFloat(sourceBalance).toFixed(
-                          XLM_DISPLAY_DECIMALS
-                        )}{' '}
+                          XLM_DISPLAY_DECIMALS,
+                        )}{" "}
                         {ASSET_XLM}
                       </p>
                     )}
                   </div>
 
                   <div className="flex items-center justify-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--primary)]/10">
-                      <ArrowRightLeft className="h-5 w-5 text-[var(--primary-light)]" />
+                    <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
+                      <ArrowRightLeft className="w-5 h-5 text-[var(--primary-light)]" />
                     </div>
                   </div>
 
                   {/* To address */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
+                    <label className="block text-sm font-medium mb-2">
                       To (C-address)
                     </label>
                     <div className="relative">
-                      <Send className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                      <Send className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                       <input
                         type="text"
                         id="to-address"
@@ -920,7 +924,7 @@ export default function BridgePage() {
                           setToAddress(sanitized);
                         }}
                         placeholder="CABC...DEF"
-                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] py-3 pr-4 pl-10 font-mono text-sm transition-colors focus:border-[var(--primary)] focus:outline-none"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== STATUS_IDLE}
                         aria-describedby="to-address-error"
                         aria-invalid={!validTo && !!toAddress}
@@ -930,7 +934,7 @@ export default function BridgePage() {
                       <p
                         id="to-address-error"
                         role="alert"
-                        className="mt-1 text-xs text-[var(--error)]"
+                        className="text-xs text-[var(--error)] mt-1"
                       >
                         {toAddressError}
                       </p>
@@ -939,7 +943,7 @@ export default function BridgePage() {
 
                   {/* Amount + asset */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
+                    <label className="block text-sm font-medium mb-2">
                       Amount
                     </label>
                     <div className="flex gap-3">
@@ -952,8 +956,8 @@ export default function BridgePage() {
                             setAmount(sanitizeAmount(e.target.value))
                           }
                           placeholder="0.00"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm transition-colors focus:border-[var(--primary)] focus:outline-none"
-                          disabled={txStatus !== 'idle'}
+                          className="w-full px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+                          disabled={txStatus !== "idle"}
                           aria-describedby="amount-error"
                           aria-invalid={!!balanceError}
                         />
@@ -961,7 +965,7 @@ export default function BridgePage() {
                       <select
                         value={asset}
                         onChange={(e) => setAsset(e.target.value)}
-                        className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm transition-colors focus:border-[var(--primary)] focus:outline-none"
+                        className="px-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                         disabled={txStatus !== STATUS_IDLE}
                       >
                         <option>{ASSET_XLM}</option>
@@ -972,7 +976,7 @@ export default function BridgePage() {
                       <p
                         id="amount-error"
                         role="alert"
-                        className="mt-1 text-xs text-[var(--error)]"
+                        className="text-xs text-[var(--error)] mt-1"
                       >
                         {balanceError}
                       </p>
@@ -981,44 +985,44 @@ export default function BridgePage() {
 
                   {/* USDC trustline warning */}
                   {trustlineStatus === STATUS_MISSING && (
-                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
-                      <div className="mb-3 flex items-start gap-3">
-                        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+                    <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <div className="flex items-start gap-3 mb-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium">
                             No USDC trustline found
                           </p>
-                          <p className="mt-1 text-xs text-[var(--text-muted)]">
+                          <p className="text-xs text-[var(--text-muted)] mt-1">
                             You need to establish a trustline first before
                             bridging USDC.
                           </p>
                         </div>
                       </div>
                       {trustlineError && (
-                        <p className="mb-2 text-xs text-[var(--error)]">
+                        <p className="text-xs text-[var(--error)] mb-2">
                           {trustlineError}
                         </p>
                       )}
                       <button
                         onClick={handleAddTrustline}
                         disabled={trustlineActionStatus === STATUS_SIGNING}
-                        className="flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--primary)]/90 disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
                       >
                         {trustlineActionStatus === STATUS_SIGNING ? (
                           <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="w-3 h-3 animate-spin" />
                             Adding Trustline…
                           </>
                         ) : (
-                          'Add USDC Trustline'
+                          "Add USDC Trustline"
                         )}
                       </button>
                     </div>
                   )}
 
                   {trustlineStatus === STATUS_HAS && asset === ASSET_USDC && (
-                    <div className="flex items-center gap-2 rounded-lg border border-[var(--success)]/20 bg-[var(--success)]/10 p-3">
-                      <Check className="h-4 w-4 text-[var(--success)]" />
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20">
+                      <Check className="w-4 h-4 text-[var(--success)]" />
                       <p className="text-xs text-[var(--success)]">
                         USDC trustline established
                       </p>
@@ -1028,9 +1032,9 @@ export default function BridgePage() {
                   <button
                     onClick={handleSubmit}
                     disabled={!canProceed}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="w-4 h-4" />
                     Review Bridge Transaction
                   </button>
                 </div>
@@ -1038,26 +1042,26 @@ export default function BridgePage() {
 
               {step === STEP_REVIEW && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold">Review Transaction</h3>
+                  <h3 className="font-semibold text-lg">Review Transaction</h3>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] p-4">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                       <span className="text-sm text-[var(--text-muted)]">
                         From
                       </span>
-                      <span className="font-mono text-sm">
+                      <span className="text-sm font-mono">
                         {encodeHtml(fromAddress)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] p-4">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                       <span className="text-sm text-[var(--text-muted)]">
                         To
                       </span>
-                      <span className="font-mono text-sm">
+                      <span className="text-sm font-mono">
                         {encodeHtml(toAddress)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] p-4">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                       <span className="text-sm text-[var(--text-muted)]">
                         Amount
                       </span>
@@ -1065,7 +1069,7 @@ export default function BridgePage() {
                         {encodeHtml(amount)} {encodeHtml(asset)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] p-4">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                       <span className="text-sm text-[var(--text-muted)]">
                         Network
                       </span>
@@ -1075,30 +1079,30 @@ export default function BridgePage() {
                           : NETWORK_DISPLAY[NETWORK_TESTNET]}
                       </span>
                     </div>
-                    <div className="space-y-2 rounded-lg bg-[var(--surface-2)] p-4">
-                      <div className="flex items-center justify-between">
+                    <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
+                      <div className="flex justify-between items-center">
                         <span className="text-sm text-[var(--text-muted)]">
                           Estimated Fee
                         </span>
-                        {simStatus === 'running' && (
+                        {simStatus === "running" && (
                           <span className="flex items-center gap-1">
-                            <span className="inline-block h-3 w-20 animate-pulse rounded bg-[var(--surface-2)]" />
+                            <span className="animate-pulse rounded bg-[var(--surface-2)] h-3 w-20 inline-block" />
                           </span>
                         )}
-                        {simStatus === 'done' && simMinFee && (
+                        {simStatus === "done" && simMinFee && (
                           <span className="text-xs text-[var(--text-muted)]">
                             ~{stroopsToXlm(simMinFee)} {ASSET_XLM} (simulated)
                           </span>
                         )}
-                        {(simStatus === 'idle' ||
-                          (simStatus === 'done' && !simMinFee)) && (
+                        {(simStatus === "idle" ||
+                          (simStatus === "done" && !simMinFee)) && (
                           <span className="text-xs text-[var(--text-muted)]">
                             ~{XLM_RESERVE_BUFFER} {ASSET_XLM}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-xs whitespace-nowrap text-[var(--text-muted)]">
+                        <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">
                           Fee (stroops)
                         </label>
                         <input
@@ -1106,11 +1110,11 @@ export default function BridgePage() {
                           min="100"
                           value={feeOverride}
                           onChange={(e) => setFeeOverride(e.target.value)}
-                          placeholder={simMinFee ?? '100'}
-                          className="flex-1 rounded border border-[var(--border)] bg-[var(--surface-3)] px-2 py-1 font-mono text-xs focus:border-[var(--primary)] focus:outline-none"
+                          placeholder={simMinFee ?? "100"}
+                          className="flex-1 px-2 py-1 rounded bg-[var(--surface-3)] border border-[var(--border)] text-xs font-mono focus:outline-none focus:border-[var(--primary)]"
                         />
                       </div>
-                      {simStatus === 'error' && simError && (
+                      {simStatus === "error" && simError && (
                         <p className="text-xs text-[var(--error)]">
                           {simError}
                         </p>
@@ -1120,44 +1124,46 @@ export default function BridgePage() {
 
                   {/* Allowance status row */}
                   {needsAllowanceCheck && (
-                    <div className="space-y-2 rounded-lg bg-[var(--surface-2)] p-4">
-                      <div className="flex items-center justify-between">
+                    <div className="p-4 rounded-lg bg-[var(--surface-2)] space-y-2">
+                      <div className="flex justify-between items-center">
                         <span className="text-sm text-[var(--text-muted)]">
                           Token Approval
                         </span>
-                        {allowanceStatus === 'checking' && (
-                          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                            <Loader2 className="h-3 w-3 animate-spin" />{' '}
-                            Checking allowance…
-                          </span>
-                        )}
-                        {(allowanceStatus === 'sufficient' ||
-                          allowanceStatus === 'approved') && (
-                          <span className="flex items-center gap-1 text-xs text-[var(--success)]">
-                            <Check className="h-3 w-3" /> Approved
-                          </span>
-                        )}
-                        {allowanceStatus === 'required' && (
-                          <span className="text-xs text-amber-400">
-                            Approval Required
-                          </span>
-                        )}
-                        {allowanceStatus === 'approving' && (
-                          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                            <Loader2 className="h-3 w-3 animate-spin" />{' '}
-                            Approving…
-                          </span>
-                        )}
-                        {allowanceStatus === 'error' && (
-                          <span className="text-xs text-[var(--error)]">
-                            Check failed
-                          </span>
-                        )}
+                        <div aria-live="polite" aria-atomic="true">
+                          {allowanceStatus === "checking" && (
+                            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                              <Loader2 className="w-3 h-3 animate-spin" />{" "}
+                              Checking allowance…
+                            </span>
+                          )}
+                          {(allowanceStatus === "sufficient" ||
+                            allowanceStatus === "approved") && (
+                            <span className="flex items-center gap-1 text-xs text-[var(--success)]">
+                              <Check className="w-3 h-3" /> Approved
+                            </span>
+                          )}
+                          {allowanceStatus === "required" && (
+                            <span className="text-xs text-amber-400">
+                              Approval Required
+                            </span>
+                          )}
+                          {allowanceStatus === "approving" && (
+                            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                              <Loader2 className="w-3 h-3 animate-spin" />{" "}
+                              Approving…
+                            </span>
+                          )}
+                          {allowanceStatus === "error" && (
+                            <span className="text-xs text-[var(--error)]">
+                              Check failed
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {allowanceStatus === 'required' && (
+                      {allowanceStatus === "required" && (
                         <button
                           onClick={handleApprove}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-500/30"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-sm font-medium hover:bg-amber-500/30 transition-colors"
                         >
                           Approve {asset} for Bridge Contract
                         </button>
@@ -1171,7 +1177,7 @@ export default function BridgePage() {
                   )}
 
                   {!needsAllowanceCheck && (
-                    <div className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] p-4">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                       <span className="text-sm text-[var(--text-muted)]">
                         Token Approval
                       </span>
@@ -1184,16 +1190,16 @@ export default function BridgePage() {
                   {txError && (
                     <div
                       aria-live="polite"
-                      className="flex items-start gap-3 rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/10 p-4"
+                      className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3"
                     >
-                      <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--error)]" />
+                      <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-[var(--error)]">
                           {rateLimitRemaining > 0
-                            ? 'Rate Limited'
-                            : 'Transaction Failed'}
+                            ? "Rate Limited"
+                            : "Transaction Failed"}
                         </p>
-                        <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        <p className="text-xs text-[var(--text-muted)] mt-1">
                           {rateLimitRemaining > 0
                             ? `Please wait ${Math.ceil(rateLimitRemaining / 1000)} seconds before submitting again`
                             : txError}
@@ -1215,7 +1221,7 @@ export default function BridgePage() {
                         txStatus === STATUS_SIGNING ||
                         txStatus === STATUS_SUBMITTING
                       }
-                      className="flex-1 rounded-xl border border-[var(--border)] px-6 py-3 font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface-2)] disabled:opacity-50"
+                      className="flex-1 px-6 py-3 rounded-xl border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
                     >
                       Edit
                     </button>
@@ -1225,19 +1231,19 @@ export default function BridgePage() {
                         txStatus === STATUS_SIGNING ||
                         txStatus === STATUS_SUBMITTING
                       }
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--primary)]/90 disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
                     >
                       {txStatus === STATUS_SIGNING ||
                       txStatus === STATUS_SUBMITTING ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           {txStatus === STATUS_SIGNING
-                            ? 'Signing…'
-                            : 'Submitting…'}
+                            ? "Signing…"
+                            : "Submitting…"}
                         </>
                       ) : (
                         <>
-                          <ArrowRight className="h-4 w-4" />
+                          <ArrowRight className="w-4 h-4" />
                           Confirm & Sign
                         </>
                       )}
@@ -1247,62 +1253,62 @@ export default function BridgePage() {
               )}
 
               {step === STEP_CONFIRM && txStatus === STATUS_SUCCESS && (
-                <div className="py-12 text-center">
+                <div className="text-center py-12">
                   {pollStatus === STATUS_CONFIRMED ? (
                     <>
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--success)]/10">
-                        <Check className="checkmark-animation h-8 w-8 text-[var(--success)]" />
+                      <div className="w-16 h-16 rounded-full bg-[var(--success)]/10 flex items-center justify-center mx-auto mb-4">
+                        <Check className="w-8 h-8 text-[var(--success)] checkmark-animation" />
                       </div>
-                      <h3 className="slide-in mb-2 text-lg font-semibold">
+                      <h3 className="text-lg font-semibold mb-2 slide-in">
                         Confirmed ✓
                       </h3>
-                      <p className="slide-in mb-4 text-sm text-[var(--text-muted)]">
+                      <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
                         Your transaction has been confirmed on the Stellar
                         network.
                       </p>
                     </>
                   ) : pollStatus === STATUS_FAILED ? (
                     <>
-                      <div className="rotate-scale-animation mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--error)]/10">
-                        <XCircle className="h-8 w-8 text-[var(--error)]" />
+                      <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4 rotate-scale-animation">
+                        <XCircle className="w-8 h-8 text-[var(--error)]" />
                       </div>
-                      <h3 className="slide-in mb-2 text-lg font-semibold">
+                      <h3 className="text-lg font-semibold mb-2 slide-in">
                         Failed ✗
                       </h3>
-                      <p className="slide-in mb-4 text-sm text-[var(--text-muted)]">
+                      <p className="text-sm text-[var(--text-muted)] mb-4 slide-in">
                         The transaction was rejected by the network.
                       </p>
                     </>
                   ) : (
                     <>
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--primary)]/10">
-                        <Loader2 className="h-8 w-8 animate-spin text-[var(--primary-light)]" />
+                      <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
+                        <Loader2 className="w-8 h-8 text-[var(--primary-light)] animate-spin" />
                       </div>
-                      <h3 className="mb-2 text-lg font-semibold">Pending…</h3>
-                      <p className="mb-4 text-sm text-[var(--text-muted)]">
+                      <h3 className="text-lg font-semibold mb-2">Pending…</h3>
+                      <p className="text-sm text-[var(--text-muted)] mb-4">
                         {pollTimedOut
-                          ? 'Could not confirm the transaction status in time.'
-                          : 'Waiting for confirmation on the Stellar network.'}
+                          ? "Could not confirm the transaction status in time."
+                          : "Waiting for confirmation on the Stellar network."}
                       </p>
                     </>
                   )}
                   {txHash && (
                     <a
-                      href={getExplorerUrl(network, 'tx', txHash)}
+                      href={getExplorerUrl(network, "tx", txHash)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--primary-light)] hover:underline"
+                      className="inline-flex items-center gap-1 text-sm text-[var(--primary-light)] hover:underline mb-6"
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="w-3 h-3" />
                       {pollTimedOut
-                        ? 'Check on Stellar Expert'
-                        : 'View on Stellar Expert'}
+                        ? "Check on Stellar Expert"
+                        : "View on Stellar Expert"}
                     </a>
                   )}
                   <div className="mt-4">
                     <button
                       onClick={handleReset}
-                      className="rounded-xl bg-[var(--primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--primary)]/90"
+                      className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
                     >
                       New Bridge Transaction
                     </button>
@@ -1311,15 +1317,15 @@ export default function BridgePage() {
               )}
 
               {step === STEP_CONFIRM && txStatus === STATUS_ERROR && (
-                <div className="py-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--error)]/10">
-                    <AlertCircle className="h-8 w-8 text-[var(--error)]" />
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-full bg-[var(--error)]/10 flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-8 h-8 text-[var(--error)]" />
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold">
+                  <h3 className="text-lg font-semibold mb-2">
                     Transaction Failed
                   </h3>
-                  <p className="mb-6 text-sm text-[var(--text-muted)]">
-                    {txError || 'An unexpected error occurred'}
+                  <p className="text-sm text-[var(--text-muted)] mb-6">
+                    {txError || "An unexpected error occurred"}
                   </p>
                   <button
                     onClick={() => {
@@ -1327,7 +1333,7 @@ export default function BridgePage() {
                       setTxStatus(STATUS_IDLE);
                       setTxError(null);
                     }}
-                    className="rounded-xl bg-[var(--primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--primary)]/90"
+                    className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
                   >
                     Try Again
                   </button>

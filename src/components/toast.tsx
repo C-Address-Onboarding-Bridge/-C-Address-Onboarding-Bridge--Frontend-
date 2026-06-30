@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   CheckCircle,
   AlertCircle,
@@ -8,7 +8,7 @@ import {
   Clock,
   X,
   ExternalLink,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type ToastType = 'success' | 'error' | 'info' | 'pending';
 
@@ -43,16 +43,22 @@ function ToastItem({
 
   const colors = {
     success:
-      'bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]',
-    error: 'bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]',
-    info: 'bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary-light)]',
+      "bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]",
+    error: "bg-[var(--error)]/10 border-[var(--error)]/30 text-[var(--error)]",
+    info: "bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary-light)]",
     pending:
-      'bg-[var(--warning)]/10 border-[var(--warning)]/30 text-[var(--warning)]',
+      "bg-[var(--warning)]/10 border-[var(--warning)]/30 text-[var(--warning)]",
   };
+
+  const role = toast.type === "error" ? "alert" : "status";
+  const ariaLive = toast.type === "error" ? "assertive" : "polite";
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${colors[toast.type]} animate-in fade-in slide-in-from-bottom-2 w-full max-w-sm`}
+      role={role}
+      aria-live={ariaLive}
+      aria-atomic="true"
+      className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${colors[toast.type]} animate-in fade-in slide-in-from-bottom-2 max-w-sm w-full`}
     >
       {icons[toast.type]}
       <div className="min-w-0 flex-1">
@@ -71,9 +77,9 @@ function ToastItem({
       </div>
       <button
         onClick={() => onClose(toast.id)}
-        className="flex-shrink-0 p-1 transition-opacity hover:opacity-70"
+        className="p-1 hover:opacity-70 transition-opacity flex-shrink-0"
       >
-        <X className="h-4 w-4" />
+        <X className="w-4 h-4" />
       </button>
     </div>
   );
@@ -87,7 +93,10 @@ export function ToastContainer({
   onClose: (id: string) => void;
 }) {
   return (
-    <div className="pointer-events-none fixed right-4 bottom-4 z-[200] flex flex-col gap-2">
+    <div
+      className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"
+      aria-label="Notifications"
+    >
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <ToastItem toast={toast} onClose={onClose} />
@@ -102,18 +111,18 @@ export function useToast() {
 
   const add = (
     message: string,
-    type: ToastType = 'info',
+    type: ToastType = "info",
     duration = 3000,
-    extra?: Pick<Toast, 'txHash' | 'explorerUrl'>
+    extra?: Pick<Toast, "txHash" | "explorerUrl">,
   ) => {
     const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, message, type, duration, ...extra }]);
     return id;
   };
 
-  const update = (id: string, patch: Partial<Omit<Toast, 'id'>>) => {
+  const update = (id: string, patch: Partial<Omit<Toast, "id">>) => {
     setToasts((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...patch } : t))
+      prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
   };
 
