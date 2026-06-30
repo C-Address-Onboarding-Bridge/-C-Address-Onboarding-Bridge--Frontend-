@@ -35,6 +35,16 @@ export default function Footer() {
               <li><a href="https://stellar.org" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Stellar</a></li>
             </ul>
           </div>
+
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Legal</h3>
+            <ul className="space-y-2">
+              <li><a href="/terms" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Terms of Service</a></li>
+              <li><a href="/privacy" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Privacy Policy</a></li>
+              <li><a href="/compliance" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Compliance</a></li>
+              <li><a href="/data-deletion" className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)]">Data Deletion</a></li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-8 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
