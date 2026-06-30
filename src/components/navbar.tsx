@@ -8,6 +8,7 @@ import { useWallet } from "./wallet-provider";
 import { ThemeToggle } from "./theme-toggle";
 import { useEscapeKey } from "@/hooks/use-keyboard-shortcuts";
 import { FocusTrap } from "./focus-trap";
+import WalletModal from "./wallet-modal"; 
 
 const navLinks = [
   { href: "/bridge", label: "Bridge", icon: ArrowLeftRight },

@@ -39,7 +39,7 @@ export default function CexPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">1. Select Your Exchange</h3>
+            <h2 className="font-semibold mb-4">1. Select Your Exchange</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {CEX_LIST.map((cex) => (
                 <button
@@ -50,8 +50,9 @@ export default function CexPage() {
                       ? "border-[var(--primary)] bg-[var(--primary)]/5 cex-logo selected transform scale-105"
                       : "border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)] cex-logo"
                   }`}
+                  aria-label={`Select ${cex.name} exchange`}
                 >
-                  <Building2 className="w-8 h-8 text-[var(--text-muted)] mb-2" />
+                  <Building2 className="w-8 h-8 text-[var(--text-muted)] mb-2" aria-hidden="true" />
                   <div className="font-medium text-sm">{cex.name}</div>
                   <div className="text-xs text-[var(--text-muted)]">Min: {cex.minWithdrawal}</div>
                 </button>
@@ -60,7 +61,7 @@ export default function CexPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">2. Choose Withdrawal Network</h3>
+            <h2 className="font-semibold mb-4">2. Choose Withdrawal Network</h2>
             <div className="flex flex-wrap gap-2">
               {CEX_NETWORKS.map((net) => (
                 <button
@@ -71,6 +72,7 @@ export default function CexPage() {
                       ? "border-[var(--primary)] bg-[var(--primary)]/5 text-[var(--primary-light)]"
                       : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)]"
                   }`}
+                  aria-label={`Select ${net} network`}
                 >
                   {net}
                 </button>
@@ -79,13 +81,13 @@ export default function CexPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">3. Enter Your C-Address</h3>
+            <h2 className="font-semibold mb-4">3. Enter Your C-Address</h2>
             <p className="text-xs text-[var(--text-muted)] mb-3">
               This is the Soroban smart account address you want to fund.
               It will be linked to your deposit via the bridge memo.
             </p>
             <div className="relative">
-              <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+              <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
               <input
                 type="text"
                 id="cex-c-address"
@@ -104,7 +106,7 @@ export default function CexPage() {
 
           {cAddress && !cAddressError && (
             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-              <h3 className="font-semibold mb-4">4. Verify Bridge Address Access</h3>
+              <h2 className="font-semibold mb-4">4. Verify Bridge Address Access</h2>
               <CEXAddressVerification
                 onVerified={() => {}}
               />
@@ -112,10 +114,12 @@ export default function CexPage() {
           )}
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <h3 className="font-semibold mb-4">5. Withdrawal Details for {selectedCex.name}</h3>
+            <h2 className="font-semibold mb-4">5. Withdrawal Details for {selectedCex.name}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-[var(--text-muted)] mb-1">Bridge Deposit Address</label>
+                <label className="block text-xs text-[var(--text-muted)] mb-1" id="bridge-address-label">
+                  Bridge Deposit Address
+                </label>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs font-mono break-all">
                     {DEFAULT_BRIDGE_ADDRESS}
@@ -123,11 +127,12 @@ export default function CexPage() {
                   <button
                     onClick={() => handleCopy(DEFAULT_BRIDGE_ADDRESS, "address")}
                     className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
+                    aria-label="Copy bridge address"
                   >
                     {copiedField === "address" ? (
-                      <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                      <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" aria-hidden="true" />
                     ) : (
-                      <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                      <Copy className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -138,7 +143,9 @@ export default function CexPage() {
 
               {cAddress && (
                 <div>
-                  <label className="block text-xs text-[var(--text-muted)] mb-1">Your C-Address (for reference)</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1" id="c-address-label">
+                    Your C-Address (for reference)
+                  </label>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs font-mono break-all">
                       {cAddress}
@@ -146,11 +153,12 @@ export default function CexPage() {
                     <button
                       onClick={() => handleCopy(cAddress, "caddress")}
                       className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
+                      aria-label="Copy C-address"
                     >
                       {copiedField === "caddress" ? (
-                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" aria-hidden="true" />
                       ) : (
-                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
                       )}
                     </button>
                   </div>
@@ -159,7 +167,9 @@ export default function CexPage() {
 
               {selectedNetwork === CEX_NETWORK_STELLAR && (
                 <div>
-                  <label className="block text-xs text-[var(--text-muted)] mb-1">Memo (Required for Stellar)</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1" id="memo-label">
+                    Memo (Required for Stellar)
+                  </label>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono">
                       {DEFAULT_BRIDGE_MEMO}
@@ -167,23 +177,24 @@ export default function CexPage() {
                     <button
                       onClick={() => handleCopy(DEFAULT_BRIDGE_MEMO, "memo")}
                       className="p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors interactive-element"
+                      aria-label="Copy memo"
                     >
                       {copiedField === "memo" ? (
-                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" />
+                        <Check className="w-4 h-4 text-[var(--success)] checkmark-animation" aria-hidden="true" />
                       ) : (
-                        <Copy className="w-4 h-4 text-[var(--text-muted)]" />
+                        <Copy className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
                       )}
                     </button>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
-                    <Info className="w-3 h-3" />
+                    <Info className="w-3 h-3" aria-hidden="true" />
                     This memo maps your deposit to your C-address ({cAddress || "enter a C-address above"})
                   </p>
                 </div>
               )}
 
               <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20">
-                <Info className="w-4 h-4 text-[var(--warning)] flex-shrink-0" />
+                <Info className="w-4 h-4 text-[var(--warning)] flex-shrink-0" aria-hidden="true" />
                 <p className="text-xs text-[var(--warning)]">
                   Send only Stellar assets (XLM, USDC) to this address. Using the wrong network will result in lost funds.
                 </p>
@@ -194,7 +205,7 @@ export default function CexPage() {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">Exchange Details</h3>
+            <h2 className="font-semibold mb-3">Exchange Details</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-[var(--text-muted)]">Exchange</span>
@@ -216,7 +227,7 @@ export default function CexPage() {
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-            <h3 className="font-semibold mb-3">How It Works</h3>
+            <h2 className="font-semibold mb-3">How It Works</h2>
             <ol className="space-y-3 text-sm text-[var(--text-muted)]">
               <li className="flex gap-2">
                 <span className="text-[var(--primary-light)] font-medium">1.</span>
@@ -245,9 +256,10 @@ export default function CexPage() {
             href={withdrawalUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--surface-2)] transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-medium hover:bg-[var(--surface-2)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+            aria-label={`Open ${selectedCex.name} withdrawal page`}
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
             Open {selectedCex.name} Withdrawal
           </a>
         </div>
