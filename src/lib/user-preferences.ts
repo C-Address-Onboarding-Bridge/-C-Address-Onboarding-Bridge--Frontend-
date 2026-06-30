@@ -1,20 +1,25 @@
-import { storeEncrypted, retrieveEncrypted, removeEncrypted, clearAllStorageData } from "./secure-storage";
+import {
+  storeEncrypted,
+  retrieveEncrypted,
+  removeEncrypted,
+  clearAllStorageData,
+} from './secure-storage';
 
 export interface UserPreferences {
   recentAddresses: string[];
-  selectedNetwork: "PUBLIC" | "TESTNET";
+  selectedNetwork: 'PUBLIC' | 'TESTNET';
   lastUsedAsset: string;
-  theme: "light" | "dark" | "auto";
+  theme: 'light' | 'dark' | 'auto';
 }
 
-const PREFERENCES_KEY = "user_preferences";
-const RECENT_ADDRESSES_KEY = "recent_addresses";
+const PREFERENCES_KEY = 'user_preferences';
+const RECENT_ADDRESSES_KEY = 'recent_addresses';
 
 const defaultPreferences: UserPreferences = {
   recentAddresses: [],
-  selectedNetwork: "TESTNET",
-  lastUsedAsset: "XLM",
-  theme: "auto",
+  selectedNetwork: 'TESTNET',
+  lastUsedAsset: 'XLM',
+  theme: 'auto',
 };
 
 export async function loadPreferences(): Promise<UserPreferences> {
@@ -24,18 +29,20 @@ export async function loadPreferences(): Promise<UserPreferences> {
       return { ...defaultPreferences, ...JSON.parse(stored) };
     }
   } catch (error) {
-    console.error("Failed to load preferences:", error);
+    console.error('Failed to load preferences:', error);
   }
   return defaultPreferences;
 }
 
-export async function savePreferences(preferences: Partial<UserPreferences>): Promise<void> {
+export async function savePreferences(
+  preferences: Partial<UserPreferences>
+): Promise<void> {
   try {
     const current = await loadPreferences();
     const updated = { ...current, ...preferences };
     await storeEncrypted(PREFERENCES_KEY, JSON.stringify(updated));
   } catch (error) {
-    console.error("Failed to save preferences:", error);
+    console.error('Failed to save preferences:', error);
   }
 }
 
@@ -47,7 +54,7 @@ export async function addRecentAddress(address: string): Promise<void> {
     const limited = recent.slice(0, 10);
     await savePreferences({ recentAddresses: limited });
   } catch (error) {
-    console.error("Failed to add recent address:", error);
+    console.error('Failed to add recent address:', error);
   }
 }
 
@@ -56,11 +63,13 @@ export async function getRecentAddresses(): Promise<string[]> {
   return preferences.recentAddresses;
 }
 
-export async function setSelectedNetwork(network: "PUBLIC" | "TESTNET"): Promise<void> {
+export async function setSelectedNetwork(
+  network: 'PUBLIC' | 'TESTNET'
+): Promise<void> {
   await savePreferences({ selectedNetwork: network });
 }
 
-export async function getSelectedNetwork(): Promise<"PUBLIC" | "TESTNET"> {
+export async function getSelectedNetwork(): Promise<'PUBLIC' | 'TESTNET'> {
   const preferences = await loadPreferences();
   return preferences.selectedNetwork;
 }
@@ -74,11 +83,13 @@ export async function getLastUsedAsset(): Promise<string> {
   return preferences.lastUsedAsset;
 }
 
-export async function setTheme(theme: "light" | "dark" | "auto"): Promise<void> {
+export async function setTheme(
+  theme: 'light' | 'dark' | 'auto'
+): Promise<void> {
   await savePreferences({ theme });
 }
 
-export async function getTheme(): Promise<"light" | "dark" | "auto"> {
+export async function getTheme(): Promise<'light' | 'dark' | 'auto'> {
   const preferences = await loadPreferences();
   return preferences.theme;
 }
@@ -89,6 +100,6 @@ export async function clearAllUserData(): Promise<void> {
     removeEncrypted(RECENT_ADDRESSES_KEY);
     clearAllStorageData();
   } catch (error) {
-    console.error("Failed to clear user data:", error);
+    console.error('Failed to clear user data:', error);
   }
 }

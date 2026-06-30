@@ -10,5 +10,7 @@ test('onramp page shows provider selection', async ({ page }) => {
 test('onramp selecting Transak highlights it', async ({ page }) => {
   await page.goto('/onramp');
   await page.locator('button:has-text("Transak")').click();
-  await expect(page.locator('button:has-text("Continue with Transak")')).toBeVisible();
+  await expect(
+    page.locator('button:has-text("Continue with Transak")')
+  ).toBeVisible();
 });

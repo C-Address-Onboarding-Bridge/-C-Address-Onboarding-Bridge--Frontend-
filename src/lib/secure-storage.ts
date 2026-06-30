@@ -1,11 +1,11 @@
-const STORAGE_KEY_PREFIX = "c_bridge_encrypted_";
-const ENCRYPTION_KEY_STORE = "c_bridge_encryption_key";
+const STORAGE_KEY_PREFIX = 'c_bridge_encrypted_';
+const ENCRYPTION_KEY_STORE = 'c_bridge_encryption_key';
 
 async function generateKey(): Promise<CryptoKey> {
   return await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
+    { name: 'AES-GCM', length: 256 },
     true,
-    ["encrypt", "decrypt"]
+    ['encrypt', 'decrypt']
   );
 }
 
@@ -14,16 +14,16 @@ async function getOrCreateKey(): Promise<CryptoKey> {
   if (stored) {
     const keyData = JSON.parse(stored);
     return await crypto.subtle.importKey(
-      "jwk",
+      'jwk',
       keyData,
-      { name: "AES-GCM" },
+      { name: 'AES-GCM' },
       true,
-      ["encrypt", "decrypt"]
+      ['encrypt', 'decrypt']
     );
   }
 
   const key = await generateKey();
-  const keyJwk = await crypto.subtle.exportKey("jwk", key);
+  const keyJwk = await crypto.subtle.exportKey('jwk', key);
   localStorage.setItem(ENCRYPTION_KEY_STORE, JSON.stringify(keyJwk));
   return key;
 }
@@ -34,7 +34,7 @@ export async function encryptData(data: string): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+    { name: 'AES-GCM', iv },
     key,
     encoded
   );
@@ -49,21 +49,23 @@ export async function encryptData(data: string): Promise<string> {
 export async function decryptData(encryptedData: string): Promise<string> {
   try {
     const key = await getOrCreateKey();
-    const combined = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
+    const combined = Uint8Array.from(atob(encryptedData), (c) =>
+      c.charCodeAt(0)
+    );
 
     const iv = combined.slice(0, 12);
     const encrypted = combined.slice(12);
 
     const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv },
+      { name: 'AES-GCM', iv },
       key,
       encrypted
     );
 
     return new TextDecoder().decode(decrypted);
   } catch (error) {
-    console.error("Decryption failed:", error);
-    return "";
+    console.error('Decryption failed:', error);
+    return '';
   }
 }
 

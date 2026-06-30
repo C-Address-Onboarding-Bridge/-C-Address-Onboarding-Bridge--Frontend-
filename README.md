@@ -36,12 +36,12 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Required env vars (see `.env.example` for all options):
 
-   | Variable | Required | Description |
-   |---|---|---|
-   | `NEXT_PUBLIC_STELLAR_NETWORK` | Yes | `TESTNET` or `PUBLIC` |
-   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No | Soroban bridge contract (omits direct payment) |
-   | `NEXT_PUBLIC_MOONPAY_API_KEY` | For onramp | From [Moonpay dashboard](https://buy.moonpay.com) |
-   | `NEXT_PUBLIC_TRANSAK_API_KEY` | For onramp | From [Transak dashboard](https://global.transak.com) |
+   | Variable                         | Required   | Description                                          |
+   | -------------------------------- | ---------- | ---------------------------------------------------- |
+   | `NEXT_PUBLIC_STELLAR_NETWORK`    | Yes        | `TESTNET` or `PUBLIC`                                |
+   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No         | Soroban bridge contract (omits direct payment)       |
+   | `NEXT_PUBLIC_MOONPAY_API_KEY`    | For onramp | From [Moonpay dashboard](https://buy.moonpay.com)    |
+   | `NEXT_PUBLIC_TRANSAK_API_KEY`    | For onramp | From [Transak dashboard](https://global.transak.com) |
 
 3. Run:
 
@@ -51,16 +51,43 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Open [http://localhost:3000](http://localhost:3000).
 
+
+## Docker Development
+
+The repository includes Docker files for both hot-reload development and production-style local builds. Copy the environment file first so compose can pass the same public configuration into the container:
+
+```bash
+cp .env.example .env.local
+docker compose up --build frontend
+```
+
+The development service mounts the repository into `/app`, keeps `node_modules` and `.next` in named volumes, enables file polling for reliable hot reloads, and serves the app at `http://localhost:3000`.
+
+To verify the production image locally, use the production profile:
+
+```bash
+docker compose --profile production up --build frontend-prod
+```
+
+You can also build the images directly:
+
+```bash
+docker build -f Dockerfile.dev -t c-address-bridge:dev .
+docker build -t c-address-bridge:prod .
+```
+
+Keep secrets out of Docker image layers. Use `.env.local` or shell environment variables for `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_BRIDGE_CONTRACT_ID`, `NEXT_PUBLIC_MOONPAY_API_KEY`, and `NEXT_PUBLIC_TRANSAK_API_KEY`.
+
 ## Available Commands
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start development server     |
+| `npm run build`     | Production build             |
+| `npm run start`     | Start production server      |
+| `npm run lint`      | Run ESLint                   |
 | `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run Vitest test suite |
+| `npm run test`      | Run Vitest test suite        |
 
 ## Mock Data (Development)
 
@@ -86,7 +113,11 @@ Developers without a Freighter wallet or live Stellar network can use the built-
 4. Import mocks directly in tests:
 
    ```typescript
-   import { mockFreighterApi, MOCK_TRANSACTIONS, mockHorizonAccount } from "@/lib/mock-data";
+   import {
+     mockFreighterApi,
+     MOCK_TRANSACTIONS,
+     mockHorizonAccount,
+   } from '@/lib/mock-data';
    ```
 
 ## Architecture
@@ -158,67 +189,4 @@ Enter any contract C-address in the **Inspect Contract** panel to fetch its on-c
 ## License
 
 MIT
-
-## Bundle Size Monitoring
-
-### Local check
-
-```bash
-npm run build:analyze   # builds with ANALYZE=true (generates report)
-npm run check:bundle-size  # validates sizes against budgets
-```
-
-To view the interactive bundle visualization (opened in browser):
-
-```bash
-ANALYZE=true npm run build
-# HTML reports written to .next/analyze/
-```
-
-### Budget configuration
-
-Budgets are defined in `.bundlebudgetrc.json` at the project root:
-
-```json
-{
-  "budgets": {
-    "initialJs": "300 KB",
-    "initialCss": "100 KB",
-    "totalAssets": "600 KB"
-  }
-}
-```
-
-Supported units: `B`, `KB` (1024 bytes), `MB` (1048576 bytes). Values are per-asset-category, not per-file.
-
-| Budget | What it measures |
-|---|---|
-| `initialJs` | JS loaded on first page visit (framework + app + polyfills) |
-| `initialCss` | CSS loaded on first page visit |
-| `totalAssets` | All JS + CSS under `.next/static/` |
-
-### CI integration
-
-Every PR and push to `main` runs a bundle size check that:
-
-1. Builds the app with `ANALYZE=true` (generates `.next/analyze/` reports via `@next/bundle-analyzer`)
-2. Validates sizes against `.bundlebudgetrc.json` budgets
-3. **Fails CI** if any budget is exceeded
-4. Posts a PR comment with current sizes, baseline comparison, and pass/fail status
-
-The baseline artifact is stored from the latest successful `main` branch build and retained for 90 days.
-
-### Reviewing intentional bundle increases
-
-If a feature intentionally increases bundle size:
-
-1. **Adjust the budget** in `.bundlebudgetrc.json` to the new expected size, or
-2. **Add a justification** in the PR description referencing the budget change
-
-Budget increases should be reviewed as part of code review. Use the `.next/analyze/` HTML reports to identify which modules contribute to the growth:
-
-```bash
-# Generate visual report
-ANALYZE=true npm run build
-open .next/analyze/client.html
-```
+ 

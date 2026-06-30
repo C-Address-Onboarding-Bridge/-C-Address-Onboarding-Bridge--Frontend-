@@ -4,9 +4,9 @@ export function NextFont() {
 
 export class Font {
   constructor(_config: Record<string, unknown>) {}
-  className = "";
+  className = '';
   style = {};
-  variable = "";
+  variable = '';
 }
 
 export default { Font };

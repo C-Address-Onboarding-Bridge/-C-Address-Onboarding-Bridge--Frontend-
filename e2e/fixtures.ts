@@ -8,7 +8,10 @@ export const test = base.extend<{ page: Page }>({
         getPublicKey: () => Promise.resolve(''),
         signTransaction: () => Promise.resolve(''),
         getNetwork: () => Promise.resolve('TESTNET'),
-        getNetworkDetails: () => Promise.resolve({ networkPassphrase: 'Test SDF Network ; September 2015' }),
+        getNetworkDetails: () =>
+          Promise.resolve({
+            networkPassphrase: 'Test SDF Network ; September 2015',
+          }),
       };
     });
     await use(page);

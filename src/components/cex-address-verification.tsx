@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Check, AlertCircle, Loader, ArrowRight } from "lucide-react";
-import { useWallet } from "./wallet-provider";
+import { useState } from 'react';
+import { Check, AlertCircle, Loader, ArrowRight } from 'lucide-react';
+import { useWallet } from './wallet-provider';
 import {
   initiateChallengeTransaction,
   verifyChallengeReceived,
@@ -10,7 +10,7 @@ import {
   clearChallenge,
   type VerificationChallenge,
   DEFAULT_BRIDGE_ADDRESS,
-} from "@/lib";
+} from '@/lib';
 
 export interface CEXVerificationProps {
   onVerified: () => void;
@@ -18,19 +18,23 @@ export interface CEXVerificationProps {
 
 export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
   const { address, network } = useWallet();
-  const [step, setStep] = useState<"idle" | "initiating" | "pending" | "verifying" | "verified" | "error">("idle");
-  const [challenge, setChallenge] = useState<VerificationChallenge | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [step, setStep] = useState<
+    'idle' | 'initiating' | 'pending' | 'verifying' | 'verified' | 'error'
+  >('idle');
+  const [challenge, setChallenge] = useState<VerificationChallenge | null>(
+    null
+  );
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInitiateChallenge = async () => {
     if (!address) {
-      setErrorMessage("Wallet not connected");
-      setStep("error");
+      setErrorMessage('Wallet not connected');
+      setStep('error');
       return;
     }
 
-    setStep("initiating");
-    setErrorMessage("");
+    setStep('initiating');
+    setErrorMessage('');
 
     try {
       const newChallenge = await initiateChallengeTransaction(
@@ -39,19 +43,21 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
         network
       );
       setChallenge(newChallenge);
-      setStep("pending");
+      setStep('pending');
 
       setTimeout(() => {
         handleVerifyChallenge(newChallenge.id);
       }, 5000);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to initiate challenge");
-      setStep("error");
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to initiate challenge'
+      );
+      setStep('error');
     }
   };
 
   const handleVerifyChallenge = async (challengeId: string) => {
-    setStep("verifying");
+    setStep('verifying');
 
     try {
       const verified = await verifyChallengeReceived(
@@ -64,16 +70,20 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
         const verifiedChallenge = getChallenge(challengeId);
         if (verifiedChallenge) {
           setChallenge(verifiedChallenge);
-          setStep("verified");
+          setStep('verified');
           onVerified();
         }
       } else {
-        setErrorMessage("Challenge not yet received at bridge address. Please try again.");
-        setStep("pending");
+        setErrorMessage(
+          'Challenge not yet received at bridge address. Please try again.'
+        );
+        setStep('pending');
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Verification failed");
-      setStep("error");
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Verification failed'
+      );
+      setStep('error');
     }
   };
 
@@ -82,38 +92,39 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
       clearChallenge(challenge.id);
     }
     setChallenge(null);
-    setStep("idle");
-    setErrorMessage("");
+    setStep('idle');
+    setErrorMessage('');
   };
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-      <h3 className="font-semibold mb-4">Verify Bridge Address Access</h3>
-      <p className="text-sm text-[var(--text-muted)] mb-6">
-        To protect your funds, we&apos;ll send a small test transaction (0.0001 XLM) to verify you control the bridge address.
+      <h3 className="mb-4 font-semibold">Verify Bridge Address Access</h3>
+      <p className="mb-6 text-sm text-[var(--text-muted)]">
+        To protect your funds, we&apos;ll send a small test transaction (0.0001
+        XLM) to verify you control the bridge address.
       </p>
 
-      {step === "idle" && (
+      {step === 'idle' && (
         <button
           onClick={handleInitiateChallenge}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-3 font-medium text-white transition-colors hover:bg-[var(--primary)]/90"
         >
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="h-4 w-4" />
           Start Verification
         </button>
       )}
 
-      {step === "initiating" && (
+      {step === 'initiating' && (
         <div className="flex items-center justify-center gap-2 py-4">
-          <Loader className="w-4 h-4 animate-spin" />
+          <Loader className="h-4 w-4 animate-spin" />
           <span className="text-sm">Sending verification transaction...</span>
         </div>
       )}
 
-      {step === "pending" && challenge && (
+      {step === 'pending' && challenge && (
         <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
-            <p className="text-sm font-medium mb-2">Challenge Details</p>
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
+            <p className="mb-2 text-sm font-medium">Challenge Details</p>
             <div className="space-y-2 text-xs text-[var(--text-muted)]">
               <div className="flex justify-between">
                 <span>Amount:</span>
@@ -121,32 +132,38 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
               </div>
               <div className="flex justify-between">
                 <span>Bridge Address:</span>
-                <span className="font-mono">{DEFAULT_BRIDGE_ADDRESS.slice(0, 8)}...</span>
+                <span className="font-mono">
+                  {DEFAULT_BRIDGE_ADDRESS.slice(0, 8)}...
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="text-[var(--warning)]">Awaiting confirmation...</span>
+                <span className="text-[var(--warning)]">
+                  Awaiting confirmation...
+                </span>
               </div>
             </div>
           </div>
 
           <button
             onClick={() => handleVerifyChallenge(challenge.id)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--surface-2)] transition-colors disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-4 py-3 font-medium transition-colors hover:bg-[var(--surface-2)] disabled:opacity-50"
           >
-            <Check className="w-4 h-4" />
+            <Check className="h-4 w-4" />
             Verify Receipt
           </button>
         </div>
       )}
 
-      {step === "verified" && challenge && (
+      {step === 'verified' && challenge && (
         <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20">
+          <div className="rounded-lg border border-[var(--success)]/20 bg-[var(--success)]/10 p-4">
             <div className="flex items-center gap-3">
-              <Check className="w-5 h-5 text-[var(--success)]" />
+              <Check className="h-5 w-5 text-[var(--success)]" />
               <div>
-                <p className="text-sm font-medium text-[var(--success)]">Verification Successful!</p>
+                <p className="text-sm font-medium text-[var(--success)]">
+                  Verification Successful!
+                </p>
                 <p className="text-xs text-[var(--text-muted)]">
                   Your access to the bridge address has been confirmed.
                 </p>
@@ -154,25 +171,30 @@ export function CEXAddressVerification({ onVerified }: CEXVerificationProps) {
             </div>
           </div>
           <p className="text-xs text-[var(--text-muted)]">
-            You can now proceed with your CEX withdrawal to {DEFAULT_BRIDGE_ADDRESS}.
+            You can now proceed with your CEX withdrawal to{' '}
+            {DEFAULT_BRIDGE_ADDRESS}.
           </p>
         </div>
       )}
 
-      {step === "error" && (
+      {step === 'error' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20">
+          <div className="rounded-lg border border-[var(--error)]/20 bg-[var(--error)]/10 p-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0" />
+              <AlertCircle className="h-5 w-5 flex-shrink-0 text-[var(--error)]" />
               <div>
-                <p className="text-sm font-medium text-[var(--error)]">Verification Failed</p>
-                <p className="text-xs text-[var(--text-muted)] mt-1">{errorMessage}</p>
+                <p className="text-sm font-medium text-[var(--error)]">
+                  Verification Failed
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {errorMessage}
+                </p>
               </div>
             </div>
           </div>
           <button
             onClick={handleRetry}
-            className="w-full px-4 py-3 rounded-xl border border-[var(--border)] font-medium hover:bg-[var(--surface-2)] transition-colors"
+            className="w-full rounded-xl border border-[var(--border)] px-4 py-3 font-medium transition-colors hover:bg-[var(--surface-2)]"
           >
             Try Again
           </button>
