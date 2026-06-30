@@ -11,8 +11,8 @@ import {
   Networks,
   Asset,
   Horizon,
-  rpc,
 } from "@stellar/stellar-sdk";
+import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
 import { BRIDGE_CONTRACT_ID } from "./types";
 
 const HORIZON_URLS = {
@@ -29,8 +29,8 @@ export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server 
   return new Horizon.Server(HORIZON_URLS[network]);
 }
 
-export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): rpc.Server {
-  return new rpc.Server(SOROBAN_RPC_URLS[network]);
+export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): RpcServer {
+  return new RpcServer(SOROBAN_RPC_URLS[network]);
 }
 
 export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
