@@ -8,6 +8,7 @@ import { OfflineBanner } from "@/components/offline-banner";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConnectivityProvider>
             <WalletProvider>
               <div className="min-h-screen flex flex-col">
+                <ServiceWorkerRegistration />
                 <Navbar />
                 <OfflineBanner />
                 <main className="flex-1 pt-16">{children}</main>
