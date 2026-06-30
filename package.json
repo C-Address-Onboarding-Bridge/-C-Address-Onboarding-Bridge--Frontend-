@@ -24,6 +24,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
     "@pact-foundation/pact": "^17.0.0",
     "@playwright/test": "1.49.1",
     "@stryker-mutator/core": "^9.6.1",
