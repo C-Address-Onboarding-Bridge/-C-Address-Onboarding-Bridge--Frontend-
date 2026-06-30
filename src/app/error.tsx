@@ -9,6 +9,23 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    // Log the error automatically when the component mounts
+    logError(error, { component: "GlobalErrorPage", action: "page_load" });
+  }, [error]);
+
+  const handleReportIssue = () => {
+    const reportData = exportErrorReports();
+    if (typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(reportData).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      });
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-24 sm:px-6 lg:px-8">
       <div className="text-center">
