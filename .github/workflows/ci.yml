@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  NEXT_PUBLIC_NETWORK: SANDBOX
+  NEXT_PUBLIC_HORIZON_URL: http://localhost:8000
+  NEXT_PUBLIC_SOROBAN_RPC_URL: http://localhost:8000/soroban/rpc
+  NEXT_PUBLIC_FRIENDBOT_URL: http://localhost:8000/friendbot
+
 jobs:
   frontend:
     name: Frontend build
@@ -20,9 +26,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
+      # Add this step to enforce Prettier formatting
+      - name: Check Formatting
+        run: npm run format:check
+        
       - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck
+      - run: chmod +x sandbox/scripts/seed-sandbox.sh && bash sandbox/scripts/seed-sandbox.sh
       - run: npm run test
       - run: npm run build
       - name: Visual tests
@@ -136,3 +147,71 @@ jobs:
         with:
           name: mutation-report
           path: reports/mutation/
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          path: pr-branch
+
+      - name: Setup Node (PR Branch)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pr-branch/package-lock.json
+
+      - name: Install dependencies (PR Branch)
+        run: |
+          cd pr-branch
+          npm ci
+
+      - name: Build site (PR Branch)
+        run: |
+          cd pr-branch
+          npm run build
+
+      - name: Run Lighthouse (PR Branch)
+        run: |
+          cd pr-branch
+          npx lhci collect
+          cp .lighthouseci/manifest.json ../.lighthouseci-pr-manifest.json
+
+      - name: Checkout Main Branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref || 'main' }}
+          path: main-branch
+
+      - name: Setup Node (Main Branch)
+        if: github.event_name == 'pull_request'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: main-branch/package-lock.json
+
+      - name: Build and Run Lighthouse (Main Branch)
+        if: github.event_name == 'pull_request'
+        run: |
+          cp pr-branch/lighthouserc.js main-branch/lighthouserc.js || true
+          cd main-branch
+          npm ci
+          npm run build
+          npx lhci collect
+          cp .lighthouseci/manifest.json ../.lighthouseci-main-manifest.json
+
+      - name: Compare Lighthouse Scores
+        run: |
+          node pr-branch/scripts/compare-lighthouse.js
+
+      - name: Comment PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && github.event_name == 'pull_request'
+        with:
+          path: lighthouse-comment.md
+

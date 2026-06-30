@@ -1,5 +1,5 @@
 export interface AppEnv {
-  stellarNetwork: "PUBLIC" | "TESTNET";
+  stellarNetwork: 'PUBLIC' | 'TESTNET';
   bridgeContractIdTestnet: string;
   bridgeContractIdMainnet: string;
   bridgeContractIdFuturenet: string;
@@ -32,25 +32,25 @@ export function validateEnv(): AppEnv {
 
   // NEXT_PUBLIC_STELLAR_NETWORK — optional, must be PUBLIC or TESTNET if set
   const rawNetwork = process.env.NEXT_PUBLIC_STELLAR_NETWORK;
-  let stellarNetwork: "PUBLIC" | "TESTNET" = "TESTNET";
-  if (rawNetwork !== undefined && rawNetwork !== "") {
+  let stellarNetwork: 'PUBLIC' | 'TESTNET' = 'TESTNET';
+  if (rawNetwork !== undefined && rawNetwork !== '') {
     const upper = rawNetwork.toUpperCase();
-    if (upper !== "PUBLIC" && upper !== "TESTNET") {
+    if (upper !== 'PUBLIC' && upper !== 'TESTNET') {
       errors.push({
-        key: "NEXT_PUBLIC_STELLAR_NETWORK",
+        key: 'NEXT_PUBLIC_STELLAR_NETWORK',
         message: `must be "PUBLIC" or "TESTNET", got "${rawNetwork}"`,
       });
     } else {
-      stellarNetwork = upper as "PUBLIC" | "TESTNET";
+      stellarNetwork = upper as 'PUBLIC' | 'TESTNET';
     }
   }
 
   // Contract ID vars — optional, but must be valid C-addresses if provided
   const contractVars = [
-    "NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET",
-    "NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET",
-    "NEXT_PUBLIC_BRIDGE_CONTRACT_ID_FUTURENET",
-    "NEXT_PUBLIC_BRIDGE_CONTRACT_ID",
+    'NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET',
+    'NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET',
+    'NEXT_PUBLIC_BRIDGE_CONTRACT_ID_FUTURENET',
+    'NEXT_PUBLIC_BRIDGE_CONTRACT_ID',
   ] as const;
 
   for (const key of contractVars) {
@@ -64,18 +64,21 @@ export function validateEnv(): AppEnv {
   }
 
   if (errors.length > 0) {
-    const details = errors.map((e) => `  • ${e.key}: ${e.message}`).join("\n");
+    const details = errors.map((e) => `  • ${e.key}: ${e.message}`).join('\n');
     throw new Error(`Environment configuration error(s):\n${details}`);
   }
 
   _env = {
     stellarNetwork,
-    bridgeContractIdTestnet: process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET ?? "",
-    bridgeContractIdMainnet: process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET ?? "",
-    bridgeContractIdFuturenet: process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_FUTURENET ?? "",
-    bridgeContractId: process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID ?? "",
-    moonpayApiKey: process.env.NEXT_PUBLIC_MOONPAY_API_KEY ?? "",
-    transakApiKey: process.env.NEXT_PUBLIC_TRANSAK_API_KEY ?? "",
+    bridgeContractIdTestnet:
+      process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_TESTNET ?? '',
+    bridgeContractIdMainnet:
+      process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_MAINNET ?? '',
+    bridgeContractIdFuturenet:
+      process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID_FUTURENET ?? '',
+    bridgeContractId: process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID ?? '',
+    moonpayApiKey: process.env.NEXT_PUBLIC_MOONPAY_API_KEY ?? '',
+    transakApiKey: process.env.NEXT_PUBLIC_TRANSAK_API_KEY ?? '',
   };
 
   return _env;

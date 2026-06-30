@@ -1,5 +1,5 @@
 export function usePathname() {
-  return "/";
+  return '/';
 }
 
 export function useRouter() {

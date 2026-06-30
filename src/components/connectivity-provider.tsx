@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from "react";
+} from 'react';
 
 interface OfflineAction {
   id: string;
@@ -27,7 +27,7 @@ const ConnectivityContext = createContext<ConnectivityContextType | null>(null);
 
 export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator !== "undefined" ? navigator.onLine : true,
+    typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [pendingOfflineActions, setPendingOfflineActions] = useState(0);
   const queuedActionsRef = useRef<OfflineAction[]>([]);
@@ -54,12 +54,12 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       setIsOnline(navigator.onLine);
     };
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
 
     return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
     };
   }, []);
 
@@ -84,7 +84,7 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       pendingOfflineActions,
       queueOfflineAction,
     }),
-    [isOnline, pendingOfflineActions, queueOfflineAction],
+    [isOnline, pendingOfflineActions, queueOfflineAction]
   );
 
   return (
@@ -97,7 +97,9 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
 export function useConnectivity() {
   const context = useContext(ConnectivityContext);
   if (!context) {
-    throw new Error("useConnectivity must be used within a ConnectivityProvider");
+    throw new Error(
+      'useConnectivity must be used within a ConnectivityProvider'
+    );
   }
   return context;
 }

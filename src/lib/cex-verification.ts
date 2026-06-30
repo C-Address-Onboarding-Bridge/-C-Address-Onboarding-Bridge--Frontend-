@@ -1,4 +1,4 @@
-import { buildAndSubmitPayment, getAccountBalances } from "./stellar";
+import { buildAndSubmitPayment, getAccountBalances } from './stellar';
 
 export interface VerificationChallenge {
   id: string;
@@ -8,8 +8,8 @@ export interface VerificationChallenge {
   verified: boolean;
 }
 
-const CHALLENGE_AMOUNT = "0.0001";
-const VERIFICATION_STORAGE_PREFIX = "cex_challenge_";
+const CHALLENGE_AMOUNT = '0.0001';
+const VERIFICATION_STORAGE_PREFIX = 'cex_challenge_';
 const MAX_CHALLENGE_AGE = 30 * 60 * 1000;
 
 export function generateChallengeId(): string {
@@ -19,7 +19,7 @@ export function generateChallengeId(): string {
 export async function initiateChallengeTransaction(
   sourceAddress: string,
   bridgeAddress: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<VerificationChallenge> {
   try {
     const challengeId = generateChallengeId();
@@ -35,7 +35,7 @@ export async function initiateChallengeTransaction(
       sourceAddress,
       bridgeAddress,
       CHALLENGE_AMOUNT,
-      "XLM",
+      'XLM',
       network
     );
 
@@ -43,16 +43,22 @@ export async function initiateChallengeTransaction(
       saveChallenge(challengeId, challenge);
       return challenge;
     } else {
-      throw new Error("Challenge transaction failed");
+      throw new Error('Challenge transaction failed');
     }
   } catch (error) {
-    console.error("Failed to initiate challenge:", error);
+    console.error('Failed to initiate challenge:', error);
     throw error;
   }
 }
 
-export function saveChallenge(id: string, challenge: VerificationChallenge): void {
-  localStorage.setItem(VERIFICATION_STORAGE_PREFIX + id, JSON.stringify(challenge));
+export function saveChallenge(
+  id: string,
+  challenge: VerificationChallenge
+): void {
+  localStorage.setItem(
+    VERIFICATION_STORAGE_PREFIX + id,
+    JSON.stringify(challenge)
+  );
 }
 
 export function getChallenge(id: string): VerificationChallenge | null {
@@ -69,16 +75,16 @@ export function isChallengeFresh(challenge: VerificationChallenge): boolean {
 export async function verifyChallengeReceived(
   challengeId: string,
   bridgeAddress: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<boolean> {
   try {
     const challenge = getChallenge(challengeId);
     if (!challenge) {
-      throw new Error("Challenge not found");
+      throw new Error('Challenge not found');
     }
 
     if (!isChallengeFresh(challenge)) {
-      throw new Error("Challenge has expired");
+      throw new Error('Challenge has expired');
     }
 
     const balances = await getAccountBalances(bridgeAddress, network);
@@ -93,7 +99,7 @@ export async function verifyChallengeReceived(
 
     return false;
   } catch (error) {
-    console.error("Challenge verification failed:", error);
+    console.error('Challenge verification failed:', error);
     return false;
   }
 }
@@ -104,10 +110,11 @@ export function clearChallenge(id: string): void {
 
 export function getChallengeExplorerUrl(
   transactionHash: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): string {
-  const base = network === "PUBLIC"
-    ? "https://stellar.expert/explorer/public"
-    : "https://stellar.expert/explorer/testnet";
+  const base =
+    network === 'PUBLIC'
+      ? 'https://stellar.expert/explorer/public'
+      : 'https://stellar.expert/explorer/testnet';
   return `${base}/tx/${transactionHash}`;
 }

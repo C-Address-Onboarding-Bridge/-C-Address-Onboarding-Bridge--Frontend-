@@ -6,7 +6,7 @@ const pages = [
   { name: 'Bridge', path: '/bridge' },
   { name: 'CEX', path: '/cex' },
   { name: 'Dashboard', path: '/dashboard' },
-  { name: 'Onramp', path: '/onramp' }
+  { name: 'Onramp', path: '/onramp' },
 ];
 
 test.describe('Visual Regression Tests', () => {

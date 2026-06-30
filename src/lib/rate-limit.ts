@@ -45,7 +45,7 @@ function getOrCreateState(key: string): RateLimitState {
  * Returns the time to wait (in ms) if rate limited, 0 if allowed
  */
 export function checkRateLimit(
-  key: string = "default",
+  key: string = 'default',
   config: Partial<RateLimitConfig> = {}
 ): number {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
@@ -75,7 +75,7 @@ export function checkRateLimit(
 /**
  * Records a successful submission attempt
  */
-export function recordSubmissionAttempt(key: string = "default"): void {
+export function recordSubmissionAttempt(key: string = 'default'): void {
   const state = getOrCreateState(key);
   state.lastSubmissionTime = Date.now();
   state.isSubmitting = true;
@@ -84,7 +84,7 @@ export function recordSubmissionAttempt(key: string = "default"): void {
 /**
  * Records a failed submission attempt and updates failure count
  */
-export function recordSubmissionFailure(key: string = "default"): void {
+export function recordSubmissionFailure(key: string = 'default'): void {
   const state = getOrCreateState(key);
   state.lastFailureTime = Date.now();
   state.failureCount += 1;
@@ -94,7 +94,7 @@ export function recordSubmissionFailure(key: string = "default"): void {
 /**
  * Records a successful submission completion and resets failure count
  */
-export function recordSubmissionSuccess(key: string = "default"): void {
+export function recordSubmissionSuccess(key: string = 'default'): void {
   const state = getOrCreateState(key);
   state.failureCount = 0;
   state.isSubmitting = false;
@@ -103,7 +103,7 @@ export function recordSubmissionSuccess(key: string = "default"): void {
 /**
  * Resets rate limit state for a given key
  */
-export function resetRateLimit(key: string = "default"): void {
+export function resetRateLimit(key: string = 'default'): void {
   rateLimitStates.delete(key);
 }
 
@@ -122,10 +122,13 @@ export function generateTransactionId(
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
-  return `${Math.abs(hash).toString(36)}_${data.split('|').map(s => s.substring(0, 4)).join('')}`;
+  return `${Math.abs(hash).toString(36)}_${data
+    .split('|')
+    .map((s) => s.substring(0, 4))
+    .join('')}`;
 }
 
 /**
@@ -182,14 +185,14 @@ export function cleanupOldDuplicateEntries(windowMs: number = 60000): void {
     }
   });
 
-  keysToDelete.forEach(key => submissionDeduplicationMap.delete(key));
+  keysToDelete.forEach((key) => submissionDeduplicationMap.delete(key));
 }
 
 /**
  * Gets the remaining cooldown time in seconds
  */
 export function getRemainingCooldownSeconds(
-  key: string = "default",
+  key: string = 'default',
   config: Partial<RateLimitConfig> = {}
 ): number {
   const remainingMs = checkRateLimit(key, config);
@@ -199,7 +202,7 @@ export function getRemainingCooldownSeconds(
 /**
  * Checks if a submission is currently in progress
  */
-export function isSubmissionInProgress(key: string = "default"): boolean {
+export function isSubmissionInProgress(key: string = 'default'): boolean {
   const state = getOrCreateState(key);
   return state.isSubmitting;
 }

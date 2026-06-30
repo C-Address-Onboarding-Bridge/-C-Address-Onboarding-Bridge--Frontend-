@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { fetchFeeStats, type FeeTiers } from "./stellar";
+import { useState, useEffect } from 'react';
+import { fetchFeeStats, type FeeTiers } from './stellar';
 
 export interface UseFeeStatsResult {
   tiers: FeeTiers | null;
@@ -10,7 +10,7 @@ export interface UseFeeStatsResult {
   refetch: () => void;
 }
 
-export function useFeeStats(network: "PUBLIC" | "TESTNET"): UseFeeStatsResult {
+export function useFeeStats(network: 'PUBLIC' | 'TESTNET'): UseFeeStatsResult {
   const [tiers, setTiers] = useState<FeeTiers | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,13 +29,17 @@ export function useFeeStats(network: "PUBLIC" | "TESTNET"): UseFeeStatsResult {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to fetch fee stats");
+          setError(
+            e instanceof Error ? e.message : 'Failed to fetch fee stats'
+          );
           setLoading(false);
         }
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [network, tick]);
 
   return { tiers, loading, error, refetch: () => setTick((n) => n + 1) };
