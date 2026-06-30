@@ -1,25 +1,4 @@
 import {
-  isConnected,
-  getAddress,
-  signTransaction as freighterSignTransaction,
-  getNetwork,
-} from "@stellar/freighter-api";
-
-/**
- * Wallet-agnostic signer function.  Matches the signature of each
- * WalletAdapter.signTransaction so callers can pass any adapter's signer
- * instead of being hard-wired to Freighter.
- * Falls back to Freighter when omitted.
- */
-export type TxSigner = (xdr: string, networkPassphrase: string) => Promise<string>;
-
-/** Default signer — wraps Freighter's API into the TxSigner shape. */
-async function defaultSigner(xdr: string, networkPassphrase: string): Promise<string> {
-  const result = await freighterSignTransaction(xdr, { networkPassphrase });
-  if ("error" in result && result.error) throw new Error(`Freighter signing failed: ${result.error}`);
-  return (result as { signedTxXdr: string }).signedTxXdr;
-}
-import {
   TransactionBuilder,
   Operation,
   BASE_FEE,
@@ -33,7 +12,31 @@ import {
   nativeToScVal,
   scValToNative,
   StrKey,
-} from "@stellar/stellar-sdk";
+  checkFreighterConnection,
+  getFreighterAddress,
+  getFreighterNetwork,
+  signWithFreighter,
+  isSimulationError,
+  getSimulationRetval,
+  addressFromString,
+  transactionFromXDR,
+  createHorizonServer,
+  createSorobanServer,
+} from "./stellar-sdk";
+
+/**
+ * Wallet-agnostic signer function.  Matches the signature of each
+ * WalletAdapter.signTransaction so callers can pass any adapter's signer
+ * instead of being hard-wired to Freighter.
+ * Falls back to Freighter when omitted.
+ */
+export type TxSigner = (xdr: string, networkPassphrase: string) => Promise<string>;
+
+/** Default signer — wraps Freighter via the SDK abstraction layer. */
+async function defaultSigner(xdr: string, passphrase: string): Promise<string> {
+  const result = await signWithFreighter(xdr, passphrase);
+  return result.signedTxXdr;
+}
 import {
   BRIDGE_CONTRACT_ID,
   HORIZON_URL,
@@ -79,7 +82,7 @@ export type { PaymentResult, AccountBalances } from "./types";
  * const account = await server.loadAccount("G...");
  */
 export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server {
-  return new Horizon.Server(HORIZON_URL[network]);
+  return createHorizonServer(HORIZON_URL[network]);
 }
 
 /**
@@ -93,7 +96,7 @@ export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server 
  * const account = await rpcServer.getAccount("G...");
  */
 export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): rpc.Server {
-  return new rpc.Server(SOROBAN_RPC_URL[network]);
+  return createSorobanServer(SOROBAN_RPC_URL[network]);
 }
 
 /**
@@ -119,12 +122,12 @@ export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
  */
 export async function connectWallet(): Promise<string | null> {
   try {
-    const conn = await isConnected();
+    const conn = await checkFreighterConnection();
     if (!conn.isConnected) {
       throw new Error("Freighter not detected");
     }
-    const addr = await getAddress();
-    return addr.address;
+    const addr = await getFreighterAddress();
+    return addr;
   } catch (e) {
     console.error("Failed to connect wallet:", e);
     return null;
@@ -138,7 +141,7 @@ export async function connectWallet(): Promise<string | null> {
  */
 export async function checkConnection(): Promise<boolean> {
   try {
-    const result = await isConnected();
+    const result = await checkFreighterConnection();
     return result.isConnected;
   } catch {
     return false;
@@ -151,12 +154,7 @@ export async function checkConnection(): Promise<boolean> {
  * @returns The G-address string, or `null` if Freighter is unavailable.
  */
 export async function getWalletAddress(): Promise<string | null> {
-  try {
-    const result = await getAddress();
-    return result.address;
-  } catch {
-    return null;
-  }
+  return getFreighterAddress();
 }
 
 /**
@@ -165,13 +163,7 @@ export async function getWalletAddress(): Promise<string | null> {
  * @returns `"PUBLIC"` or `"TESTNET"`. Falls back to the app default if Freighter is unavailable.
  */
 export async function getCurrentNetwork(): Promise<"PUBLIC" | "TESTNET"> {
-  try {
-    const result = await getNetwork();
-    return result.network === Networks.PUBLIC ? "PUBLIC" : "TESTNET";
-  } catch {
-    return DEFAULT_NETWORK;
-  }
-}
+  return getFreighterNetwork();
 
 /**
  * Returns `true` if the given string is a syntactically valid Stellar address (G- or C-address).
@@ -370,7 +362,7 @@ export async function buildAndSubmitPayment(
     .build();
 
   const signedXDR = await signer(tx.toXDR(), passphrase);
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const signedTx = transactionFromXDR(signedXDR, passphrase);
   const result = await server.submitTransaction(signedTx);
   return { hash: result.hash, successful: result.successful };
 }
@@ -472,7 +464,7 @@ export async function bridgeViaContract(
   }
 
   const signedXDR = await signer(prepared.toXDR(), passphrase);
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const signedTx = transactionFromXDR(signedXDR, passphrase);
 
   const sendResult = await server.sendTransaction(signedTx);
   if (sendResult.status === "ERROR") {
@@ -613,7 +605,7 @@ export async function buildAndSubmitChangeTrust(
     .build();
 
   const signedXDR = await signer(tx.toXDR(), passphrase);
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const signedTx = transactionFromXDR(signedXDR, passphrase);
   const result = await server.submitTransaction(signedTx);
   return { hash: result.hash, successful: result.successful };
 }
@@ -683,8 +675,8 @@ async function simulateContractRead(
     .setTimeout(30)
     .build();
   const sim = await server.simulateTransaction(tx);
-  if (rpc.Api.isSimulationError(sim)) return null;
-  return (sim as rpc.Api.SimulateTransactionSuccessResponse).result?.retval ?? null;
+  if (isSimulationError(sim)) return null;
+  return getSimulationRetval(sim as rpc.Api.SimulateTransactionSuccessResponse);
 }
 
 /**
@@ -794,10 +786,7 @@ export async function getSorobanAccountBalances(
  * Ref: https://developers.stellar.org/docs/learn/encyclopedia/contract-development/types/built-in-types#address
  */
 function addressToScVal(address: string) {
-  if (StrKey.isValidEd25519PublicKey(address)) {
-    return nativeToScVal(Address.account(StrKey.decodeEd25519PublicKey(address)), { type: "address" });
-  }
-  return nativeToScVal(Address.contract(StrKey.decodeContract(address)), { type: "address" });
+  return nativeToScVal(addressFromString(address), { type: "address" });
 }
 
 /**
@@ -827,12 +816,12 @@ export async function getTokenAllowance(
     .build();
 
   const sim = await server.simulateTransaction(tx);
-  if (rpc.Api.isSimulationError(sim)) {
-    throw new Error(`Allowance simulation failed: ${sim.error}`);
+  if (isSimulationError(sim)) {
+    throw new Error(`Allowance simulation failed: ${(sim as rpc.Api.SimulateTransactionErrorResponse).error}`);
   }
-  const result = (sim as rpc.Api.SimulateTransactionSuccessResponse).result;
-  if (!result) return BigInt(0);
-  return BigInt(scValToNative(result.retval) as bigint);
+  const retval = getSimulationRetval(sim as rpc.Api.SimulateTransactionSuccessResponse);
+  if (!retval) return BigInt(0);
+  return BigInt(scValToNative(retval) as bigint);
 }
 
 /**
@@ -881,7 +870,7 @@ export async function approveToken(
 
   const prepared = await server.prepareTransaction(tx);
   const signedXDR = await defaultSigner(prepared.toXDR(), passphrase);
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+  const signedTx = transactionFromXDR(signedXDR, passphrase);
   const sendResult = await server.sendTransaction(signedTx);
   if (sendResult.status === "ERROR") {
     throw new Error(`Approve transaction failed: ${JSON.stringify(sendResult.errorResult)}`);
@@ -928,7 +917,7 @@ export async function deployContract(
 
   const preparedUpload = await server.prepareTransaction(uploadTx);
   const signedUploadXDR = await defaultSigner(preparedUpload.toXDR(), passphrase);
-  const uploadResult = await server.sendTransaction(TransactionBuilder.fromXDR(signedUploadXDR, passphrase));
+  const uploadResult = await server.sendTransaction(transactionFromXDR(signedUploadXDR, passphrase));
   if (uploadResult.status === "ERROR") throw new Error(`WASM upload failed: ${JSON.stringify(uploadResult.errorResult)}`);
   const uploadPolled = await server.pollTransaction(uploadResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (uploadPolled.status !== "SUCCESS") throw new Error(`WASM upload did not succeed: ${uploadPolled.status}`);
@@ -960,7 +949,7 @@ export async function deployContract(
 
   const preparedDeploy = await server.prepareTransaction(deployTx);
   const signedDeployXDR = await defaultSigner(preparedDeploy.toXDR(), passphrase);
-  const deployResult = await server.sendTransaction(TransactionBuilder.fromXDR(signedDeployXDR, passphrase));
+  const deployResult = await server.sendTransaction(transactionFromXDR(signedDeployXDR, passphrase));
   if (deployResult.status === "ERROR") throw new Error(`Contract deploy failed: ${JSON.stringify(deployResult.errorResult)}`);
   const deployPolled = await server.pollTransaction(deployResult.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (deployPolled.status !== "SUCCESS") throw new Error(`Contract deploy did not succeed: ${deployPolled.status}`);
@@ -991,7 +980,7 @@ export async function upgradeContract(
 
   const prepared = await server.prepareTransaction(tx);
   const signedXDR = await defaultSigner(prepared.toXDR(), passphrase);
-  const result = await server.sendTransaction(TransactionBuilder.fromXDR(signedXDR, passphrase));
+  const result = await server.sendTransaction(transactionFromXDR(signedXDR, passphrase));
   if (result.status === "ERROR") throw new Error(`Upgrade failed: ${JSON.stringify(result.errorResult)}`);
   const polled = await server.pollTransaction(result.hash, { attempts: 30, sleepStrategy: rpc.BasicSleepStrategy });
   if (polled.status !== "SUCCESS") throw new Error(`Upgrade did not succeed: ${polled.status}`);

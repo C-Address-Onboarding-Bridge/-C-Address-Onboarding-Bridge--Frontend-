@@ -24,13 +24,7 @@
  * rather than SEP-0007 URIs.
  */
 
-import { Networks } from "@stellar/stellar-sdk";
-import {
-  isConnected as freighterIsConnected,
-  getAddress as freighterGetAddress,
-  getNetwork as freighterGetNetwork,
-  signTransaction as freighterSignTransaction,
-} from "@stellar/freighter-api";
+import { Networks, checkFreighterConnection, getFreighterAddress, getFreighterNetwork, signWithFreighter } from "./stellar-sdk";
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -69,37 +63,25 @@ export const freighterAdapter: WalletAdapter = {
 
   async connect() {
     try {
-      const conn = await freighterIsConnected();
+      const conn = await checkFreighterConnection();
       if (!conn.isConnected) return null;
-      const { address } = await freighterGetAddress();
-      return address || null;
+      return await getFreighterAddress();
     } catch {
       return null;
     }
   },
 
   async getAddress() {
-    try {
-      const { address } = await freighterGetAddress();
-      return address || null;
-    } catch {
-      return null;
-    }
+    return getFreighterAddress();
   },
 
   async getNetwork() {
-    try {
-      const result = await freighterGetNetwork();
-      return result.network === Networks.PUBLIC ? "PUBLIC" : "TESTNET";
-    } catch {
-      return "TESTNET";
-    }
+    return getFreighterNetwork();
   },
 
   async signTransaction(xdr, networkPassphrase) {
-    const result = await freighterSignTransaction(xdr, { networkPassphrase });
-    if ("error" in result && result.error) throw new Error(`Freighter: ${result.error}`);
-    return (result as { signedTxXdr: string }).signedTxXdr;
+    const result = await signWithFreighter(xdr, networkPassphrase);
+    return result.signedTxXdr;
   },
 };
 

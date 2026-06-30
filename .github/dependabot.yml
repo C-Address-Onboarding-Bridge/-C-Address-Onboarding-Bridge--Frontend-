@@ -1,13 +1,36 @@
 version: 2
+
 updates:
   - package-ecosystem: npm
-    directory: /
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
     groups:
-      production-dependencies:
-        dependency-type: production
-      development-dependencies:
-        dependency-type: development
+      stellar-sdk:
+        patterns:
+          - "@stellar/*"
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "playwright"
+          - "@playwright/*"
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore"
+      include: scope
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
