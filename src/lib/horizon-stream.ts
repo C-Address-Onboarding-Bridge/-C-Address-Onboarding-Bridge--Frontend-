@@ -13,8 +13,8 @@
  * MUST invoke on unmount to prevent memory leaks.
  */
 
-import { Horizon } from "@stellar/stellar-sdk";
-import { HORIZON_URL } from "./types";
+import { Horizon } from '@stellar/stellar-sdk';
+import { HORIZON_URL } from './types';
 
 export interface StreamPaymentRecord {
   id: string;
@@ -45,7 +45,7 @@ export interface StreamOptions {
  * connections.  Always false in Node/SSR.
  */
 export function isStreamingSupported(): boolean {
-  return typeof window !== "undefined" && typeof EventSource !== "undefined";
+  return typeof window !== 'undefined' && typeof EventSource !== 'undefined';
 }
 
 /**
@@ -57,7 +57,7 @@ export function isStreamingSupported(): boolean {
  */
 export function streamPayments(
   address: string,
-  network: "PUBLIC" | "TESTNET",
+  network: 'PUBLIC' | 'TESTNET',
   options: StreamOptions
 ): () => void {
   if (!isStreamingSupported()) {
@@ -65,7 +65,7 @@ export function streamPayments(
   }
 
   const server = new Horizon.Server(HORIZON_URL[network]);
-  const { onRecord, onError, cursor = "now" } = options;
+  const { onRecord, onError, cursor = 'now' } = options;
 
   let stop: (() => void) | null = null;
 
@@ -79,7 +79,10 @@ export function streamPayments(
           onRecord(record as unknown as StreamPaymentRecord);
         },
         onerror: (event) => {
-          const err = event instanceof Error ? event : new Error("Horizon payment stream error");
+          const err =
+            event instanceof Error
+              ? event
+              : new Error('Horizon payment stream error');
           const shouldStop = onError?.(err);
           if (shouldStop) {
             stop?.();
@@ -102,7 +105,7 @@ export function streamPayments(
  */
 export function streamTransactions(
   address: string,
-  network: "PUBLIC" | "TESTNET",
+  network: 'PUBLIC' | 'TESTNET',
   options: StreamOptions
 ): () => void {
   if (!isStreamingSupported()) {
@@ -110,7 +113,7 @@ export function streamTransactions(
   }
 
   const server = new Horizon.Server(HORIZON_URL[network]);
-  const { onRecord, onError, cursor = "now" } = options;
+  const { onRecord, onError, cursor = 'now' } = options;
 
   let stop: (() => void) | null = null;
 
@@ -124,7 +127,10 @@ export function streamTransactions(
           onRecord(record as unknown as StreamPaymentRecord);
         },
         onerror: (event) => {
-          const err = event instanceof Error ? event : new Error("Horizon transaction stream error");
+          const err =
+            event instanceof Error
+              ? event
+              : new Error('Horizon transaction stream error');
           const shouldStop = onError?.(err);
           if (shouldStop) {
             stop?.();

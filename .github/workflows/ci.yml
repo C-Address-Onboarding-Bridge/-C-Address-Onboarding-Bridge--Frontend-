@@ -20,6 +20,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
+      # Add this step to enforce Prettier formatting
+      - name: Check Formatting
+        run: npm run format:check
+        
       - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run typecheck

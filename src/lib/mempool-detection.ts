@@ -3,7 +3,7 @@
  * Prevents users from submitting identical pending transactions
  */
 
-import { getHorizonServer } from "./stellar";
+import { getHorizonServer } from './stellar';
 
 export interface MempoolTransaction {
   hash: string;
@@ -11,7 +11,7 @@ export interface MempoolTransaction {
   destinationAddress: string;
   amount: string;
   asset: string;
-  status: "pending" | "failed" | "confirmed";
+  status: 'pending' | 'failed' | 'confirmed';
   timestamp: number;
 }
 
@@ -30,10 +30,10 @@ export function generateMempoolTransactionId(
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
-  return `mempool_${Math.abs(hash).toString(36)}_${Buffer.from(data).toString("base64").substring(0, 16)}`;
+  return `mempool_${Math.abs(hash).toString(36)}_${Buffer.from(data).toString('base64').substring(0, 16)}`;
 }
 
 /**
@@ -45,7 +45,7 @@ export async function checkMempoolForDuplicates(
   destinationAddress: string,
   amount: string,
   asset: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<MempoolTransaction[]> {
   const server = getHorizonServer(network);
   const duplicates: MempoolTransaction[] = [];
@@ -56,7 +56,7 @@ export async function checkMempoolForDuplicates(
       .transactions()
       .forAccount(sourceAddress)
       .limit(50) // Get last 50 transactions
-      .order("desc")
+      .order('desc')
       .call();
 
     if (!transactions.records || transactions.records.length === 0) {
@@ -66,13 +66,15 @@ export async function checkMempoolForDuplicates(
     // Check each transaction for duplicates
     for (const tx of transactions.records) {
       const txRecord = tx as unknown as Record<string, unknown>;
-      const hash = String(txRecord.id || txRecord.hash || "");
+      const hash = String(txRecord.id || txRecord.hash || '');
 
       // Check if this transaction matches our criteria
       if (matchesTransactionDetails(txRecord)) {
         // Determine status based on whether it's in the most recent ledger
-        const createdAtStr = String(txRecord.created_at || "");
-        const txTimestamp = createdAtStr ? new Date(createdAtStr).getTime() : Date.now();
+        const createdAtStr = String(txRecord.created_at || '');
+        const txTimestamp = createdAtStr
+          ? new Date(createdAtStr).getTime()
+          : Date.now();
         const isRecent = Date.now() - txTimestamp < 5 * 60 * 1000; // Within 5 minutes
         const successful = Boolean(txRecord.successful);
 
@@ -82,7 +84,7 @@ export async function checkMempoolForDuplicates(
           destinationAddress,
           amount,
           asset,
-          status: isRecent ? "pending" : successful ? "confirmed" : "failed",
+          status: isRecent ? 'pending' : successful ? 'confirmed' : 'failed',
           timestamp: txTimestamp,
         });
       }
@@ -90,7 +92,7 @@ export async function checkMempoolForDuplicates(
 
     return duplicates;
   } catch (error) {
-    console.warn("Error checking mempool for duplicates:", error);
+    console.warn('Error checking mempool for duplicates:', error);
     // Return empty array if unable to check - don't block the user
     return [];
   }
@@ -99,15 +101,13 @@ export async function checkMempoolForDuplicates(
 /**
  * Checks if a Horizon transaction matches the transaction details we're looking for
  */
-function matchesTransactionDetails(
-  tx: Record<string, unknown>
-): boolean {
+function matchesTransactionDetails(tx: Record<string, unknown>): boolean {
   // For now, we check transactions to the destination address with matching amount
   // In a real implementation, you would parse the operations within the transaction
   // to more precisely identify duplicates
 
   // Simple check: if the transaction has operations
-  if (typeof tx.operations_count === "number" && tx.operations_count > 0) {
+  if (typeof tx.operations_count === 'number' && tx.operations_count > 0) {
     // Note: This is a simplified check. A more robust implementation would
     // fetch and parse the operations within the transaction to verify amounts
     return true; // Conservative approach - mark as potential match
@@ -121,22 +121,22 @@ function matchesTransactionDetails(
  */
 export async function getMempoolTransactionDetails(
   txHash: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<MempoolTransaction | null> {
   const server = getHorizonServer(network);
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
     const horizonTx = tx as unknown as Record<string, unknown>;
-    const createdAtStr = String(horizonTx.created_at || "");
+    const createdAtStr = String(horizonTx.created_at || '');
 
     return {
       hash: String(horizonTx.id || txHash),
-      sourceAddress: String(horizonTx.source_account || horizonTx.source || ""),
-      destinationAddress: "", // Would need to parse operations to get destination
-      amount: "", // Would need to parse operations to get amount
-      asset: "", // Would need to parse operations to get asset
-      status: Boolean(horizonTx.successful) ? "confirmed" : "failed",
+      sourceAddress: String(horizonTx.source_account || horizonTx.source || ''),
+      destinationAddress: '', // Would need to parse operations to get destination
+      amount: '', // Would need to parse operations to get amount
+      asset: '', // Would need to parse operations to get asset
+      status: Boolean(horizonTx.successful) ? 'confirmed' : 'failed',
       timestamp: createdAtStr ? new Date(createdAtStr).getTime() : Date.now(),
     };
   } catch (error) {
@@ -148,19 +148,21 @@ export async function getMempoolTransactionDetails(
 /**
  * Warns user about duplicate transactions and provides recommended action
  */
-export function getDuplicateWarningMessage(duplicates: MempoolTransaction[]): string {
+export function getDuplicateWarningMessage(
+  duplicates: MempoolTransaction[]
+): string {
   if (duplicates.length === 0) {
-    return "";
+    return '';
   }
 
-  const recent = duplicates.filter(d => d.status === "pending");
+  const recent = duplicates.filter((d) => d.status === 'pending');
   if (recent.length > 0) {
     const tx = recent[0];
     const minutesAgo = Math.floor((Date.now() - tx.timestamp) / 60000);
     return `⚠️ A similar transaction was submitted ${minutesAgo} minute(s) ago and may still be pending. Check the transaction status before resubmitting.`;
   }
 
-  const confirmed = duplicates.filter(d => d.status === "confirmed");
+  const confirmed = duplicates.filter((d) => d.status === 'confirmed');
   if (confirmed.length > 0) {
     return `⚠️ A transaction with the same details was already confirmed. You may be attempting to submit a duplicate.`;
   }
@@ -173,7 +175,7 @@ export function getDuplicateWarningMessage(duplicates: MempoolTransaction[]): st
  */
 export async function isTransactionPending(
   txHash: string,
-  network: "PUBLIC" | "TESTNET"
+  network: 'PUBLIC' | 'TESTNET'
 ): Promise<boolean> {
   const server = getHorizonServer(network);
 
@@ -199,36 +201,39 @@ export async function isTransactionPending(
  */
 export async function getTransactionStatusDetail(
   txHash: string,
-  network: "PUBLIC" | "TESTNET"
-): Promise<{ status: "pending" | "confirmed" | "failed"; details?: MempoolTransaction }> {
+  network: 'PUBLIC' | 'TESTNET'
+): Promise<{
+  status: 'pending' | 'confirmed' | 'failed';
+  details?: MempoolTransaction;
+}> {
   const server = getHorizonServer(network);
 
   try {
     const tx = await server.transactions().transaction(txHash).call();
     const horizonTx = tx as unknown as Record<string, unknown>;
-    const createdAtStr = String(horizonTx.created_at || "");
+    const createdAtStr = String(horizonTx.created_at || '');
     const isSuccessful = Boolean(horizonTx.successful);
 
     const details: MempoolTransaction = {
       hash: String(horizonTx.id || txHash),
-      sourceAddress: String(horizonTx.source_account || ""),
-      destinationAddress: "",
-      amount: "",
-      asset: "",
-      status: isSuccessful ? "confirmed" : "failed",
+      sourceAddress: String(horizonTx.source_account || ''),
+      destinationAddress: '',
+      amount: '',
+      asset: '',
+      status: isSuccessful ? 'confirmed' : 'failed',
       timestamp: createdAtStr ? new Date(createdAtStr).getTime() : Date.now(),
     };
 
     return {
-      status: isSuccessful ? "confirmed" : "failed",
+      status: isSuccessful ? 'confirmed' : 'failed',
       details,
     };
   } catch (error: unknown) {
     const err = error as { response?: { status?: number } };
     if (err.response?.status === 404) {
-      return { status: "pending" };
+      return { status: 'pending' };
     }
     // Default to pending on error
-    return { status: "pending" };
+    return { status: 'pending' };
   }
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import OnboardingTour from "./onboarding-tour";
+import OnboardingTour from './onboarding-tour';
 
 export default function TourProvider() {
   return <OnboardingTour />;

@@ -6,7 +6,7 @@ import {
   BASE_RECEIVE_MULTIPLIER,
   MOONPAY_RECEIVE_MULTIPLIER,
   TRANSAK_RECEIVE_MULTIPLIER,
-} from "@/lib/constants";
+} from '@/lib/constants';
 
 export type OnrampProvider = typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK;
 
@@ -15,14 +15,20 @@ export interface OnrampEstimate {
   receive: number;
 }
 
-export function estimateOnrampOutput(amount: number, provider: OnrampProvider): OnrampEstimate {
+export function estimateOnrampOutput(
+  amount: number,
+  provider: OnrampProvider
+): OnrampEstimate {
   if (amount <= 0) {
     return { fee: 0, receive: 0 };
   }
 
-  const feeRate = provider === PROVIDER_MOONPAY ? MOONPAY_FEE_RATE : TRANSAK_FEE_RATE;
+  const feeRate =
+    provider === PROVIDER_MOONPAY ? MOONPAY_FEE_RATE : TRANSAK_FEE_RATE;
   const receiveMultiplier =
-    provider === PROVIDER_MOONPAY ? MOONPAY_RECEIVE_MULTIPLIER : TRANSAK_RECEIVE_MULTIPLIER;
+    provider === PROVIDER_MOONPAY
+      ? MOONPAY_RECEIVE_MULTIPLIER
+      : TRANSAK_RECEIVE_MULTIPLIER;
 
   return {
     fee: amount * feeRate,

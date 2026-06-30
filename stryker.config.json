@@ -4,10 +4,7 @@
   "vitest": {
     "configFile": "vitest.stryker.config.ts"
   },
-  "mutate": [
-    "src/lib/onramp.ts",
-    "src/lib/stellar.ts"
-  ],
+  "mutate": ["src/lib/onramp.ts", "src/lib/stellar.ts"],
   "reporters": ["progress", "html", "json"],
   "htmlReporter": {
     "fileName": "reports/mutation/mutation.html"

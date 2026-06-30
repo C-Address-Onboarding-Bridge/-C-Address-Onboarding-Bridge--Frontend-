@@ -3,6 +3,7 @@
 ## Project Overview
 
 C-Address Bridge is the onboarding layer for Soroban dApps on Stellar. It lets users fund any Soroban smart account (C-address) from three sources:
+
 - **G → C Bridge** — Send XLM/USDC from a Stellar G-address to a C-address
 - **Fiat Onramp** — Buy USDC via Moonpay/Transak and send directly to a C-address
 - **CEX Withdrawal** — Route Binance/Coinbase/Kraken withdrawals through a bridge address
@@ -35,6 +36,7 @@ C-Address Bridge is the onboarding layer for Soroban dApps on Stellar. It lets u
 ## What to Push / Not Push
 
 ### Push:
+
 - Source code under `src/`, `backend/`, `contracts/`
 - Configuration: `package.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`
 - CI: `.github/workflows/ci.yml`
@@ -43,6 +45,7 @@ C-Address Bridge is the onboarding layer for Soroban dApps on Stellar. It lets u
 - Public assets: `public/` (project-specific SVGs only)
 
 ### Do NOT push:
+
 - `.next/`, `node_modules/`, `out/`, `build/`, `coverage/`
 - `.env.local`, `.env.production`, or any actual `.env*` file (tracked via `.env.example`)
 - `*.tsbuildinfo`, `next-env.d.ts`

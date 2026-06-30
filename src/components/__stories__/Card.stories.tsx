@@ -1,29 +1,26 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta = {
-  title: "Primitives/Card",
-  tags: ["autodocs"],
+  title: 'Primitives/Card',
+  tags: ['autodocs'],
   parameters: {
-    backgrounds: { default: "dark" },
+    backgrounds: { default: 'dark' },
   },
   argTypes: {
     hoverable: {
-      control: "boolean",
+      control: 'boolean',
     },
   },
 };
 
 export default meta;
-type Story = StoryObj = {};
+type Story = StoryObj<typeof meta>;
 
-const Card: React.FC<React.HTMLAttributes<HTMLDivElement> & { hoverable?: boolean }> = ({
-  hoverable = false,
-  className = "",
-  children,
-  ...props
-}) => (
+const Card: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & { hoverable?: boolean }
+> = ({ hoverable = false, className = '', children, ...props }) => (
   <div
-    className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover ${hoverable ? "card-hover" : ""} ${className}`}
+    className={`card-hover rounded-xl border border-[var(--border)] bg-[var(--surface)] ${hoverable ? 'card-hover' : ''} ${className}`}
     {...props}
   >
     {children}
@@ -33,8 +30,13 @@ const Card: React.FC<React.HTMLAttributes<HTMLDivElement> & { hoverable?: boolea
 export const Default: Story = {
   render: () => (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Card Title</h3>
-      <p className="text-sm text-[var(--text-muted)]">This is a basic card with body content. Cards are used throughout the app to group related information.</p>
+      <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
+        Card Title
+      </h3>
+      <p className="text-sm text-[var(--text-muted)]">
+        This is a basic card with body content. Cards are used throughout the
+        app to group related information.
+      </p>
     </Card>
   ),
 };
@@ -42,9 +44,13 @@ export const Default: Story = {
 export const WithHeader: Story = {
   render: () => (
     <Card>
-      <div className="p-6 border-b border-[var(--border)]">
-        <h3 className="text-lg font-semibold text-[var(--foreground)]">Fund Your C-Address</h3>
-        <p className="text-sm text-[var(--text-muted)] mt-1">Choose your funding source</p>
+      <div className="border-b border-[var(--border)] p-6">
+        <h3 className="text-lg font-semibold text-[var(--foreground)]">
+          Fund Your C-Address
+        </h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Choose your funding source
+        </p>
       </div>
       <div className="p-6">
         <p className="text-sm text-[var(--text-muted)]">0x1a2b3c4d...5e6f</p>
@@ -55,18 +61,26 @@ export const WithHeader: Story = {
 
 export const Hoverable: Story = {
   render: () => (
-    <Card className="p-6 card-hover" style={{ transition: "all 0.2s ease" }}>
-      <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Hoverable Card</h3>
-      <p className="text-sm text-[var(--text-muted)]">Hover over this card to see the elevated shadow effect.</p>
+    <Card className="card-hover p-6" style={{ transition: 'all 0.2s ease' }}>
+      <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
+        Hoverable Card
+      </h3>
+      <p className="text-sm text-[var(--text-muted)]">
+        Hover over this card to see the elevated shadow effect.
+      </p>
     </Card>
   ),
 };
 
 export const SurfaceVariant: Story = {
   render: () => (
-    <Card className="p-6 bg-[var(--surface-2)]">
-      <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Surface 2 Card</h3>
-      <p className="text-sm text-[var(--text-muted)]">Card using the secondary surface color.</p>
+    <Card className="bg-[var(--surface-2)] p-6">
+      <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
+        Surface 2 Card
+      </h3>
+      <p className="text-sm text-[var(--text-muted)]">
+        Card using the secondary surface color.
+      </p>
     </Card>
   ),
 };
@@ -74,9 +88,13 @@ export const SurfaceVariant: Story = {
 export const WithGradientBorder: Story = {
   render: () => (
     <div className="gradient-border rounded-xl">
-      <div className="p-6 bg-[var(--surface)] rounded-xl">
-        <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Gradient Border Card</h3>
-        <p className="text-sm text-[var(--text-muted)]">Card with a gradient border using the primary/secondary theme colors.</p>
+      <div className="rounded-xl bg-[var(--surface)] p-6">
+        <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
+          Gradient Border Card
+        </h3>
+        <p className="text-sm text-[var(--text-muted)]">
+          Card with a gradient border using the primary/secondary theme colors.
+        </p>
       </div>
     </div>
   ),
@@ -84,13 +102,17 @@ export const WithGradientBorder: Story = {
 
 export const LightTheme: Story = {
   parameters: {
-    backgrounds: { default: "light" },
+    backgrounds: { default: 'light' },
   },
-  globals: { theme: "light" },
+  globals: { theme: 'light' },
   render: () => (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Light Card</h3>
-      <p className="text-sm text-[var(--text-muted)]">Card displayed with the light theme active.</p>
+      <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
+        Light Card
+      </h3>
+      <p className="text-sm text-[var(--text-muted)]">
+        Card displayed with the light theme active.
+      </p>
     </Card>
   ),
 };
