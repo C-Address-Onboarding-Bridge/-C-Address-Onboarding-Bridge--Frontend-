@@ -53,6 +53,7 @@ export default function CexPage() {
                       ? 'cex-logo selected scale-105 transform border-[var(--primary)] bg-[var(--primary)]/5'
                       : 'cex-logo border-[var(--border)] bg-[var(--surface-2)] hover:border-[var(--text-muted)]'
                   }`}
+                  aria-label={`Select ${cex.name} exchange`}
                 >
                   <Image
                     src={cex.logo}
@@ -82,6 +83,7 @@ export default function CexPage() {
                       ? 'border-[var(--primary)] bg-[var(--primary)]/5 text-[var(--primary-light)]'
                       : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)]'
                   }`}
+                  aria-label={`Select ${net} network`}
                 >
                   {net}
                 </button>

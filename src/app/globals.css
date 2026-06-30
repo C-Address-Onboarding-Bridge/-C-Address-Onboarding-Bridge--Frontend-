@@ -8,34 +8,36 @@
 :root,
 :root.dark-theme {
   --background: #0a0b0e;
-  --foreground: #e8eaed;
-  --primary: #6c5ce7;
-  --primary-light: #a29bfe;
-  --secondary: #00cec9;
+  --foreground: #ffffff;
+  --primary: #8b7cf7;
+  --primary-light: #b8aeff;
+  --secondary: #00e5d9;
   --accent: #fd79a8;
   --surface: #141519;
   --surface-2: #1e1f25;
-  --border: #2a2b32;
-  --text-muted: #8a8c93;
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --error: #e17055;
+  --border: #55585e;
+  --text-muted: #ffffff;
+  --success: #00d4a0;
+  --warning: #fddb7a;
+  --error: #f57a6b;
+  --focus-ring: #8b7cf7;
 }
 
 :root.light-theme {
   --background: #ffffff;
-  --foreground: #1a1a1a;
-  --primary: #6c5ce7;
-  --primary-light: #7e6fe8;
+  --foreground: #000000;
+  --primary: #4a3bd1;
+  --primary-light: #6e5fe8;
   --secondary: #00b8a9;
   --accent: #d63031;
   --surface: #f5f5f5;
   --surface-2: #e8e8e8;
-  --border: #d0d0d0;
-  --text-muted: #6b7280;
+  --border: #b8b8b8;
+  --text-muted: #000000;
   --success: #10b981;
   --warning: #f59e0b;
-  --error: #ef4444;
+  --error: #dc2626;
+  --focus-ring: #4a3bd1;
 }
 
 @theme inline {
@@ -51,6 +53,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-focus-ring: var(--focus-ring);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
@@ -137,26 +140,23 @@ textarea:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Skip to main content link */
-.skip-to-main {
+.skip-to-content {
   position: absolute;
-  top: -40px;
-  left: 0;
+  top: -9999px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
   background: var(--primary);
   color: white;
-  padding: 8px 16px;
-  text-decoration: none;
-  z-index: 100;
+  border-radius: 0 0 8px 8px;
+  z-index: 9999;
+  font-weight: 600;
 }
 
-.skip-to-main:focus {
+.skip-to-content:focus {
   top: 0;
   outline: none;
 }

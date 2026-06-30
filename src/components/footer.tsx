@@ -92,7 +92,10 @@ export default function Footer() {
 
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-[var(--border)] pt-8 sm:flex-row">
           <p className="text-xs text-[var(--text-muted)]">
-            Built for the Stellar Soroban ecosystem. Not financial advice.
+            &copy; {new Date().getFullYear()} C-Address Bridge. All rights reserved.
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            Built on Stellar & Soroban
           </p>
           <div className="flex items-center gap-4">
             <span className="text-xs text-[var(--text-muted)]">

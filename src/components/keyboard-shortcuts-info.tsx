@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 
-export function KeyboardShortcutsInfo() {
-  const [open, setOpen] = useState(false);
+export default function KeyboardShortcutsInfo() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEscapeKey(() => {
+    if (isOpen) {
+      setIsOpen(false);
+    }
+  });
 
   const shortcuts = [
     {
@@ -29,8 +35,8 @@ export function KeyboardShortcutsInfo() {
     },
   ];
 
-  return (
-    <>
+  if (!isOpen) {
+    return (
       <button
         onClick={() => setOpen(true)}
         className="fixed right-6 bottom-6 z-40 rounded-full bg-[var(--primary)] p-3 text-white shadow-lg transition-colors hover:bg-[var(--primary)]/90"
@@ -39,6 +45,8 @@ export function KeyboardShortcutsInfo() {
       >
         <HelpCircle className="h-5 w-5" />
       </button>
+    );
+  }
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -92,7 +100,7 @@ export function KeyboardShortcutsInfo() {
             </div>
           </div>
         </div>
-      )}
-    </>
+      </FocusTrap>
+    </div>
   );
 }

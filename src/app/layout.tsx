@@ -4,7 +4,7 @@ import "./globals.css";
 import { WalletProvider } from "@/components/wallet-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConnectivityProvider } from "@/components/connectivity-provider";
-import { OfflineBanner } from "@/components/offline-banner";
+import OfflineBanner from "@/components/offline-banner";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { KeyboardShortcutsInfo } from "@/components/keyboard-shortcuts-info";

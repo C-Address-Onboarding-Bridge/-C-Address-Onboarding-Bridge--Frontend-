@@ -63,7 +63,7 @@ const steps = [
   },
 ];
 
-export default function LandingPage() {
+export default function HomePage() {
   return (
     <div>
       <section className="relative overflow-hidden">
@@ -161,6 +161,8 @@ export default function LandingPage() {
                     {step.description}
                   </p>
                 </div>
+                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+                <p className="text-sm text-[var(--text-muted)]">{step.description}</p>
               </div>
             ))}
           </div>

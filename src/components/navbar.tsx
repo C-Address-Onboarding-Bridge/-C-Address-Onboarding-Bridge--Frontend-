@@ -109,7 +109,6 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-      </div>
 
       {mobileOpen && (
         <div className="border-t border-[var(--border)] bg-[var(--background)] md:hidden">

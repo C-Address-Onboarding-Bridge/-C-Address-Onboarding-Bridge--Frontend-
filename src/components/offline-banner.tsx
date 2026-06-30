@@ -3,10 +3,12 @@
 import { AlertCircle } from 'lucide-react';
 import { useConnectivity } from './connectivity-provider';
 
-export function OfflineBanner() {
-  const { isOffline, pendingOfflineActions } = useConnectivity();
+export default function OfflineBanner() {
+  const { isOnline } = useConnectivity();
 
-  if (!isOffline) return null;
+  if (isOnline) {
+    return null;
+  }
 
   return (
     <div className="flex w-full flex-col items-center justify-between gap-3 border-b border-[var(--error)]/30 bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)] sm:flex-row">
@@ -22,7 +24,7 @@ export function OfflineBanner() {
           {pendingOfflineActions} action{pendingOfflineActions === 1 ? '' : 's'}{' '}
           will retry when back online.
         </span>
-      )}
+      </div>
     </div>
   );
 }
