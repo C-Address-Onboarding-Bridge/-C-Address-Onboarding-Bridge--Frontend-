@@ -17,6 +17,17 @@ export interface BridgeTransaction {
   timestamp: number;
   type: "g-to-c" | "fiat" | "cex";
   hash?: string;
+  memo?: string;
+}
+
+export interface PaymentResult {
+  hash: string;
+  successful: boolean;
+}
+
+export interface AccountBalances {
+  total: string;
+  balances: { asset: string; amount: string }[];
 }
 
 export interface Balance {
@@ -59,6 +70,8 @@ export const HORIZON_URL = {
 } as const;
 
 export const BRIDGE_CONTRACT_ID = process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID || "";
+
+export { getBridgeContractId, BRIDGE_CONTRACT_IDS } from "@/config/networks";
 
 export const DEFAULT_BRIDGE_ADDRESS = "GAIUIQ7G3TMN53Z2Y3Y5CJI7Q7ZQJX4W5F5N5Z5Q5Z5Q5Z5Q5Z5Q5Z5";
 export const DEFAULT_BRIDGE_MEMO = "1847326491";

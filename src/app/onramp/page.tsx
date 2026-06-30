@@ -1,16 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle, Shield, FileText } from "lucide-react";
-import { isValidStellarAddress, isCAddress } from "@/lib/stellar";
+import { CreditCard, Wallet, ExternalLink, ArrowRight, Check, DollarSign, AlertCircle } from "lucide-react";
+import { validateCAddress } from "@/utils/validation";
+import {
+  isValidStellarAddress,
+  isCAddress,
+  estimateOnrampOutput,
+  STELLAR_ADDRESS_LENGTH,
+  PROVIDER_MOONPAY,
+  PROVIDER_TRANSAK,
+  WALLET_CHAIN_STELLAR,
+  DEFAULT_CRYPTO_CURRENCY,
+  FIAT_DISPLAY_DECIMALS,
+  MOONPAY_BASE_URL,
+  TRANSAK_BASE_URL,
+  REDIRECT_DELAY_MS,
+  ENV_MOONPAY_API_KEY,
+  ENV_TRANSAK_API_KEY,
+  STEP_FORM,
+  STEP_REDIRECT,
+} from "@/lib";
 
 const MOONPAY_API_KEY = process.env.NEXT_PUBLIC_MOONPAY_API_KEY || "";
 const TRANSAK_API_KEY = process.env.NEXT_PUBLIC_TRANSAK_API_KEY || "";
 
 const providers = [
   {
-    id: "moonpay",
+    id: PROVIDER_MOONPAY,
     name: "Moonpay",
     description: "Buy with credit/debit card",
     fee: "4.5%",
@@ -18,10 +35,10 @@ const providers = [
     currencies: ["USD", "EUR", "GBP"],
     supported: true,
     apiKey: MOONPAY_API_KEY,
-    baseUrl: "https://buy.moonpay.com",
+    baseUrl: MOONPAY_BASE_URL,
   },
   {
-    id: "transak",
+    id: PROVIDER_TRANSAK,
     name: "Transak",
     description: "Buy with card, Apple Pay, Google Pay",
     fee: "5%",
@@ -29,41 +46,49 @@ const providers = [
     currencies: ["USD", "EUR", "GBP", "INR"],
     supported: true,
     apiKey: TRANSAK_API_KEY,
-    baseUrl: "https://global.transak.com",
+    baseUrl: TRANSAK_BASE_URL,
   },
 ];
 
 export default function OnrampPage() {
   const [cAddress, setCAddress] = useState("");
   const [fiatAmount, setFiatAmount] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("moonpay");
-  const [step, setStep] = useState<"form" | "redirect">("form");
+  const [selectedProvider, setSelectedProvider] = useState<string>(PROVIDER_MOONPAY);
+  const [step, setStep] = useState<"form" | "redirect">(STEP_FORM);
   const [error, setError] = useState<string | null>(null);
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
 
-  const validAddress = !cAddress || (isValidStellarAddress(cAddress) && isCAddress(cAddress));
+  const cAddressError = validateCAddress(cAddress);
+  const validAddress = !cAddress || (!cAddressError && isValidStellarAddress(cAddress) && isCAddress(cAddress));
   const validAmount = !fiatAmount || /^\d+(\.\d{1,2})?$/.test(fiatAmount);
   const canProceed = cAddress && fiatAmount && validAddress && validAmount && riskAcknowledged;
 
   const handleProviderRedirect = () => {
-    if (!canProceed) return;
+    if (!canProceed) {
+      if (!cAddress || !validAddress) {
+        document.getElementById("c-address")?.focus();
+      } else if (!fiatAmount || !validAmount) {
+        document.getElementById("fiat-amount")?.focus();
+      }
+      return;
+    }
     setError(null);
 
     const provider = providers.find((p) => p.id === selectedProvider);
     if (!provider) return;
 
     if (!provider.apiKey) {
-      setError(`${provider.name} API key is not configured. Set NEXT_PUBLIC_${provider.id === "moonpay" ? "MOONPAY" : "TRANSAK"}_API_KEY in your environment.`);
+      setError(`${provider.name} API key is not configured. Set ${provider.id === PROVIDER_MOONPAY ? ENV_MOONPAY_API_KEY : ENV_TRANSAK_API_KEY} in your environment.`);
       return;
     }
 
-    setStep("redirect");
+    setStep(STEP_REDIRECT);
 
     const params = new URLSearchParams({
       apiKey: provider.apiKey,
       walletAddress: cAddress,
-      walletChain: "Stellar",
-      defaultCryptoCurrency: "USDC",
+      walletChain: WALLET_CHAIN_STELLAR,
+      defaultCryptoCurrency: DEFAULT_CRYPTO_CURRENCY,
       defaultFiatAmount: fiatAmount,
     });
 
@@ -71,10 +96,12 @@ export default function OnrampPage() {
 
     setTimeout(() => {
       window.open(url, "_blank", "noopener,noreferrer");
-    }, 1500);
+    }, REDIRECT_DELAY_MS);
   };
 
   const provider = providers.find((p) => p.id === selectedProvider);
+
+  const missingKeys = providers.filter((p) => !p.apiKey).map((p) => p.name);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -85,10 +112,20 @@ export default function OnrampPage() {
         </p>
       </div>
 
+      {missingKeys.length > 0 && (
+        <div className="mb-6 p-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/20 flex items-start gap-2 text-sm">
+          <AlertCircle className="w-4 h-4 text-[var(--warning)] flex-shrink-0 mt-0.5" />
+          <span className="text-[var(--warning)]">
+            {missingKeys.join(" and ")} {missingKeys.length === 1 ? "is" : "are"} not configured and will be unavailable.
+            Set the corresponding <code className="font-mono text-xs">NEXT_PUBLIC_*_API_KEY</code> environment variable to enable {missingKeys.length === 1 ? "it" : "them"}.
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            {step === "form" && (
+            {step === STEP_FORM && (
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-3">Select Provider</label>
@@ -126,14 +163,17 @@ export default function OnrampPage() {
                     <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="c-address"
                       value={cAddress}
                       onChange={(e) => setCAddress(e.target.value)}
                       placeholder="CABC...DEF"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm font-mono focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      aria-describedby="c-address-error"
+                      aria-invalid={!validAddress && !!cAddress}
                     />
                   </div>
                   {!validAddress && cAddress && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid C-address (must start with C, 56 characters)</p>
+                    <p id="c-address-error" role="alert" className="text-xs text-[var(--error)] mt-1">{cAddressError}</p>
                   )}
                 </div>
 
@@ -143,14 +183,17 @@ export default function OnrampPage() {
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                     <input
                       type="text"
+                      id="fiat-amount"
                       value={fiatAmount}
                       onChange={(e) => setFiatAmount(e.target.value)}
                       placeholder="100.00"
                       className="w-full pl-10 pr-4 py-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+                      aria-describedby="fiat-amount-error"
+                      aria-invalid={!validAmount && !!fiatAmount}
                     />
                   </div>
                   {!validAmount && fiatAmount && (
-                    <p className="text-xs text-[var(--error)] mt-1">Invalid amount format</p>
+                    <p id="fiat-amount-error" role="alert" className="text-xs text-[var(--error)] mt-1">Invalid amount format</p>
                   )}
                 </div>
 
@@ -163,14 +206,14 @@ export default function OnrampPage() {
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Fee ({provider?.fee})</span>
                     <span>
-                      -${fiatAmount ? (Number(fiatAmount) * (selectedProvider === "moonpay" ? 0.045 : 0.05)).toFixed(2) : "0"}
+                      -${fiatAmount ? estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).fee.toFixed(FIAT_DISPLAY_DECIMALS) : "0"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
                     <span className="text-[var(--text-muted)]">Est. receive</span>
                     <span className="font-semibold">
                       {fiatAmount && validAmount
-                        ? `~${(Number(fiatAmount) * 0.95 * (selectedProvider === "moonpay" ? 1 : 0.95)).toFixed(2)} USDC`
+                        ? `~${estimateOnrampOutput(Number(fiatAmount), selectedProvider as typeof PROVIDER_MOONPAY | typeof PROVIDER_TRANSAK).receive.toFixed(FIAT_DISPLAY_DECIMALS)} USDC`
                         : "—"}
                     </span>
                   </div>
@@ -221,7 +264,7 @@ export default function OnrampPage() {
                 </label>
 
                 {error && (
-                  <div className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
+                  <div aria-live="polite" className="p-4 rounded-lg bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-[var(--error)] flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-[var(--error)]">{error}</p>
                   </div>
@@ -238,7 +281,7 @@ export default function OnrampPage() {
               </div>
             )}
 
-            {step === "redirect" && (
+            {step === STEP_REDIRECT && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-4">
                   <ExternalLink className="w-8 h-8 text-[var(--primary-light)]" />
@@ -248,7 +291,7 @@ export default function OnrampPage() {
                   You will be redirected to complete your purchase. Funds will be sent to your C-address.
                 </p>
                 <button
-                  onClick={() => setStep("form")}
+                  onClick={() => setStep(STEP_FORM)}
                   className="text-sm text-[var(--primary-light)] hover:underline"
                 >
                   Go back

@@ -1,52 +1,52 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Loader2 } from "lucide-react";
+import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Radio } from "lucide-react";
+import { Skeleton } from "@/components/skeleton";
 import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
 import Link from "next/link";
-import { getAccountBalances, fetchRecentTransactions, getExplorerUrl } from "@/lib/stellar";
-import type { BridgeTransactionData as BridgeTransaction } from "@/lib/stellar";
+import { getExplorerUrl, isCAddress } from "@/lib/stellar";
+import { useDashboardData } from "@/lib/use-dashboard-data";
+import { getBridgeContractId } from "@/config/networks";
+import { QRCodeCard } from "@/components/qr-code-card";
+import {
+  getAccountBalances,
+  fetchRecentTransactions,
+  getSorobanAccountBalances,
+  type BridgeTransaction,
+  ASSET_XLM,
+  NETWORK_DISPLAY,
+  COPY_FEEDBACK_MS,
+  XLM_DISPLAY_DECIMALS,
+  ASSET_DISPLAY_DECIMALS,
+  STATUS_CONFIRMED,
+  STATUS_PENDING,
+  ENV_BRIDGE_CONTRACT_ID,
+} from "@/lib/constants";
 
 export default function DashboardPage() {
   const { isConnected, address, network, connect } = useWallet();
   const [copied, setCopied] = useState(false);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<BridgeTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isConnected || !address) return;
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [balResult, txResult] = await Promise.all([
-          getAccountBalances(address, network),
-          fetchRecentTransactions(address, network, 10),
-        ]);
-        setBalance(balResult.total);
-        setTransactions(txResult);
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Failed to fetch data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, [isConnected, address, network]);
+  const {
+    balance,
+    allBalances,
+    transactions,
+    loading,
+    error,
+    isStreaming,
+    refresh,
+  } = useDashboardData(address, network, isConnected);
 
-  const confirmedCount = transactions.filter((t) => t.status === "confirmed").length;
-  const pendingCount = transactions.filter((t) => t.status === "pending").length;
+  const confirmedCount = transactions.filter((t) => t.status === STATUS_CONFIRMED).length;
+  const pendingCount = transactions.filter((t) => t.status === STATUS_PENDING).length;
 
   const handleCopy = () => {
     if (!address) return;
     navigator.clipboard.writeText(address);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   if (!isConnected) {
@@ -76,7 +76,26 @@ export default function DashboardPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            {isStreaming ? (
+              <span
+                title="Live updates active"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--success)]/15 text-[var(--success)] border border-[var(--success)]/25"
+              >
+                <Radio className="w-3 h-3" aria-hidden="true" />
+                Live
+              </span>
+            ) : (
+              <button
+                onClick={refresh}
+                title="Refresh dashboard data"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--text-muted)] border border-[var(--border)] hover:text-[var(--text)] transition-colors"
+              >
+                Polling
+              </button>
+            )}
+          </div>
           <p className="text-[var(--text-muted)]">Manage your C-address funding activity</p>
         </div>
         <Link
@@ -88,8 +107,16 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+      {!getBridgeContractId(network) && (
+        <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm text-blue-400 flex items-center gap-2">
+          <span className="font-medium">Info:</span>
+          Bridge contract not configured — bridge transactions will use direct payment.
+          Set <code className="font-mono text-xs">{ENV_BRIDGE_CONTRACT_ID}</code> to enable the smart contract.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="w-4 h-4 text-[var(--primary-light)]" />
             <span className="text-xs text-[var(--text-muted)]">Connected Address</span>
@@ -98,12 +125,20 @@ export default function DashboardPage() {
             <code className="text-sm font-mono">
               {address?.slice(0, 8)}...{address?.slice(-8)}
             </code>
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors">
-              {copied ? <Check className="w-3 h-3 text-[var(--success)]" /> : <Copy className="w-3 h-3 text-[var(--text-muted)]" />}
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors"
+              aria-label="Copy address"
+            >
+              {copied ? (
+                <Check className="w-3 h-3 text-[var(--success)]" />
+              ) : (
+                <Copy className="w-3 h-3 text-[var(--text-muted)]" />
+              )}
             </button>
           </div>
           <div className="text-xs text-[var(--text-muted)] mt-1">
-            {network === "PUBLIC" ? "Mainnet" : "Testnet"}
+            {NETWORK_DISPLAY[network]}
             {address && (
               <a
                 href={getExplorerUrl(network, "account", address)}
@@ -118,29 +153,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs text-[var(--text-muted)] mb-1">XLM Balance</div>
+        <div className="space-y-6">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs text-[var(--text-muted)] mb-1">{ASSET_XLM} Balance</div>
           {loading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">Loading...</span>
+            <div className="space-y-2 mt-1">
+              <Skeleton className="h-8 w-28" />
+              <Skeleton className="h-3 w-8" />
             </div>
           ) : (
             <>
               <div className="text-2xl font-bold mb-1">
-                {balance !== null ? parseFloat(balance).toFixed(2) : "—"}
+                {balance !== null ? parseFloat(balance).toFixed(XLM_DISPLAY_DECIMALS) : "—"}
               </div>
-              <div className="text-xs text-[var(--text-muted)]">XLM</div>
+              <div className="text-xs text-[var(--text-muted)]">{ASSET_XLM}</div>
             </>
           )}
         </div>
 
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 card-entrance">
           <div className="text-xs text-[var(--text-muted)] mb-1">Transactions</div>
           {loading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">Loading...</span>
+            <div className="space-y-2 mt-1">
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-28" />
             </div>
           ) : (
             <>
@@ -153,10 +189,37 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {isCAddress(address ?? "") && address ? (
+        <div className="mb-8">
+          <QRCodeCard address={address} />
+        </div>
+      ) : null}
+
+      {allBalances.length > 0 && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 mb-6 card-entrance">
+          <h3 className="text-sm font-semibold mb-3">Token Balances</h3>
+          <div className="divide-y divide-[var(--border)]">
+            {allBalances.map((b) => (
+              <div
+                key={b.asset}
+                className="flex justify-between items-center py-2 first:pt-0 last:pb-0"
+              >
+                <span className="text-sm text-[var(--text-muted)]">{b.asset}</span>
+                <span className="text-sm font-mono">
+                  {parseFloat(b.amount).toFixed(
+                    b.asset === ASSET_XLM ? XLM_DISPLAY_DECIMALS : ASSET_DISPLAY_DECIMALS
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Link
           href="/bridge"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
             <ArrowLeftRight className="w-5 h-5 text-[var(--primary-light)]" />
@@ -169,7 +232,7 @@ export default function DashboardPage() {
 
         <Link
           href="/onramp"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--secondary)]/10 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-[var(--secondary)]" />
@@ -182,7 +245,7 @@ export default function DashboardPage() {
 
         <Link
           href="/cex"
-          className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
+          className="feature-card flex items-center gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]"
         >
           <div className="w-10 h-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center">
             <Building2 className="w-5 h-5 text-[var(--accent)]" />
