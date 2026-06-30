@@ -6,7 +6,7 @@ import { connectWallet, checkConnection, getWalletAddress, getCurrentNetwork } f
 interface WalletContextType {
   address: string | null;
   publicKey: string | null;
-  network: "PUBLIC" | "TESTNET";
+  network: "PUBLIC" | "TESTNET" | "SANDBOX";
   isConnected: boolean;
   isConnecting: boolean;
   connect: () => Promise<void>;
@@ -25,7 +25,7 @@ const WalletContext = createContext<WalletContextType>({
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
-  const [network, setNetwork] = useState<"PUBLIC" | "TESTNET">("TESTNET");
+  const [network, setNetwork] = useState<"PUBLIC" | "TESTNET" | "SANDBOX">("TESTNET");
   const [isConnecting, setIsConnecting] = useState(false);
 
   const updateConnection = useCallback(async () => {

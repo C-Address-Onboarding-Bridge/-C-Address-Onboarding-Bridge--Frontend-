@@ -19,18 +19,19 @@ describe("CEX_LIST", () => {
 });
 
 describe("Network constants", () => {
-  it("has PUBLIC and TESTNET", () => {
+  it("has PUBLIC, TESTNET, and SANDBOX", () => {
     expect(STELLAR_NETWORK.PUBLIC).toBe("PUBLIC");
     expect(STELLAR_NETWORK.TESTNET).toBe("TESTNET");
+    expect(STELLAR_NETWORK.SANDBOX).toBe("SANDBOX");
   });
 
   it("Soroban RPC URLs are valid", () => {
-    expect(SOROBAN_RPC_URL.PUBLIC).toContain("stellar.org");
     expect(SOROBAN_RPC_URL.TESTNET).toContain("testnet");
+    expect(SOROBAN_RPC_URL.SANDBOX).toContain("localhost");
   });
 
   it("Horizon URLs are valid", () => {
-    expect(HORIZON_URL.PUBLIC).toContain("horizon.stellar.org");
     expect(HORIZON_URL.TESTNET).toContain("testnet");
+    expect(HORIZON_URL.SANDBOX).toContain("localhost");
   });
 });

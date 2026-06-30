@@ -46,16 +46,19 @@ export interface CexConfig {
 export const STELLAR_NETWORK = {
   PUBLIC: "PUBLIC",
   TESTNET: "TESTNET",
+  SANDBOX: "SANDBOX",
 } as const;
 
 export const SOROBAN_RPC_URL = {
-  PUBLIC: "https://soroban-rpc.stellar.org",
+  PUBLIC: process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://soroban-rpc.stellar.org",
   TESTNET: "https://soroban-rpc-testnet.stellar.org",
+  SANDBOX: process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "http://localhost:8000/soroban/rpc",
 } as const;
 
 export const HORIZON_URL = {
-  PUBLIC: "https://horizon.stellar.org",
+  PUBLIC: process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon.stellar.org",
   TESTNET: "https://horizon-testnet.stellar.org",
+  SANDBOX: process.env.NEXT_PUBLIC_HORIZON_URL || "http://localhost:8000",
 } as const;
 
 export const BRIDGE_CONTRACT_ID = process.env.NEXT_PUBLIC_BRIDGE_CONTRACT_ID || "";

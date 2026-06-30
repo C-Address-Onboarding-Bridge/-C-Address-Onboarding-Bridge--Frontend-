@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRightLeft, Wallet, Send, ArrowRight, Check, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowRightLeft, Wallet, Send, ArrowRight, Check, AlertCircle, Loader2, ExternalLink, Clock } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
 import { isValidStellarAddress, isCAddress, bridgeViaContract, getExplorerUrl, getAccountBalances } from "@/lib/stellar";
+import CongestionBanner from "@/components/congestion-banner";
+import { checkCongestion } from "@/lib/congestion";
+import type { CongestionInfo } from "@/lib/congestion";
 
 type Step = "form" | "review" | "confirm";
 type TxStatus = "idle" | "signing" | "submitting" | "success" | "error";
@@ -19,6 +22,24 @@ export default function BridgePage() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [sourceBalance, setSourceBalance] = useState<string | null>(null);
+  const [congestion, setCongestion] = useState<CongestionInfo | null>(null);
+  const [congestionError, setCongestionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isConnected || !network) return;
+    const check = async () => {
+      try {
+        const info = await checkCongestion(network);
+        setCongestion(info);
+        setCongestionError(null);
+      } catch {
+        setCongestionError("Failed to check network conditions");
+      }
+    };
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [isConnected, network]);
 
   const validFrom = !fromAddress || isValidStellarAddress(fromAddress);
   const validTo = !toAddress || (isValidStellarAddress(toAddress) && isCAddress(toAddress));
@@ -170,6 +191,8 @@ export default function BridgePage() {
                   </div>
                 </div>
 
+                <CongestionBanner congestion={congestion} loading={false} error={congestionError} />
+
                 <button
                   onClick={handleSubmit}
                   disabled={!canProceed}
@@ -185,7 +208,27 @@ export default function BridgePage() {
               <div className="space-y-6">
                 <h3 className="font-semibold text-lg">Review Transaction</h3>
 
-                <div className="space-y-4">
+                <CongestionBanner congestion={congestion} loading={false} error={null} />
+
+              {congestion?.level !== "none" && congestion && (
+                <div className="p-4 rounded-lg border border-[var(--warning)]/20 bg-[var(--warning)]/5">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-4 h-4 text-[var(--warning)] flex-shrink-0 mt-0.5" />
+                    <div className="text-sm space-y-2">
+                      <p className="font-medium">Alternative Options</p>
+                      <ul className="space-y-1 text-xs text-[var(--text-muted)]">
+                        <li>• Try again later when network traffic subsides</li>
+                        <li>• Use CEX Withdrawal route as an alternative</li>
+                        {congestion.level === "severe" && (
+                          <li>• Consider using a different bridge service</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
                     <span className="text-sm text-[var(--text-muted)]">From</span>
                     <span className="text-sm font-mono">{fromAddress}</span>
@@ -203,7 +246,9 @@ export default function BridgePage() {
                     <span className="text-sm">{network === "PUBLIC" ? "Mainnet" : "Testnet"}</span>
                   </div>
                   <div className="flex justify-between items-center p-4 rounded-lg bg-[var(--surface-2)]">
-                    <span className="text-sm text-[var(--text-muted)]">Fee</span>
+                    <span className="text-sm text-[var(--text-muted)]">
+                      Fee {congestion?.level !== "none" && congestion ? `(suggested: ${congestion.suggestedFee} stroops)` : ""}
+                    </span>
                     <span className="text-sm">~0.00001 XLM</span>
                   </div>
                 </div>

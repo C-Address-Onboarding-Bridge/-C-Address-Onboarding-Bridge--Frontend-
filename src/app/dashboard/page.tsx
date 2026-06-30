@@ -103,7 +103,7 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="text-xs text-[var(--text-muted)] mt-1">
-            {network === "PUBLIC" ? "Mainnet" : "Testnet"}
+              {network === "PUBLIC" ? "Mainnet" : network === "SANDBOX" ? "Sandbox" : "Testnet"}
             {address && (
               <a
                 href={getExplorerUrl(network, "account", address)}

@@ -1,0 +1,22 @@
+services:
+  stellar:
+    image: stellar/quickstart:testing
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+      - "11625:11625"
+      - "11626:11626"
+    environment:
+      - ENABLE_SOROBAN_RPC=yes
+    command: "--standalone"
+    volumes:
+      - stellar-data:/opt/stellar
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+volumes:
+  stellar-data:
