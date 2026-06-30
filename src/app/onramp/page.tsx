@@ -65,13 +65,14 @@ export default function OnrampPage() {
     useState<string>(PROVIDER_MOONPAY);
   const [step, setStep] = useState<'form' | 'redirect'>(STEP_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
 
   const cAddressError = validateCAddress(cAddress);
   const validAddress =
     !cAddress ||
     (!cAddressError && isValidStellarAddress(cAddress) && isCAddress(cAddress));
   const validAmount = !fiatAmount || /^\d+(\.\d{1,2})?$/.test(fiatAmount);
-  const canProceed = cAddress && fiatAmount && validAddress && validAmount;
+  const canProceed = cAddress && fiatAmount && validAddress && validAmount && riskAcknowledged;
 
   const handleProviderRedirect = () => {
     if (!canProceed) {
@@ -270,6 +271,50 @@ export default function OnrampPage() {
                   </div>
                 </div>
 
+                <div className="p-4 rounded-lg bg-[var(--warning)]/5 border border-[var(--warning)]/20">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-[var(--warning)] flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-[var(--text-muted)]">
+                      <p className="mb-1">
+                        <strong className="text-[var(--warning)]">KYC/AML Notice:</strong>{" "}
+                        Fiat onramp providers require identity verification (KYC) to comply
+                        with Anti-Money Laundering regulations. You will need to provide
+                        government-issued ID and proof of address.
+                      </p>
+                      <p>
+                        By proceeding, you confirm that you are using this service in compliance
+                        with your local laws. See{" "}
+                        <Link href="/terms" className="text-[var(--primary-light)] hover:underline">
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/compliance" className="text-[var(--primary-light)] hover:underline">
+                          Compliance Dashboard
+                        </Link>{" "}
+                        for details.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 p-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={riskAcknowledged}
+                    onChange={(e) => setRiskAcknowledged(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-[var(--border)] bg-[var(--surface)] accent-[var(--primary)]"
+                  />
+                  <span className="text-xs text-[var(--text-muted)]">
+                    I acknowledge the financial risks involved in cryptocurrency transactions.
+                    I understand that digital asset values can fluctuate significantly and that
+                    I am solely responsible for my financial decisions. I have read and agree
+                    to the{" "}
+                    <Link href="/terms" className="text-[var(--primary-light)] hover:underline">
+                      Terms of Service
+                    </Link>.
+                  </span>
+                </label>
+
                 {error && (
                   <div
                     aria-live="polite"
@@ -353,6 +398,90 @@ export default function OnrampPage() {
                 <span>Credit/debit card, Apple Pay, Google Pay</span>
               </li>
             </ul>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-4 h-4 text-[var(--primary-light)]" />
+              <h3 className="font-semibold">KYC/AML Information</h3>
+            </div>
+            <div className="space-y-3 text-sm text-[var(--text-muted)]">
+              <p>
+                <strong className="text-[var(--foreground)]">When is KYC required?</strong>
+              </p>
+              <ul className="space-y-1.5">
+                <li className="flex gap-2">
+                  <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                  <span>Fiat onramp via Moonpay or Transak — always required</span>
+                </li>
+                <li className="flex gap-2">
+                  <Check className="w-4 h-4 text-[var(--success)] flex-shrink-0 mt-0.5" />
+                  <span>Purchases exceeding provider-specific thresholds</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 mt-0.5 text-[var(--text-muted)]">—</span>
+                  <span>G → C bridging or CEX withdrawal — not required</span>
+                </li>
+              </ul>
+
+              <div className="pt-2 border-t border-[var(--border)]">
+                <p className="mb-2">
+                  <strong className="text-[var(--foreground)]">Regulatory Guidance</strong>
+                </p>
+                <ul className="space-y-1.5">
+                  <li>
+                    <a
+                      href="https://www.fatf-gafi.org"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[var(--primary-light)] hover:underline text-xs"
+                    >
+                      <FileText className="w-3 h-3" />
+                      FATF Recommendations
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://www.moonpay.com/legal/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[var(--primary-light)] hover:underline text-xs"
+                    >
+                      <FileText className="w-3 h-3" />
+                      Moonpay Terms
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://transak.com/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[var(--primary-light)] hover:underline text-xs"
+                    >
+                      <FileText className="w-3 h-3" />
+                      Transak Terms
+                    </a>
+                  </li>
+                  <li>
+                    <Link
+                      href="/compliance"
+                      className="inline-flex items-center gap-1 text-[var(--primary-light)] hover:underline text-xs"
+                    >
+                      <Shield className="w-3 h-3" />
+                      Compliance Dashboard
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-2 border-t border-[var(--border)] text-xs">
+                <p>
+                  Moonpay and Transak are regulated financial institutions. They collect and
+                  verify identity information as required by anti-money laundering laws.
+                  See their respective privacy policies for details on data handling.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
