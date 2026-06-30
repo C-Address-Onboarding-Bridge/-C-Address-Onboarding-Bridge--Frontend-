@@ -24,10 +24,10 @@ const OVERSCAN = 5;
 interface Props {
   transactions: BridgeTransactionData[];
   loading: boolean;
-  network: "PUBLIC" | "TESTNET";
+  network: "PUBLIC" | "TESTNET" | "SANDBOX";
 }
 
-function TransactionRow({ tx, network }: { tx: BridgeTransactionData; network: "PUBLIC" | "TESTNET" }) {
+function TransactionRow({ tx, network }: { tx: BridgeTransactionData; network: "PUBLIC" | "TESTNET" | "SANDBOX" }) {
   const type = typeConfig[tx.type] || typeConfig["g-to-c"];
   const status = statusConfig[tx.status];
   const Icon = type.icon;

@@ -13,27 +13,18 @@ import {
   Horizon,
 } from "@stellar/stellar-sdk";
 import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
-import { BRIDGE_CONTRACT_ID } from "./types";
+import { BRIDGE_CONTRACT_ID, HORIZON_URL, SOROBAN_RPC_URL } from "./types";
 
-const HORIZON_URLS = {
-  PUBLIC: "https://horizon.stellar.org",
-  TESTNET: "https://horizon-testnet.stellar.org",
-};
-
-const SOROBAN_RPC_URLS = {
-  PUBLIC: "https://soroban-rpc.stellar.org",
-  TESTNET: "https://soroban-rpc-testnet.stellar.org",
-};
-
-export function getHorizonServer(network: "PUBLIC" | "TESTNET"): Horizon.Server {
-  return new Horizon.Server(HORIZON_URLS[network]);
+export function getHorizonServer(network: "PUBLIC" | "TESTNET" | "SANDBOX"): Horizon.Server {
+  return new Horizon.Server(network === "SANDBOX" ? HORIZON_URL.SANDBOX : HORIZON_URL[network]);
 }
 
-export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET"): RpcServer {
-  return new RpcServer(SOROBAN_RPC_URLS[network]);
+export function getSorobanRpcServer(network: "PUBLIC" | "TESTNET" | "SANDBOX"): RpcServer {
+  return new RpcServer(network === "SANDBOX" ? SOROBAN_RPC_URL.SANDBOX : SOROBAN_RPC_URL[network]);
 }
 
-export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET"): string {
+export function getNetworkPassphrase(network: "PUBLIC" | "TESTNET" | "SANDBOX"): string {
+  if (network === "SANDBOX") return Networks.TESTNET;
   return network === "PUBLIC" ? Networks.PUBLIC : Networks.TESTNET;
 }
 
@@ -69,8 +60,10 @@ export async function getWalletAddress(): Promise<string | null> {
   }
 }
 
-export async function getCurrentNetwork(): Promise<"PUBLIC" | "TESTNET"> {
+export async function getCurrentNetwork(): Promise<"PUBLIC" | "TESTNET" | "SANDBOX"> {
   try {
+    const env = process.env.NEXT_PUBLIC_NETWORK;
+    if (env === "SANDBOX") return "SANDBOX";
     const result = await getNetwork();
     return result.network === Networks.PUBLIC ? "PUBLIC" : "TESTNET";
   } catch {
@@ -134,7 +127,7 @@ interface HorizonPayment {
 
 export async function getAccountBalances(
   address: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET" | "SANDBOX"
 ): Promise<AccountBalances> {
   const server = getHorizonServer(network);
   try {
@@ -152,7 +145,7 @@ export async function getAccountBalances(
 
 export async function fetchRecentTransactions(
   address: string,
-  network: "PUBLIC" | "TESTNET",
+  network: "PUBLIC" | "TESTNET" | "SANDBOX",
   limit: number = 10
 ): Promise<BridgeTransactionData[]> {
   const server = getHorizonServer(network);
@@ -185,7 +178,7 @@ export async function buildAndSubmitPayment(
   destinationAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET" | "SANDBOX"
 ): Promise<PaymentResult> {
   const server = getHorizonServer(network);
   const passphrase = getNetworkPassphrase(network);
@@ -243,7 +236,7 @@ export async function bridgeViaContract(
   cAddress: string,
   amount: string,
   assetCode: string,
-  network: "PUBLIC" | "TESTNET"
+  network: "PUBLIC" | "TESTNET" | "SANDBOX"
 ): Promise<PaymentResult> {
   if (!BRIDGE_CONTRACT_ID) {
     return buildAndSubmitPayment(sourceAddress, cAddress, amount, assetCode, network);
@@ -299,7 +292,7 @@ export async function bridgeViaContract(
 }
 
 export function getExplorerUrl(
-  network: "PUBLIC" | "TESTNET",
+  network: "PUBLIC" | "TESTNET" | "SANDBOX",
   type: "tx" | "account" | "contract",
   id: string
 ): string {

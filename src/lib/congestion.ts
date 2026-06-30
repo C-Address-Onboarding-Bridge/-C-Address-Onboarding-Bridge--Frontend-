@@ -73,7 +73,7 @@ function getTip(level: CongestionInfo["level"]): string {
   }
 }
 
-export async function checkCongestion(network: "PUBLIC" | "TESTNET"): Promise<CongestionInfo> {
+export async function checkCongestion(network: "PUBLIC" | "TESTNET" | "SANDBOX"): Promise<CongestionInfo> {
   const server = getHorizonServer(network);
   const rawResponse = await server.feeStats();
   const feeStats = parseFeeStats(rawResponse);
@@ -94,7 +94,7 @@ export async function checkCongestion(network: "PUBLIC" | "TESTNET"): Promise<Co
   };
 }
 
-export async function checkSorobanHealth(network: "PUBLIC" | "TESTNET"): Promise<boolean> {
+export async function checkSorobanHealth(network: "PUBLIC" | "TESTNET" | "SANDBOX"): Promise<boolean> {
   try {
     const rpcServer = getSorobanRpcServer(network);
     await rpcServer.getHealth();
