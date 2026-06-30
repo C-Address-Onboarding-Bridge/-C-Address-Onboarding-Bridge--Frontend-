@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback } from 'react';
 
 interface WalletContextValue {
   isConnected: boolean;
@@ -8,12 +8,13 @@ interface WalletContextValue {
   connect: (walletId?: string) => void;
   disconnect: () => void;
   isConnecting: boolean;
-  network: "PUBLIC" | "TESTNET";
+  network: 'PUBLIC' | 'TESTNET';
 }
 
 const WalletContext = createContext<WalletContextValue | undefined>(undefined);
 
-const FAKE_ADDRESS = "GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+const FAKE_ADDRESS =
+  'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [isConnected] = useState(true);
@@ -36,7 +37,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         connect,
         disconnect,
         isConnecting,
-        network: "TESTNET",
+        network: 'TESTNET',
       }}
     >
       {children}
@@ -53,6 +54,6 @@ export function useWallet(): WalletContextValue {
     connect: () => {},
     disconnect: () => {},
     isConnecting: false,
-    network: "TESTNET",
+    network: 'TESTNET',
   };
 }

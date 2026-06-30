@@ -36,12 +36,12 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Required env vars (see `.env.example` for all options):
 
-   | Variable | Required | Description |
-   |---|---|---|
-   | `NEXT_PUBLIC_STELLAR_NETWORK` | Yes | `TESTNET` or `PUBLIC` |
-   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No | Soroban bridge contract (omits direct payment) |
-   | `NEXT_PUBLIC_MOONPAY_API_KEY` | For onramp | From [Moonpay dashboard](https://buy.moonpay.com) |
-   | `NEXT_PUBLIC_TRANSAK_API_KEY` | For onramp | From [Transak dashboard](https://global.transak.com) |
+   | Variable                         | Required   | Description                                          |
+   | -------------------------------- | ---------- | ---------------------------------------------------- |
+   | `NEXT_PUBLIC_STELLAR_NETWORK`    | Yes        | `TESTNET` or `PUBLIC`                                |
+   | `NEXT_PUBLIC_BRIDGE_CONTRACT_ID` | No         | Soroban bridge contract (omits direct payment)       |
+   | `NEXT_PUBLIC_MOONPAY_API_KEY`    | For onramp | From [Moonpay dashboard](https://buy.moonpay.com)    |
+   | `NEXT_PUBLIC_TRANSAK_API_KEY`    | For onramp | From [Transak dashboard](https://global.transak.com) |
 
 3. Run:
 
@@ -51,36 +51,43 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Open [http://localhost:3000](http://localhost:3000).
 
-## Docker Setup
 
-You can also run the application using Docker, ensuring a consistent development environment across the team.
+## Docker Development
 
-1. Create your `.env.local` file from `.env.example` as described above.
-2. Start the development server with hot-reload using docker-compose:
-
-   ```bash
-   docker-compose up
-   ```
-
-3. The application will be available at [http://localhost:3000](http://localhost:3000).
-
-To build and run the production image:
+The repository includes Docker files for both hot-reload development and production-style local builds. Copy the environment file first so compose can pass the same public configuration into the container:
 
 ```bash
-docker build -t c-address-bridge-prod .
-docker run -p 3000:3000 --env-file .env.local c-address-bridge-prod
+cp .env.example .env.local
+docker compose up --build frontend
 ```
+
+The development service mounts the repository into `/app`, keeps `node_modules` and `.next` in named volumes, enables file polling for reliable hot reloads, and serves the app at `http://localhost:3000`.
+
+To verify the production image locally, use the production profile:
+
+```bash
+docker compose --profile production up --build frontend-prod
+```
+
+You can also build the images directly:
+
+```bash
+docker build -f Dockerfile.dev -t c-address-bridge:dev .
+docker build -t c-address-bridge:prod .
+```
+
+Keep secrets out of Docker image layers. Use `.env.local` or shell environment variables for `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_BRIDGE_CONTRACT_ID`, `NEXT_PUBLIC_MOONPAY_API_KEY`, and `NEXT_PUBLIC_TRANSAK_API_KEY`.
 
 ## Available Commands
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start development server     |
+| `npm run build`     | Production build             |
+| `npm run start`     | Start production server      |
+| `npm run lint`      | Run ESLint                   |
 | `npm run typecheck` | Run TypeScript type checking |
-| `npm run test` | Run Vitest test suite |
+| `npm run test`      | Run Vitest test suite        |
 
 ## Mock Data (Development)
 
@@ -106,7 +113,11 @@ Developers without a Freighter wallet or live Stellar network can use the built-
 4. Import mocks directly in tests:
 
    ```typescript
-   import { mockFreighterApi, MOCK_TRANSACTIONS, mockHorizonAccount } from "@/lib/mock-data";
+   import {
+     mockFreighterApi,
+     MOCK_TRANSACTIONS,
+     mockHorizonAccount,
+   } from '@/lib/mock-data';
    ```
 
 ## Architecture
@@ -178,3 +189,4 @@ Enter any contract C-address in the **Inspect Contract** panel to fetch its on-c
 ## License
 
 MIT
+ 

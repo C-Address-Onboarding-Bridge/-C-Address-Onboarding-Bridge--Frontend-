@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/lib/stellar.ts"],
+  "out": "docs/api",
+  "readme": "none",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "categorizeByGroup": true,
+  "navigationLinks": {
+    "Repository": "https://github.com/C-Address-Onboarding-Bridge/-C-Address-Onboarding-Bridge--Frontend-"
+  }
+}

@@ -7,58 +7,61 @@
  */
 
 // ─── CEX address verification ─────────────────────────────────────────────────
-export type { CEXVerificationProps } from "./cex-address-verification";
-export { CEXAddressVerification } from "./cex-address-verification";
+export type { CEXVerificationProps } from './cex-address-verification';
+export { CEXAddressVerification } from './cex-address-verification';
 
 // ─── Generic data table ───────────────────────────────────────────────────────
-export type { Column, DataTableProps } from "./data-table";
-export { DataTable } from "./data-table";
+export type { Column, DataTableProps } from './data-table';
+export { DataTable } from './data-table';
 
 // ─── Fee selector ─────────────────────────────────────────────────────────────
-export type { FeeTier } from "./fee-selector";
-export { FeeSelector } from "./fee-selector";
+export type { FeeTier } from './fee-selector';
+export { FeeSelector } from './fee-selector';
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-export { default as Footer } from "./footer";
+export { default as Footer } from './footer';
 
 // ─── Keyboard shortcuts info panel ───────────────────────────────────────────
-export { KeyboardShortcutsInfo } from "./keyboard-shortcuts-info";
+export { KeyboardShortcutsInfo } from './keyboard-shortcuts-info';
 
 // ─── Navigation bar ───────────────────────────────────────────────────────────
-export { default as Navbar } from "./navbar";
+export { default as Navbar } from './navbar';
 
 // ─── Network mismatch banner ─────────────────────────────────────────────────
-export { NetworkMismatchBanner } from "./network-mismatch-banner";
+export { NetworkMismatchBanner } from './network-mismatch-banner';
 
 // ─── Onboarding tour ─────────────────────────────────────────────────────────
-export { default as OnboardingTour, useOnboardingTour } from "./onboarding-tour";
+export {
+  default as OnboardingTour,
+  useOnboardingTour,
+} from './onboarding-tour';
 
 // ─── Resource / simulation result panel ──────────────────────────────────────
-export { ResourcePanel } from "./resource-panel";
+export { ResourcePanel } from './resource-panel';
 
 // ─── Theme provider and hook ─────────────────────────────────────────────────
-export { ThemeProvider, useTheme } from "./theme-provider";
-export { ConnectivityProvider, useConnectivity } from "./connectivity-provider";
-export { OfflineBanner } from "./offline-banner";
+export { ThemeProvider, useTheme } from './theme-provider';
+export { ConnectivityProvider, useConnectivity } from './connectivity-provider';
+export { OfflineBanner } from './offline-banner';
 
 // ─── Theme toggle button ─────────────────────────────────────────────────────
-export { ThemeToggle } from "./theme-toggle";
+export { ThemeToggle } from './theme-toggle';
 
 // ─── Toast notifications ─────────────────────────────────────────────────────
-export type { ToastType, Toast } from "./toast";
-export { ToastContainer, useToast } from "./toast";
+export type { ToastType, Toast } from './toast';
+export { ToastContainer, useToast } from './toast';
 
 // ─── Tour provider ────────────────────────────────────────────────────────────
-export { default as TourProvider } from "./tour-provider";
+export { default as TourProvider } from './tour-provider';
 
 // ─── Transaction history table ────────────────────────────────────────────────
-export { default as TransactionHistory } from "./transaction-history";
+export { default as TransactionHistory } from './transaction-history';
 
 // ─── Wallet modal ─────────────────────────────────────────────────────────────
-export { default as WalletModal } from "./wallet-modal";
+export { default as WalletModal } from './wallet-modal';
 
 // ─── Wallet permissions panel ────────────────────────────────────────────────
-export { WalletPermissionsPanel } from "./wallet-permissions-panel";
+export { WalletPermissionsPanel } from './wallet-permissions-panel';
 
 // ─── Wallet provider and hook ─────────────────────────────────────────────────
-export { WalletProvider, useWallet } from "./wallet-provider";
+export { WalletProvider, useWallet } from './wallet-provider';
