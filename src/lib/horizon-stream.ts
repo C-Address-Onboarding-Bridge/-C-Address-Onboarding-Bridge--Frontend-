@@ -13,7 +13,7 @@
  * MUST invoke on unmount to prevent memory leaks.
  */
 
-import { Horizon } from "@stellar/stellar-sdk";
+import { Horizon } from "./stellar-sdk";
 import { HORIZON_URL } from "./types";
 
 export interface StreamPaymentRecord {

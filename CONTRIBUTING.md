@@ -89,6 +89,42 @@ E2E tests (requires a running dev server or built app):
 npm run test:e2e
 ```
 
+## Upgrading the Stellar SDK
+
+The `@stellar/stellar-sdk` and `@stellar/freighter-api` versions are pinned exactly in `package.json` (no `^` caret). This is intentional — the Stellar SDK moves fast and caret ranges have caused silent breakage in the past.
+
+Dependabot is configured to open a PR when a new version is available. Before merging any SDK upgrade PR:
+
+### Upgrade checklist
+
+1. Read the SDK release notes / changelog for breaking changes.
+2. Run the full check suite locally:
+   ```bash
+   npm run typecheck
+   npm run test
+   npm run build
+   ```
+3. Pay special attention to the integration test suite:
+   ```bash
+   npx vitest run src/__tests__/stellar-sdk-integration.test.ts
+   ```
+   These tests validate the behaviour the abstraction layer depends on. A failure here means `src/lib/stellar-sdk.ts` needs to be updated before the upgrade is safe to merge.
+4. Check `src/lib/stellar-sdk.ts` for any API surface that changed. The abstraction layer exports wrappers for the most version-sensitive areas:
+   - `isSimulationError` / `getSimulationMinFee` / `getSimulationRetval` — Soroban RPC response shape
+   - `checkFreighterConnection` / `getFreighterAddress` / `getFreighterNetwork` / `signWithFreighter` — Freighter API return shapes
+   - `createHorizonServer` / `createSorobanServer` — server construction
+   - `transactionFromXDR` / `addressFromString` — transaction and address helpers
+5. Update the version pins in `package.json` to the new exact version.
+6. Run `npm install` to update `package-lock.json`, then commit both files together.
+7. Do not merge if any check fails.
+
+### Adding new SDK calls
+
+When adding new code that calls the Stellar SDK directly:
+- Import from `@/lib/stellar-sdk`, not from `@stellar/stellar-sdk` or `@stellar/freighter-api`.
+- If the SDK functionality you need is not yet exported by `stellar-sdk.ts`, add a thin wrapper there first.
+- Add a test in `src/__tests__/stellar-sdk-integration.test.ts` that covers the new wrapper's behaviour, including its response-shape assumptions.
+
 ## Submitting a Pull Request
 
 1. Branch off `main`: `git checkout -b feat/short-description`
