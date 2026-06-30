@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { WifiOff } from "lucide-react";
-import { useConnectivity } from "./connectivity-provider";
+import { AlertCircle } from 'lucide-react';
+import { useConnectivity } from './connectivity-provider';
 
 export default function OfflineBanner() {
   const { isOnline } = useConnectivity();
@@ -11,15 +11,18 @@ export default function OfflineBanner() {
   }
 
   return (
-    <div
-      role="alert"
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--error)] text-white px-4 py-3 text-center"
-      aria-label="You are offline. Please check your internet connection."
-    >
-      <div className="flex items-center justify-center gap-2">
-        <WifiOff className="w-4 h-4" aria-hidden="true" />
-        <span className="text-sm font-medium">
-          You are offline. Please check your internet connection.
+    <div className="flex w-full flex-col items-center justify-between gap-3 border-b border-[var(--error)]/30 bg-[var(--error)]/10 px-4 py-3 text-sm text-[var(--error)] sm:flex-row">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-[var(--error)]" />
+        <span>
+          You are offline. Network actions are disabled until connectivity
+          returns.
+        </span>
+      </div>
+      {pendingOfflineActions > 0 && (
+        <span className="text-xs font-medium text-[var(--error)]">
+          {pendingOfflineActions} action{pendingOfflineActions === 1 ? '' : 's'}{' '}
+          will retry when back online.
         </span>
       </div>
     </div>

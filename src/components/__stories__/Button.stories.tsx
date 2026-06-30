@@ -1,47 +1,58 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Wallet, RefreshCw } from "lucide-react";
+import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
+import { Wallet, RefreshCw } from 'lucide-react';
 
 const meta: Meta = {
-  title: "Primitives/Button",
-  tags: ["autodocs"],
+  title: 'Primitives/Button',
+  tags: ['autodocs'],
   parameters: {
-    backgrounds: { default: "dark" },
+    backgrounds: { default: 'dark' },
   },
   argTypes: {
     variant: {
-      control: "select",
-      options: ["primary", "secondary", "outline"],
+      control: 'select',
+      options: ['primary', 'secondary', 'outline'],
     },
     size: {
-      control: "select",
-      options: ["sm", "md", "lg"],
+      control: 'select',
+      options: ['sm', 'md', 'lg'],
     },
     disabled: {
-      control: "boolean",
+      control: 'boolean',
     },
   },
 };
 
 export default meta;
-type Story = StoryObj = {};
 
-const BaseButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "outline"; size?: "sm" | "md" | "lg" }> = ({
-  variant = "primary",
-  size = "md",
-  className = "",
+// CORRECTED: Define Story using the meta type
+type Story = StoryObj<typeof meta>;
+
+const BaseButton: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: 'primary' | 'secondary' | 'outline';
+    size?: 'sm' | 'md' | 'lg';
+  }
+> = ({
+  variant = 'primary',
+  size = 'md',
+  className = '',
   children,
   ...props
 }) => {
-  const baseClasses = "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50";
+  const baseClasses =
+    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:opacity-50';
   const variantClasses = {
-    primary: "bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90",
-    secondary: "bg-[var(--surface-2)] text-[var(--foreground)] border border-[var(--border)] hover:bg-[var(--border)]",
-    outline: "bg-transparent border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/10",
+    primary: 'bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90',
+    secondary:
+      'bg-[var(--surface-2)] text-[var(--foreground)] border border-[var(--border)] hover:bg-[var(--border)]',
+    outline:
+      'bg-transparent border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/10',
   };
   const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-sm",
-    lg: "px-6 py-3 text-base",
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
   };
 
   return (
@@ -55,7 +66,11 @@ const BaseButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { var
 };
 
 export const Primary: Story = {
-  render: () => <BaseButton variant="primary"><Wallet className="w-4 h-4" /> Connect Wallet</BaseButton>,
+  render: () => (
+    <BaseButton variant="primary">
+      <Wallet className="h-4 w-4" /> Connect Wallet
+    </BaseButton>
+  ),
 };
 
 export const Secondary: Story = {
@@ -69,22 +84,34 @@ export const Outline: Story = {
 export const WithIcon: Story = {
   render: () => (
     <BaseButton variant="primary">
-      <RefreshCw className="w-4 h-4" />
+      <RefreshCw className="h-4 w-4" />
       Try Again
     </BaseButton>
   ),
 };
 
 export const Small: Story = {
-  render: () => <BaseButton variant="primary" size="sm">Small</BaseButton>,
+  render: () => (
+    <BaseButton variant="primary" size="sm">
+      Small
+    </BaseButton>
+  ),
 };
 
 export const Large: Story = {
-  render: () => <BaseButton variant="primary" size="lg">Large</BaseButton>,
+  render: () => (
+    <BaseButton variant="primary" size="lg">
+      Large
+    </BaseButton>
+  ),
 };
 
 export const Disabled: Story = {
-  render: () => <BaseButton variant="primary" disabled>Disabled</BaseButton>,
+  render: () => (
+    <BaseButton variant="primary" disabled>
+      Disabled
+    </BaseButton>
+  ),
 };
 
 export const AllVariants: Story = {
@@ -100,9 +127,15 @@ export const AllVariants: Story = {
 export const AllSizes: Story = {
   render: () => (
     <div className="flex flex-wrap items-end gap-4">
-      <BaseButton variant="primary" size="sm">Small</BaseButton>
-      <BaseButton variant="primary" size="md">Medium</BaseButton>
-      <BaseButton variant="primary" size="lg">Large</BaseButton>
+      <BaseButton variant="primary" size="sm">
+        Small
+      </BaseButton>
+      <BaseButton variant="primary" size="md">
+        Medium
+      </BaseButton>
+      <BaseButton variant="primary" size="lg">
+        Large
+      </BaseButton>
     </div>
   ),
 };

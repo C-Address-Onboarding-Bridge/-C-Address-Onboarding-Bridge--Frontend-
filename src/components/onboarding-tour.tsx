@@ -1,63 +1,63 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback, useLayoutEffect } from "react";
-import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { useEffect, useState, useCallback, useLayoutEffect } from 'react';
+import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface TourStep {
   id: string;
   title: string;
   description: string;
   target?: string;
-  position?: "top" | "bottom" | "left" | "right";
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 const TOUR_STEPS: TourStep[] = [
   {
-    id: "landing",
-    title: "Welcome to C-Address Bridge",
+    id: 'landing',
+    title: 'Welcome to C-Address Bridge',
     description:
-      "This is a protocol for funding Soroban smart accounts (C-addresses) directly from CEX, credit card, or existing G-address wallets.",
-    position: "bottom",
+      'This is a protocol for funding Soroban smart accounts (C-addresses) directly from CEX, credit card, or existing G-address wallets.',
+    position: 'bottom',
   },
   {
-    id: "bridge",
-    title: "Bridge Stellar Assets",
+    id: 'bridge',
+    title: 'Bridge Stellar Assets',
     description:
-      "Send XLM or other Stellar assets from a G-address wallet directly to a C-address.",
-    target: "Bridge",
-    position: "bottom",
+      'Send XLM or other Stellar assets from a G-address wallet directly to a C-address.',
+    target: 'Bridge',
+    position: 'bottom',
   },
   {
-    id: "wallet",
-    title: "Connect Your Wallet",
+    id: 'wallet',
+    title: 'Connect Your Wallet',
     description:
-      "Click the Connect Wallet button to authenticate with Freighter or Lobstr and start bridging.",
-    target: "Connect Wallet",
-    position: "bottom",
+      'Click the Connect Wallet button to authenticate with Freighter or Lobstr and start bridging.',
+    target: 'Connect Wallet',
+    position: 'bottom',
   },
   {
-    id: "onramp",
-    title: "Onramp with Moonpay/Transak",
+    id: 'onramp',
+    title: 'Onramp with Moonpay/Transak',
     description:
-      "Fund your C-address directly with fiat currency through our integrated onramp partners.",
-    target: "Onramp",
-    position: "bottom",
+      'Fund your C-address directly with fiat currency through our integrated onramp partners.',
+    target: 'Onramp',
+    position: 'bottom',
   },
   {
-    id: "cex",
-    title: "CEX Withdrawal Routes",
+    id: 'cex',
+    title: 'CEX Withdrawal Routes',
     description:
-      "Check available CEX partners and withdrawal addresses for your account.",
-    target: "CEX",
-    position: "bottom",
+      'Check available CEX partners and withdrawal addresses for your account.',
+    target: 'CEX',
+    position: 'bottom',
   },
   {
-    id: "dashboard",
-    title: "Monitor Your Activity",
+    id: 'dashboard',
+    title: 'Monitor Your Activity',
     description:
-      "View transaction history and account balances on your dashboard.",
-    target: "Dashboard",
-    position: "bottom",
+      'View transaction history and account balances on your dashboard.',
+    target: 'Dashboard',
+    position: 'bottom',
   },
 ];
 
@@ -66,18 +66,21 @@ interface OnboardingTourProps {
   restartKey?: number;
 }
 
-export default function OnboardingTour({ onComplete, restartKey }: OnboardingTourProps) {
+export default function OnboardingTour({
+  onComplete,
+  restartKey,
+}: OnboardingTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem("hasSeenOnboardingTour");
+    const hasSeenTour = localStorage.getItem('hasSeenOnboardingTour');
     if (!hasSeenTour) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
-      localStorage.setItem("hasSeenOnboardingTour", "true");
+      localStorage.setItem('hasSeenOnboardingTour', 'true');
     }
   }, [restartKey]);
 
@@ -88,18 +91,17 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
       return;
     }
 
-    const element = step.target && document.body.innerText.includes(step.target)
-      ? Array.from(document.querySelectorAll("*")).find(
-          (el) => {
+    const element =
+      step.target && document.body.innerText.includes(step.target)
+        ? Array.from(document.querySelectorAll('*')).find((el) => {
             const htmlEl = el as HTMLElement;
             return (
               htmlEl.textContent?.includes(step.target!) &&
               htmlEl.offsetHeight > 0 &&
               htmlEl.offsetWidth > 0
             );
-          }
-        )
-      : null;
+          })
+        : null;
 
     if (element) {
       const rect = (element as HTMLElement).getBoundingClientRect();
@@ -109,12 +111,12 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
       let top = rect.bottom + offset;
       let left = rect.left + rect.width / 2;
 
-      if (step.position === "top") {
+      if (step.position === 'top') {
         top = rect.top - 200 - offset;
-      } else if (step.position === "left") {
+      } else if (step.position === 'left') {
         left = rect.left - 320 - offset;
         top = rect.top + rect.height / 2 - 100;
-      } else if (step.position === "right") {
+      } else if (step.position === 'right') {
         left = rect.right + offset;
         top = rect.top + rect.height / 2 - 100;
       }
@@ -129,11 +131,11 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
   useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition);
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
     };
   }, [updatePosition]);
 
@@ -162,11 +164,11 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
 
   return (
     <>
-      <div className="fixed inset-0 z-[90] pointer-events-none">
+      <div className="pointer-events-none fixed inset-0 z-[90]">
         {highlightRect && (
           <>
             <div
-              className="fixed bg-black/50 pointer-events-auto cursor-default"
+              className="pointer-events-auto fixed cursor-default bg-black/50"
               style={{
                 top: 0,
                 left: 0,
@@ -176,7 +178,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
               onClick={() => {}}
             />
             <div
-              className="fixed bg-black/50 pointer-events-auto cursor-default"
+              className="pointer-events-auto fixed cursor-default bg-black/50"
               style={{
                 top: `${highlightRect.bottom}px`,
                 left: 0,
@@ -186,7 +188,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
               onClick={() => {}}
             />
             <div
-              className="fixed bg-black/50 pointer-events-auto cursor-default"
+              className="pointer-events-auto fixed cursor-default bg-black/50"
               style={{
                 top: `${highlightRect.top}px`,
                 left: 0,
@@ -196,7 +198,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
               onClick={() => {}}
             />
             <div
-              className="fixed bg-black/50 pointer-events-auto cursor-default"
+              className="pointer-events-auto fixed cursor-default bg-black/50"
               style={{
                 top: `${highlightRect.top}px`,
                 left: `${highlightRect.right}px`,
@@ -206,7 +208,7 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
               onClick={() => {}}
             />
             <div
-              className="fixed border-2 border-[var(--primary)] rounded-lg pointer-events-none"
+              className="pointer-events-none fixed rounded-lg border-2 border-[var(--primary)]"
               style={{
                 top: `${highlightRect.top - 4}px`,
                 left: `${highlightRect.left - 4}px`,
@@ -219,16 +221,16 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
       </div>
 
       <div
-        className="fixed z-[95] w-80 bg-[var(--background)] rounded-lg border border-[var(--border)] shadow-2xl animate-in fade-in slide-in-from-bottom-2"
+        className="animate-in fade-in slide-in-from-bottom-2 fixed z-[95] w-80 rounded-lg border border-[var(--border)] bg-[var(--background)] shadow-2xl"
         style={{
           top: `${position.top}px`,
           left: `${position.left}px`,
         }}
       >
         <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
+          <div className="mb-4 flex items-start justify-between">
             <div className="flex-1">
-              <div className="text-xs font-medium text-[var(--primary)] mb-2">
+              <div className="mb-2 text-xs font-medium text-[var(--primary)]">
                 Step {currentStep + 1} of {TOUR_STEPS.length}
               </div>
               <h3 className="text-lg font-bold text-[var(--foreground)]">
@@ -237,13 +239,13 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
             </div>
             <button
               onClick={handleComplete}
-              className="flex-shrink-0 p-1 text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+              className="flex-shrink-0 p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--foreground)]"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          <p className="text-sm text-[var(--text-muted)] mb-6">
+          <p className="mb-6 text-sm text-[var(--text-muted)]">
             {step.description}
           </p>
 
@@ -251,21 +253,21 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
             <button
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className="p-2 rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-3)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="rounded-lg bg-[var(--surface-2)] p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <div className="flex-1 flex gap-1 justify-center">
+            <div className="flex flex-1 justify-center gap-1">
               {TOUR_STEPS.map((_, i) => (
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all ${
                     i === currentStep
-                      ? "bg-[var(--primary)] w-6"
+                      ? 'w-6 bg-[var(--primary)]'
                       : i < currentStep
-                        ? "bg-[var(--primary)]/50 w-1.5"
-                        : "bg-[var(--border)] w-1.5"
+                        ? 'w-1.5 bg-[var(--primary)]/50'
+                        : 'w-1.5 bg-[var(--border)]'
                   }`}
                 />
               ))}
@@ -273,15 +275,15 @@ export default function OnboardingTour({ onComplete, restartKey }: OnboardingTou
 
             <button
               onClick={handleNext}
-              className="p-2 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90 transition-colors"
+              className="rounded-lg bg-[var(--primary)] p-2 text-white transition-colors hover:bg-[var(--primary)]/90"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           <button
             onClick={handleComplete}
-            className="w-full mt-4 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--surface-2)] text-[var(--foreground)] hover:bg-[var(--surface-3)] transition-colors"
+            className="mt-4 w-full rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--surface-3)]"
           >
             Skip Tour
           </button>
@@ -295,7 +297,7 @@ export function useOnboardingTour() {
   const [restartKey, setRestartKey] = useState(0);
 
   const restartTour = useCallback(() => {
-    localStorage.removeItem("hasSeenOnboardingTour");
+    localStorage.removeItem('hasSeenOnboardingTour');
     setRestartKey((k) => k + 1);
   }, []);
 

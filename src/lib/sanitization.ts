@@ -8,13 +8,13 @@
  * Converts: & < > " '
  */
 export function encodeHtml(text: string): string {
-  if (!text) return "";
+  if (!text) return '';
   const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
   };
   return text.replace(/[&<>"']/g, (char) => map[char]);
 }
@@ -24,11 +24,11 @@ export function encodeHtml(text: string): string {
  * Returns empty string if invalid
  */
 export function sanitizeStellarAddress(address: string): string {
-  if (!address) return "";
+  if (!address) return '';
   const trimmed = address.trim();
   // Stellar addresses are 56 characters, alphanumeric only
   if (!/^[GA][A-Z0-9]{54}$/.test(trimmed)) {
-    return "";
+    return '';
   }
   return trimmed;
 }
@@ -38,11 +38,11 @@ export function sanitizeStellarAddress(address: string): string {
  * Returns empty string if invalid
  */
 export function sanitizeCAddress(address: string): string {
-  if (!address) return "";
+  if (!address) return '';
   const trimmed = address.trim();
   // C-addresses are 56 characters starting with C
   if (!/^C[A-Z0-9]{55}$/.test(trimmed)) {
-    return "";
+    return '';
   }
   return trimmed;
 }
@@ -52,11 +52,11 @@ export function sanitizeCAddress(address: string): string {
  * Allows only digits and decimal point
  */
 export function sanitizeAmount(amount: string): string {
-  if (!amount) return "";
+  if (!amount) return '';
   // Remove anything that's not a digit or decimal point
-  const sanitized = amount.replace(/[^\d.]/g, "");
+  const sanitized = amount.replace(/[^\d.]/g, '');
   // Prevent multiple decimal points
-  const parts = sanitized.split(".");
+  const parts = sanitized.split('.');
   if (parts.length > 2) {
     return `${parts[0]}.${parts[1]}`;
   }
@@ -68,9 +68,9 @@ export function sanitizeAmount(amount: string): string {
  * Removes potentially dangerous characters and enforces length limits
  */
 export function sanitizeMemo(memo: string, maxLength: number = 280): string {
-  if (!memo) return "";
+  if (!memo) return '';
   // Remove null bytes and other control characters
-  let sanitized = memo.replace(/\0|[\x00-\x1F\x7F]/g, "");
+  let sanitized = memo.replace(/\0|[\x00-\x1F\x7F]/g, '');
   // Limit length
   sanitized = sanitized.substring(0, maxLength);
   return sanitized.trim();
@@ -105,28 +105,28 @@ export function sanitizeTransaction(data: {
 }): SanitizedTransaction {
   const errors: string[] = [];
 
-  const fromAddress = sanitizeStellarAddress(data.fromAddress || "");
+  const fromAddress = sanitizeStellarAddress(data.fromAddress || '');
   if (!fromAddress && data.fromAddress) {
-    errors.push("Invalid source address");
+    errors.push('Invalid source address');
   }
 
-  const toAddress = sanitizeCAddress(data.toAddress || "");
+  const toAddress = sanitizeCAddress(data.toAddress || '');
   if (!toAddress && data.toAddress) {
-    errors.push("Invalid destination address");
+    errors.push('Invalid destination address');
   }
 
-  const amount = sanitizeAmount(data.amount || "");
+  const amount = sanitizeAmount(data.amount || '');
   const amountNum = parseFloat(amount);
   if (!amount || isNaN(amountNum) || amountNum <= 0) {
-    errors.push("Invalid amount");
+    errors.push('Invalid amount');
   }
 
-  const asset = (data.asset || "XLM").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const asset = (data.asset || 'XLM').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!asset) {
-    errors.push("Invalid asset");
+    errors.push('Invalid asset');
   }
 
-  const memo = sanitizeMemo(data.memo || "");
+  const memo = sanitizeMemo(data.memo || '');
 
   return {
     fromAddress,
@@ -143,8 +143,15 @@ export function sanitizeTransaction(data: {
  * Safe wrapper for rendering address in UI
  * Always HTML-encoded to prevent XSS
  */
-export function SafeAddress({ address, truncate = false }: { address: string; truncate?: boolean }): string {
-  const sanitized = sanitizeStellarAddress(address) || sanitizeCAddress(address) || address;
+export function SafeAddress({
+  address,
+  truncate = false,
+}: {
+  address: string;
+  truncate?: boolean;
+}): string {
+  const sanitized =
+    sanitizeStellarAddress(address) || sanitizeCAddress(address) || address;
   const display = truncate
     ? `${sanitized.substring(0, 8)}...${sanitized.substring(sanitized.length - 8)}`
     : sanitized;
@@ -155,8 +162,14 @@ export function SafeAddress({ address, truncate = false }: { address: string; tr
  * Safe wrapper for rendering amount in UI
  * Always HTML-encoded to prevent XSS
  */
-export function SafeAmount({ amount, decimals = 2 }: { amount: string; decimals?: number }): string {
+export function SafeAmount({
+  amount,
+  decimals = 2,
+}: {
+  amount: string;
+  decimals?: number;
+}): string {
   const num = parseFloat(amount);
-  if (isNaN(num)) return "0";
+  if (isNaN(num)) return '0';
   return encodeHtml(num.toFixed(decimals));
 }

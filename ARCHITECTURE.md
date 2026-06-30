@@ -3,7 +3,7 @@
 ## High-level overview
 
 C-Address Bridge is a **pure client-side Next.js application** — there is no
-proprietary backend server.  All business logic runs in the browser:
+proprietary backend server. All business logic runs in the browser:
 
 ```
 Browser
@@ -61,7 +61,7 @@ type TxSigner = (xdr: string, networkPassphrase: string) => Promise<string>;
 ```
 
 Functions that require a signature accept an optional `signer` parameter
-(default: Freighter).  The active wallet adapter from `WalletProvider` supplies
+(default: Freighter). The active wallet adapter from `WalletProvider` supplies
 its `signTransaction` method as the signer, enabling any supported wallet to
 sign transactions without changing the core Stellar logic.
 
@@ -69,12 +69,12 @@ sign transactions without changing the core Stellar logic.
 
 `src/lib/wallet-adapters.ts` defines one `WalletAdapter` per wallet:
 
-| Adapter   | Detection           | Notes |
-|-----------|---------------------|-------|
-| Freighter | `window.freighter`  | Default; uses `@stellar/freighter-api` |
-| Lobstr    | `window.lobstr`     | Extension injects its own API |
-| xBull     | `window.xBullSDK`   | Extension injects SDK object |
-| Albedo    | `window.albedo`     | Web-based pop-up signer, no extension needed |
+| Adapter   | Detection          | Notes                                        |
+| --------- | ------------------ | -------------------------------------------- |
+| Freighter | `window.freighter` | Default; uses `@stellar/freighter-api`       |
+| Lobstr    | `window.lobstr`    | Extension injects its own API                |
+| xBull     | `window.xBullSDK`  | Extension injects SDK object                 |
+| Albedo    | `window.albedo`    | Web-based pop-up signer, no extension needed |
 
 `WalletProvider` detects available wallets at mount, persists the user's last
 choice in `localStorage`, and exposes `switchWallet(id)` which disconnects the
@@ -82,34 +82,34 @@ current adapter and reconnects via the chosen one — no page reload required.
 
 ## State management
 
-| Concern | Where |
-|---------|-------|
-| Wallet connection, address, network | `WalletContext` (React context) |
+| Concern                             | Where                                    |
+| ----------------------------------- | ---------------------------------------- |
+| Wallet connection, address, network | `WalletContext` (React context)          |
 | User preferences (recent addresses) | `localStorage` via `user-preferences.ts` |
-| App network selection | `localStorage` (`stellar_app_network`) |
-| Active wallet selection | `localStorage` (`stellar_active_wallet`) |
-| Transaction/balance data | Local component state + custom hooks |
+| App network selection               | `localStorage` (`stellar_app_network`)   |
+| Active wallet selection             | `localStorage` (`stellar_active_wallet`) |
+| Transaction/balance data            | Local component state + custom hooks     |
 
 There is no global client-side cache beyond what the browser provides.
 
 ## Key design decisions and trade-offs
 
 **No backend by design** — simplifies deployment (static host / Vercel) and
-removes a trust surface.  The trade-off is that all RPC calls go directly from
+removes a trust surface. The trade-off is that all RPC calls go directly from
 the user's browser to Stellar public infrastructure, which means no
 request-level rate-limiting, caching, or IP shielding.
 
 **Polling instead of streaming** — the wallet connection is checked every 3 s
-(`WALLET_POLL_INTERVAL_MS`) rather than via extension events.  This is simpler
+(`WALLET_POLL_INTERVAL_MS`) rather than via extension events. This is simpler
 and portable across wallets, at the cost of a short lag when the user switches
 accounts in the extension.
 
 **Adapter pattern for wallets** — each wallet gets its own adapter module behind
-a common interface.  Adding a new wallet requires one new adapter file with no
+a common interface. Adding a new wallet requires one new adapter file with no
 changes to the rest of the app.
 
 **Soroban simulation before signing** — `prepareTransaction` is called before
-presenting the transaction to the wallet.  This populates fees automatically and
+presenting the transaction to the wallet. This populates fees automatically and
 catches contract errors before the user is prompted, improving UX.
 
 ## Future architecture evolution

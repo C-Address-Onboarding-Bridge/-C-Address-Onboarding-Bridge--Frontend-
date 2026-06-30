@@ -9,5 +9,7 @@ test('cex page shows exchange selection', async ({ page }) => {
 test('cex network selection works', async ({ page }) => {
   await page.goto('/cex');
   await page.locator('button:has-text("Ethereum")').click();
-  await expect(page.locator('button:has-text("Ethereum")').first()).toBeVisible();
+  await expect(
+    page.locator('button:has-text("Ethereum")').first()
+  ).toBeVisible();
 });
