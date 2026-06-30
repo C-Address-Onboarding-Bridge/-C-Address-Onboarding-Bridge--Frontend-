@@ -51,6 +51,26 @@ The onboarding layer for Soroban dApps. Fund any Soroban smart account (C-addres
 
    Open [http://localhost:3000](http://localhost:3000).
 
+## Docker Setup
+
+You can also run the application using Docker, ensuring a consistent development environment across the team.
+
+1. Create your `.env.local` file from `.env.example` as described above.
+2. Start the development server with hot-reload using docker-compose:
+
+   ```bash
+   docker-compose up
+   ```
+
+3. The application will be available at [http://localhost:3000](http://localhost:3000).
+
+To build and run the production image:
+
+```bash
+docker build -t c-address-bridge-prod .
+docker run -p 3000:3000 --env-file .env.local c-address-bridge-prod
+```
+
 ## Available Commands
 
 | Command | Description |

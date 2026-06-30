@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies based on the preferred package manager
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Copy source files
+COPY . .
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start development server with hot-reload
+CMD ["npm", "run", "dev"]
