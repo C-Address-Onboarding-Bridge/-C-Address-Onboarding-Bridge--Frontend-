@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Wallet, ArrowLeftRight, CreditCard, Building2, LayoutDashboard, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useWallet } from "./wallet-provider";
+import { PrefetchLink } from "./prefetch-link";
 
 const navLinks = [
   { href: "/bridge", label: "Bridge", icon: ArrowLeftRight },
@@ -34,7 +35,7 @@ export default function Navbar() {
               const Icon = link.icon;
               const isActive = pathname === link.href;
               return (
-                <Link
+                <PrefetchLink
                   key={link.href}
                   href={link.href}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -45,7 +46,7 @@ export default function Navbar() {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
-                </Link>
+                </PrefetchLink>
               );
             })}
           </div>
@@ -86,7 +87,7 @@ export default function Navbar() {
               const Icon = link.icon;
               const isActive = pathname === link.href;
               return (
-                <Link
+                <PrefetchLink
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
@@ -98,7 +99,7 @@ export default function Navbar() {
                 >
                   <Icon className="w-4 h-4" />
                   {link.label}
-                </Link>
+                </PrefetchLink>
               );
             })}
             {!isConnected && (

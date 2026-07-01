@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Shield, Zap, CreditCard, Building2, Globe, Code } from "lucide-react";
+import { PrefetchLink } from "@/components/prefetch-link";
 
 const features = [
   {
@@ -71,20 +72,20 @@ export default function LandingPage() {
               a credit card, or an existing G-address. No account model knowledge required.
             </p>
             <div className="flex items-center justify-center gap-4">
-              <Link
+              <PrefetchLink
                 href="/bridge"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors glow"
               >
                 Start Bridging
                 <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
+              </PrefetchLink>
+              <PrefetchLink
                 href="/dashboard"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border)] text-[var(--foreground)] font-medium hover:bg-[var(--surface-2)] transition-colors"
               >
                 <Code className="w-4 h-4" />
                 Dashboard
-              </Link>
+              </PrefetchLink>
             </div>
           </div>
         </div>
@@ -105,7 +106,7 @@ export default function LandingPage() {
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <Link
+              <PrefetchLink
                 key={feature.title}
                 href={feature.href}
                 className="group relative p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] card-hover"
@@ -115,7 +116,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="font-semibold mb-2">{feature.title}</h3>
                 <p className="text-sm text-[var(--text-muted)]">{feature.description}</p>
-              </Link>
+              </PrefetchLink>
             );
           })}
         </div>
@@ -157,13 +158,13 @@ export default function LandingPage() {
           <p className="text-[var(--text-muted)] max-w-lg mx-auto mb-8 relative">
             Start funding Soroban smart accounts directly. No G-address required for new users.
           </p>
-          <Link
+          <PrefetchLink
             href="/bridge"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-colors glow relative"
           >
             Launch Bridge
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </PrefetchLink>
         </div>
       </section>
     </div>
