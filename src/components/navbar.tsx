@@ -1,9 +1,9 @@
 "use client";
 
+import React, { memo, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet, ArrowLeftRight, CreditCard, Building2, LayoutDashboard, Menu, X } from "lucide-react";
-import { useState } from "react";
 import { useWallet } from "./wallet-provider";
 import { PrefetchLink } from "./prefetch-link";
 
@@ -14,10 +14,20 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
-export default function Navbar() {
+const Navbar = () => {
   const pathname = usePathname();
   const { isConnected, address, connect, isConnecting } = useWallet();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const handleConnect = useCallback(() => connect(), [connect]);
+  const handleMobileConnect = useCallback(() => {
+    connect();
+    setMobileOpen(false);
+  }, [connect]);
+
+  const addressDisplay = useMemo(() => (address ? `${address.slice(0, 4)}...${address.slice(-4)}` : null), [address]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl">
@@ -55,13 +65,11 @@ export default function Navbar() {
             {isConnected ? (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
                 <div className="w-2 h-2 rounded-full bg-[var(--success)]" />
-                <span className="text-xs font-mono text-[var(--text-muted)]">
-                  {address?.slice(0, 4)}...{address?.slice(-4)}
-                </span>
+                <span className="text-xs font-mono text-[var(--text-muted)]">{addressDisplay}</span>
               </div>
             ) : (
               <button
-                onClick={connect}
+                onClick={handleConnect}
                 disabled={isConnecting}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary)]/90 transition-colors disabled:opacity-50"
               >
@@ -70,10 +78,7 @@ export default function Navbar() {
               </button>
             )}
 
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)]"
-            >
+            <button onClick={toggleMobile} className="md:hidden p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)]">
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
@@ -90,7 +95,7 @@ export default function Navbar() {
                 <PrefetchLink
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobile}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-[var(--primary)]/10 text-[var(--primary-light)]"
@@ -104,7 +109,7 @@ export default function Navbar() {
             })}
             {!isConnected && (
               <button
-                onClick={() => { connect(); setMobileOpen(false); }}
+                onClick={handleMobileConnect}
                 disabled={isConnecting}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--primary)] text-white text-sm font-medium"
               >
@@ -117,4 +122,6 @@ export default function Navbar() {
       )}
     </nav>
   );
-}
+};
+
+export default memo(Navbar);
