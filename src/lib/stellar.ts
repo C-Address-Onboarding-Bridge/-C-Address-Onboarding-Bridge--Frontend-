@@ -4,8 +4,18 @@ import {
   signTransaction,
   getNetwork,
 } from "@stellar/freighter-api";
-import type { Horizon, rpc } from "@stellar/stellar-sdk";
+import {
+  TransactionBuilder,
+  Operation,
+  BASE_FEE,
+  Networks,
+  Asset,
+  Horizon,
+  rpc,
+  Account,
+} from "@stellar/stellar-sdk";
 import { BRIDGE_CONTRACT_ID } from "./types";
+import { withSequenceRetry } from "./sequenceManager";
 
 const HORIZON_URLS = {
   PUBLIC: "https://horizon.stellar.org",
@@ -188,52 +198,63 @@ export async function buildAndSubmitPayment(
   const { TransactionBuilder, Operation, BASE_FEE, Asset } = await import("@stellar/stellar-sdk");
   type AssetType = InstanceType<typeof Asset>;
 
-  const account = await server.loadAccount(sourceAddress);
-  let asset: AssetType;
-  if (assetCode === "XLM") {
-    asset = Asset.native();
-  } else {
-    const balances = account.balances as HorizonBalance[];
-    const matchingBalance = balances.find(
-      (b) => b.asset_code === assetCode
-    );
-    if (!matchingBalance) {
-      throw new Error(`No ${assetCode} trustline found for this account`);
-    }
-    asset = new Asset(assetCode, matchingBalance.asset_issuer);
-  }
+  const result = await withSequenceRetry(
+    sourceAddress,
+    async (getSequence) => {
+      const sequence = await getSequence();
+      const account = new Account(sourceAddress, (sequence - 1n).toString());
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: passphrase,
-  })
-    .addOperation(
-      Operation.payment({
-        destination: destinationAddress,
-        asset,
-        amount,
+      // Load balances for asset validation
+      const horizonAccount = await server.loadAccount(sourceAddress);
+      let asset: Asset;
+
+      if (assetCode === "XLM") {
+        asset = Asset.native();
+      } else {
+        const balances = horizonAccount.balances as HorizonBalance[];
+        const matchingBalance = balances.find((b) => b.asset_code === assetCode);
+        if (!matchingBalance) {
+          throw new Error(`No ${assetCode} trustline found for this account`);
+        }
+        asset = new Asset(assetCode, matchingBalance.asset_issuer);
+      }
+
+      const tx = new TransactionBuilder(account, {
+        fee: BASE_FEE,
+        networkPassphrase: passphrase,
       })
-    )
-    .setTimeout(30)
-    .build();
+        .addOperation(
+          Operation.payment({
+            destination: destinationAddress,
+            asset,
+            amount,
+          })
+        )
+        .setTimeout(30)
+        .build();
 
-  const signedResult = await signTransaction(tx.toXDR(), {
-    networkPassphrase: passphrase,
-  });
+      const signedResult = await signTransaction(tx.toXDR(), {
+        networkPassphrase: passphrase,
+      });
 
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
+      if ("error" in signedResult && signedResult.error) {
+        throw new Error(`Signing failed: ${signedResult.error}`);
+      }
 
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+      const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+      const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
 
-  const result = await server.submitTransaction(signedTx);
+      const submitResult = await server.submitTransaction(signedTx);
 
-  return {
-    hash: result.hash,
-    successful: result.successful,
-  };
+      return {
+        hash: submitResult.hash,
+        successful: submitResult.successful,
+      };
+    },
+    server
+  );
+
+  return result;
 }
 
 export async function bridgeViaContract(
@@ -251,50 +272,59 @@ export async function bridgeViaContract(
   const passphrase = await getNetworkPassphrase(network);
   const { TransactionBuilder, Operation, BASE_FEE, Asset } = await import("@stellar/stellar-sdk");
 
-  const account = await server.loadAccount(sourceAddress);
+  const result = await withSequenceRetry(
+    sourceAddress,
+    async (getSequence) => {
+      const sequence = await getSequence();
+      const account = new Account(sourceAddress, (sequence - 1n).toString());
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: passphrase,
-  })
-    .addOperation(
-      Operation.payment({
-        destination: BRIDGE_CONTRACT_ID,
-        asset: Asset.native(),
-        amount,
+      const tx = new TransactionBuilder(account, {
+        fee: BASE_FEE,
+        networkPassphrase: passphrase,
       })
-    )
-    .setTimeout(30)
-    .build();
+        .addOperation(
+          Operation.payment({
+            destination: BRIDGE_CONTRACT_ID,
+            asset: Asset.native(),
+            amount,
+          })
+        )
+        .setTimeout(30)
+        .build();
 
-  const unsignedXDR = tx.toXDR();
+      const unsignedXDR = tx.toXDR();
 
-  const signedResult = await signTransaction(unsignedXDR, {
-    networkPassphrase: passphrase,
-  });
+      const signedResult = await signTransaction(unsignedXDR, {
+        networkPassphrase: passphrase,
+      });
 
-  if ("error" in signedResult && signedResult.error) {
-    throw new Error(`Signing failed: ${signedResult.error}`);
-  }
+      if ("error" in signedResult && signedResult.error) {
+        throw new Error(`Signing failed: ${signedResult.error}`);
+      }
 
-  const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
-  const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
+      const signedXDR = (signedResult as { signedTxXdr: string }).signedTxXdr;
+      const signedTx = TransactionBuilder.fromXDR(signedXDR, passphrase);
 
-  try {
-    const result = await server.submitTransaction(signedTx);
-    return {
-      hash: result.hash,
-      successful: result.successful,
-    };
-  } catch (e: unknown) {
-    const err = e as { response?: { data?: { extras?: { result_codes?: unknown } } } };
-    if (err.response?.data?.extras?.result_codes) {
-      throw new Error(
-        `Transaction failed: ${JSON.stringify(err.response.data.extras.result_codes)}`
-      );
-    }
-    throw e;
-  }
+      try {
+        const submitResult = await server.submitTransaction(signedTx);
+        return {
+          hash: submitResult.hash,
+          successful: submitResult.successful,
+        };
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { extras?: { result_codes?: unknown } } } };
+        if (err.response?.data?.extras?.result_codes) {
+          throw new Error(
+            `Transaction failed: ${JSON.stringify(err.response.data.extras.result_codes)}`
+          );
+        }
+        throw e;
+      }
+    },
+    server
+  );
+
+  return result;
 }
 
 export function getExplorerUrl(
