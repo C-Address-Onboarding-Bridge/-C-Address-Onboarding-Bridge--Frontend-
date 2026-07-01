@@ -1,3 +1,4 @@
+import React, { memo, useMemo } from "react";
 import { ArrowLeftRight, CreditCard, Building2, ExternalLink, Loader2 } from "lucide-react";
 import type { BridgeTransactionData } from "@/lib/stellar";
 import { getExplorerUrl } from "@/lib/stellar";
@@ -20,7 +21,57 @@ interface Props {
   network: "PUBLIC" | "TESTNET";
 }
 
-export default function TransactionHistory({ transactions, loading, network }: Props) {
+const TransactionItem = memo(function TransactionItem({ tx, network }: { tx: BridgeTransactionData; network: Props["network"] }) {
+  const type = typeConfig[tx.type] || typeConfig["g-to-c"];
+  const status = statusConfig[tx.status];
+  const Icon = type.icon;
+
+  const date = useMemo(() => new Date(tx.timestamp).toLocaleDateString(), [tx.timestamp]);
+  const toShort = useMemo(() => {
+    if (!tx.toAddress) return "";
+    return tx.toAddress.length > 20 ? `${tx.toAddress.slice(0, 10)}...${tx.toAddress.slice(-6)}` : tx.toAddress;
+  }, [tx.toAddress]);
+
+  return (
+    <div className="p-4 hover:bg-[var(--surface-2)] transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-[var(--surface-2)] flex items-center justify-center flex-shrink-0">
+            <Icon className={`w-4 h-4 ${type.color}`} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{type.label}</p>
+            <p className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">
+              {tx.amount} {tx.asset} → {toShort}
+            </p>
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className={`text-xs font-medium ${status.color}`}>{status.label}</p>
+          <p className="text-xs text-[var(--text-muted)]">{date}</p>
+          {tx.hash && (
+            <a
+              href={getExplorerUrl(network, "tx", tx.hash)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[var(--primary-light)] hover:underline inline-flex items-center gap-0.5"
+            >
+              <ExternalLink className="w-3 h-3" />
+              View
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+function TransactionHistory({ transactions, loading, network }: Props) {
+  const items = useMemo(
+    () => transactions.map((tx) => <TransactionItem key={tx.id} tx={tx} network={network} />),
+    [transactions, network]
+  );
+
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]">
       <div className="p-5 border-b border-[var(--border)]">
@@ -35,47 +86,7 @@ export default function TransactionHistory({ transactions, loading, network }: P
           <p className="text-sm text-[var(--text-muted)]">No transactions found for this account.</p>
         </div>
       ) : (
-        <div className="divide-y divide-[var(--border)]">
-          {transactions.map((tx) => {
-            const type = typeConfig[tx.type] || typeConfig["g-to-c"];
-            const status = statusConfig[tx.status];
-            const Icon = type.icon;
-            return (
-              <div key={tx.id} className="p-4 hover:bg-[var(--surface-2)] transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-[var(--surface-2)] flex items-center justify-center flex-shrink-0">
-                      <Icon className={`w-4 h-4 ${type.color}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{type.label}</p>
-                      <p className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">
-                        {tx.amount} {tx.asset} → {tx.toAddress}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className={`text-xs font-medium ${status.color}`}>{status.label}</p>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      {new Date(tx.timestamp).toLocaleDateString()}
-                    </p>
-                    {tx.hash && (
-                      <a
-                        href={getExplorerUrl(network, "tx", tx.hash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-[var(--primary-light)] hover:underline inline-flex items-center gap-0.5"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <div className="divide-y divide-[var(--border)]">{items}</div>
       )}
       <div className="p-4 border-t border-[var(--border)]">
         <a
@@ -91,3 +102,5 @@ export default function TransactionHistory({ transactions, loading, network }: P
     </div>
   );
 }
+
+export default memo(TransactionHistory);

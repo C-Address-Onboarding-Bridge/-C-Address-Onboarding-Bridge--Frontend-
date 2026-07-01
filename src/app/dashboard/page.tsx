@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Wallet, ArrowLeftRight, CreditCard, Building2, Copy, Check, ExternalLink, Plus, Loader2 } from "lucide-react";
 import { useWallet } from "@/components/wallet-provider";
 import TransactionHistory from "@/components/transaction-history";
@@ -39,15 +39,15 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [isConnected, address, network]);
 
-  const confirmedCount = transactions.filter((t) => t.status === "confirmed").length;
-  const pendingCount = transactions.filter((t) => t.status === "pending").length;
+  const confirmedCount = useMemo(() => transactions.filter((t) => t.status === "confirmed").length, [transactions]);
+  const pendingCount = useMemo(() => transactions.filter((t) => t.status === "pending").length, [transactions]);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     if (!address) return;
     navigator.clipboard.writeText(address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [address]);
 
   if (!isConnected) {
     return (
@@ -95,9 +95,7 @@ export default function DashboardPage() {
             <span className="text-xs text-[var(--text-muted)]">Connected Address</span>
           </div>
           <div className="flex items-center gap-2">
-            <code className="text-sm font-mono">
-              {address?.slice(0, 8)}...{address?.slice(-8)}
-            </code>
+            <code className="text-sm font-mono">{address ? `${address.slice(0, 8)}...${address.slice(-8)}` : ""}</code>
             <button onClick={handleCopy} className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors">
               {copied ? <Check className="w-3 h-3 text-[var(--success)]" /> : <Copy className="w-3 h-3 text-[var(--text-muted)]" />}
             </button>
